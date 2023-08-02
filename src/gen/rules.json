@@ -272,7 +272,7 @@
       "Dynamically typed expressions (typing.Any) are disallowed in `{name}`"
     ],
     "autofix": "Autofix is not available.",
-    "explanation": "## What it does\nChecks that an expression is annotated with a more specific type than\n`Any`.\n\n## Why is this bad?\n`Any` is a special type indicating an unconstrained type. When an\nexpression is annotated with type `Any`, type checkers will allow all\noperations on it.\n\nIt's better to be explicit about the type of an expression, and to use\n`Any` as an \"escape hatch\" only when it is really needed.\n\n## Example\n```python\ndef foo(x: Any):\n    ...\n```\n\nUse instead:\n```python\ndef foo(x: int):\n    ...\n```\n\n## References\n- [PEP 484](https://www.python.org/dev/peps/pep-0484/#the-any-type)\n- [`typing.Any`](https://docs.python.org/3/library/typing.html#typing.Any)\n- [Mypy: The Any type](https://mypy.readthedocs.io/en/stable/kinds_of_types.html#the-any-type)\n",
+    "explanation": "## What it does\nChecks that function arguments are annotated with a more specific type than\n`Any`.\n\n## Why is this bad?\n`Any` is a special type indicating an unconstrained type. When an\nexpression is annotated with type `Any`, type checkers will allow all\noperations on it.\n\nIt's better to be explicit about the type of an expression, and to use\n`Any` as an \"escape hatch\" only when it is really needed.\n\n## Example\n```python\ndef foo(x: Any):\n    ...\n```\n\nUse instead:\n```python\ndef foo(x: int):\n    ...\n```\n\n## Known problems\n\nType aliases are unsupported and can lead to false positives.\nFor example, the following will trigger this rule inadvertently:\n```python\nfrom typing import Any\n\nMyAny = Any\n\n\ndef foo(x: MyAny):\n    ...\n```\n\n## References\n- [PEP 484](https://www.python.org/dev/peps/pep-0484/#the-any-type)\n- [Python documentation: `typing.Any`](https://docs.python.org/3/library/typing.html#typing.Any)\n- [Mypy: The Any type](https://mypy.readthedocs.io/en/stable/kinds_of_types.html#the-any-type)\n",
     "nursery": false
   },
   {
@@ -717,7 +717,7 @@
       "Probable use of `{string}` call with `verify=False` disabling SSL certificate checks"
     ],
     "autofix": "Autofix is not available.",
-    "explanation": null,
+    "explanation": "## What it does\nChecks for HTTPS requests that disable SSL certificate checks.\n\n## Why is this bad?\nIf SSL certificates are not verified, an attacker could perform a \"man in\nthe middle\" attack by intercepting and modifying traffic between the client\nand server.\n\n## Example\n```python\nimport requests\n\nrequests.get(\"https://www.example.com\", verify=False)\n```\n\nUse instead:\n```python\nimport requests\n\nrequests.get(\"https://www.example.com\")  # By default, `verify=True`.\n```\n\n## References\n- [Common Weakness Enumeration: CWE-295](https://cwe.mitre.org/data/definitions/295.html)\n",
     "nursery": false
   },
   {
@@ -730,7 +730,7 @@
       "Probable use of unsafe `yaml.load`. Allows instantiation of arbitrary objects. Consider `yaml.safe_load`."
     ],
     "autofix": "Autofix is not available.",
-    "explanation": null,
+    "explanation": "## What it does\nChecks for uses of the `yaml.load` function.\n\n## Why is this bad?\nRunning the `yaml.load` function over untrusted YAML files is insecure, as\n`yaml.load` allows for the creation of arbitrary Python objects, which can\nthen be used to execute arbitrary code.\n\nInstead, consider using `yaml.safe_load`, which allows for the creation of\nsimple Python objects like integers and lists, but prohibits the creation of\nmore complex objects like functions and classes.\n\n## Example\n```python\nimport yaml\n\nyaml.load(untrusted_yaml)\n```\n\nUse instead:\n```python\nimport yaml\n\nyaml.safe_load(untrusted_yaml)\n```\n\n## References\n- [PyYAML documentation: Loading YAML](https://pyyaml.org/wiki/PyYAMLDocumentation)\n- [Common Weakness Enumeration: CWE-20](https://cwe.mitre.org/data/definitions/20.html)\n",
     "nursery": false
   },
   {
@@ -742,7 +742,7 @@
       "The use of SNMPv1 and SNMPv2 is insecure. Use SNMPv3 if able."
     ],
     "autofix": "Autofix is not available.",
-    "explanation": null,
+    "explanation": "## What it does\nChecks for uses of SNMPv1 or SNMPv2.\n\n## Why is this bad?\nThe SNMPv1 and SNMPv2 protocols are considered insecure as they do\nnot support encryption. Instead, prefer SNMPv3, which supports\nencryption.\n\n## Example\n```python\nfrom pysnmp.hlapi import CommunityData\n\nCommunityData(\"public\", mpModel=0)\n```\n\nUse instead:\n```python\nfrom pysnmp.hlapi import CommunityData\n\nCommunityData(\"public\", mpModel=2)\n```\n\n## References\n- [Cybersecurity and Infrastructure Security Agency (CISA): Alert TA17-156A](https://www.cisa.gov/news-events/alerts/2017/06/05/reducing-risk-snmp-abuse)\n- [Common Weakness Enumeration: CWE-319](https://cwe.mitre.org/data/definitions/319.html)\n",
     "nursery": false
   },
   {
@@ -754,7 +754,7 @@
       "You should not use SNMPv3 without encryption. `noAuthNoPriv` & `authNoPriv` is insecure."
     ],
     "autofix": "Autofix is not available.",
-    "explanation": null,
+    "explanation": "## What it does\nChecks for uses of the SNMPv3 protocol without encryption.\n\n## Why is this bad?\nUnencrypted SNMPv3 communication can be intercepted and read by\nunauthorized parties. Instead, enable encryption when using SNMPv3.\n\n## Example\n```python\nfrom pysnmp.hlapi import UsmUserData\n\nUsmUserData(\"user\")\n```\n\nUse instead:\n```python\nfrom pysnmp.hlapi import UsmUserData\n\nUsmUserData(\"user\", \"authkey\", \"privkey\")\n```\n\n## References\n- [Common Weakness Enumeration: CWE-319](https://cwe.mitre.org/data/definitions/319.html)\n",
     "nursery": false
   },
   {
@@ -766,7 +766,7 @@
       "Possible shell injection via Paramiko call; check inputs are properly sanitized"
     ],
     "autofix": "Autofix is not available.",
-    "explanation": null,
+    "explanation": "## What it does\nChecks for `paramiko` calls.\n\n## Why is this bad?\n`paramiko` calls allow users to execute arbitrary shell commands on a\nremote machine. If the inputs to these calls are not properly sanitized,\nthey can be vulnerable to shell injection attacks.\n\n## Example\n```python\nimport paramiko\n\nclient = paramiko.SSHClient()\nclient.exec_command(\"echo $HOME\")\n```\n\n## References\n- [Common Weakness Enumeration: CWE-78](https://cwe.mitre.org/data/definitions/78.html)\n- [Paramiko documentation: `SSHClient.exec_command()`](https://docs.paramiko.org/en/stable/api/client.html#paramiko.client.SSHClient.exec_command)\n",
     "nursery": false
   },
   {
@@ -840,7 +840,7 @@
       "Starting a process with a partial executable path"
     ],
     "autofix": "Autofix is not available.",
-    "explanation": null,
+    "explanation": "## What it does\nChecks for the starting of a process with a partial executable path.\n\n## Why is this bad?\nStarting a process with a partial executable path can allow attackers to\nexecute arbitrary executable by adjusting the `PATH` environment variable.\nConsider using a full path to the executable instead.\n\n## Example\n```python\nimport subprocess\n\nsubprocess.Popen([\"ruff\", \"check\", \"file.py\"])\n```\n\nUse instead:\n```python\nimport subprocess\n\nsubprocess.Popen([\"/usr/bin/ruff\", \"check\", \"file.py\"])\n```\n\n## References\n- [Python documentation: `subprocess.Popen()`](https://docs.python.org/3/library/subprocess.html#subprocess.Popen)\n- [Common Weakness Enumeration: CWE-78](https://cwe.mitre.org/data/definitions/78.html)\n",
     "nursery": false
   },
   {
@@ -864,7 +864,7 @@
       "Possible wildcard injection in call due to `*` usage"
     ],
     "autofix": "Autofix is not available.",
-    "explanation": null,
+    "explanation": "## What it does\nChecks for possible wildcard injections in calls to `subprocess.Popen()`.\n\n## Why is this bad?\nWildcard injections can lead to unexpected behavior if unintended files are\nmatched by the wildcard. Consider using a more specific path instead.\n\n## Example\n```python\nimport subprocess\n\nsubprocess.Popen([\"chmod\", \"777\", \"*.py\"])\n```\n\nUse instead:\n```python\nimport subprocess\n\nsubprocess.Popen([\"chmod\", \"777\", \"main.py\"])\n```\n\n## References\n- [Common Weakness Enumeration: CWE-78](https://cwe.mitre.org/data/definitions/78.html)\n",
     "nursery": false
   },
   {
@@ -876,7 +876,7 @@
       "Use of insecure `logging.config.listen` detected"
     ],
     "autofix": "Autofix is not available.",
-    "explanation": null,
+    "explanation": "## What it does\nChecks for insecure `logging.config.listen` calls.\n\n## Why is this bad?\n`logging.config.listen` starts a server that listens for logging\nconfiguration requests. This is insecure as parts of the configuration are\npassed to the built-in `eval` function, which can be used to execute\narbitrary code.\n\n## Example\n```python\nimport logging\n\nlogging.config.listen(9999)\n```\n\n## References\n- [Python documentation: `logging.config.listen()`](https://docs.python.org/3/library/logging.config.html#logging.config.listen)\n",
     "nursery": false
   },
   {
@@ -889,7 +889,7 @@
       "By default, jinja2 sets `autoescape` to `False`. Consider using `autoescape=True` or the `select_autoescape` function to mitigate XSS vulnerabilities."
     ],
     "autofix": "Autofix is not available.",
-    "explanation": null,
+    "explanation": "## What it does\nChecks for `jinja2` templates that use `autoescape=False`.\n\n## Why is this bad?\n`jinja2` templates that use `autoescape=False` are vulnerable to cross-site\nscripting (XSS) attacks that allow attackers to execute arbitrary\nJavaScript.\n\nBy default, `jinja2` sets `autoescape` to `False`, so it is important to\nset `autoescape=True` or use the `select_autoescape` function to mitigate\nXSS vulnerabilities.\n\n## Example\n```python\nimport jinja2\n\njinja2.Environment(loader=jinja2.FileSystemLoader(\".\"))\n```\n\nUse instead:\n```python\nimport jinja2\n\njinja2.Environment(loader=jinja2.FileSystemLoader(\".\"), autoescape=True)\n```\n\n## References\n- [Jinja documentation: API](https://jinja.palletsprojects.com/en/latest/api/#autoescaping)\n- [Common Weakness Enumeration: CWE-94](https://cwe.mitre.org/data/definitions/94.html)\n",
     "nursery": false
   },
   {
@@ -941,15 +941,16 @@
     "nursery": false
   },
   {
-    "name": "unary-prefix-increment",
+    "name": "unary-prefix-increment-decrement",
     "code": "B002",
     "linter": "flake8-bugbear",
-    "summary": "Python does not support the unary prefix increment",
+    "summary": "Python does not support the unary prefix increment operator (`++`)",
     "message_formats": [
-      "Python does not support the unary prefix increment"
+      "Python does not support the unary prefix increment operator (`++`)",
+      "Python does not support the unary prefix decrement operator (`--`)"
     ],
     "autofix": "Autofix is not available.",
-    "explanation": "## What it does\nChecks for uses of the unary prefix increment operator (e.g., `++n`).\n\n## Why is this bad?\nPython does not support the unary prefix increment operator. Writing `++n`\nis equivalent to `+(+(n))`, which is equivalent to `n`.\n\n## Example\n```python\n++n\n```\n\nUse instead:\n```python\nn += 1\n```\n\n## References\n- [Python documentation: Unary arithmetic and bitwise operations](https://docs.python.org/3/reference/expressions.html#unary-arithmetic-and-bitwise-operations)\n- [Python documentation: Augmented assignment statements](https://docs.python.org/3/reference/simple_stmts.html#augmented-assignment-statements)\n",
+    "explanation": "## What it does\nChecks for the attempted use of the unary prefix increment (`++`) or\ndecrement operator (`--`).\n\n## Why is this bad?\nPython does not support the unary prefix increment or decrement operator.\nWriting `++n` is equivalent to `+(+(n))` and writing `--n` is equivalent to\n`-(-(n))`. In both cases, it is equivalent to `n`.\n\n## Example\n```python\n++x\n--y\n```\n\nUse instead:\n```python\nx += 1\ny -= 1\n```\n\n## References\n- [Python documentation: Unary arithmetic and bitwise operations](https://docs.python.org/3/reference/expressions.html#unary-arithmetic-and-bitwise-operations)\n- [Python documentation: Augmented assignment statements](https://docs.python.org/3/reference/simple_stmts.html#augmented-assignment-statements)\n",
     "nursery": false
   },
   {
@@ -968,11 +969,11 @@
     "name": "unreliable-callable-check",
     "code": "B004",
     "linter": "flake8-bugbear",
-    "summary": "Using `hasattr(x, '__call__')` to test if x is callable is unreliable. Use `callable(x)` for consistent results.",
+    "summary": "Using `hasattr(x, \"__call__\")` to test if x is callable is unreliable. Use `callable(x)` for consistent results.",
     "message_formats": [
-      "Using `hasattr(x, '__call__')` to test if x is callable is unreliable. Use `callable(x)` for consistent results."
+      "Using `hasattr(x, \"__call__\")` to test if x is callable is unreliable. Use `callable(x)` for consistent results."
     ],
-    "autofix": "Autofix is not available.",
+    "autofix": "Autofix is sometimes available.",
     "explanation": "## What it does\nChecks for uses of `hasattr` to test if an object is callable (e.g.,\n`hasattr(obj, \"__call__\")`).\n\n## Why is this bad?\nUsing `hasattr` is an unreliable mechanism for testing if an object is\ncallable. If `obj` implements a custom `__getattr__`, or if its `__call__`\nis itself not callable, you may get misleading results.\n\nInstead, use `callable(obj)` to test if `obj` is callable.\n\n## Example\n```python\nhasattr(obj, \"__call__\")\n```\n\nUse instead:\n```python\ncallable(obj)\n```\n\n## References\n- [Python documentation: `callable`](https://docs.python.org/3/library/functions.html#callable)\n- [Python documentation: `hasattr`](https://docs.python.org/3/library/functions.html#hasattr)\n- [Python documentation: `__getattr__`](https://docs.python.org/3/reference/datamodel.html#object.__getattr__)\n- [Python documentation: `__call__`](https://docs.python.org/3/reference/datamodel.html#object.__call__)\n",
     "nursery": false
   },
@@ -1337,7 +1338,7 @@
       "`{method}` should pass `{param_name}` and `flags` as keyword arguments to avoid confusion due to unintuitive argument positions"
     ],
     "autofix": "Autofix is not available.",
-    "explanation": "## What it does\nChecks for calls to `re.sub`, `re.subn`, and `re.split` that pass `count`,\n`maxsplit`, or `flags` as positional arguments.\n\n## Why is this bad?\nPassing `count`, `maxsplit`, or `flags` as positional arguments to\n`re.sub`, re.subn`, or `re.split` can lead to confusion, as most methods in\nthe `re` module accepts `flags` as the third positional argument, while\n`re.sub`, `re.subn`, and `re.split` have different signatures.\n\nInstead, pass `count`, `maxsplit`, and `flags` as keyword arguments.\n\n## Example\n```python\nimport re\n\nre.split(\"pattern\", \"replacement\", 1)\n```\n\nUse instead:\n```python\nimport re\n\nre.split(\"pattern\", \"replacement\", maxsplit=1)\n```\n\n## References\n- [Python documentation: `re.sub`](https://docs.python.org/3/library/re.html#re.sub)\n- [Python documentation: `re.subn`](https://docs.python.org/3/library/re.html#re.subn)\n- [Python documentation: `re.split`](https://docs.python.org/3/library/re.html#re.split)\n",
+    "explanation": "## What it does\nChecks for calls to `re.sub`, `re.subn`, and `re.split` that pass `count`,\n`maxsplit`, or `flags` as positional arguments.\n\n## Why is this bad?\nPassing `count`, `maxsplit`, or `flags` as positional arguments to\n`re.sub`, `re.subn`, or `re.split` can lead to confusion, as most methods in\nthe `re` module accept `flags` as the third positional argument, while\n`re.sub`, `re.subn`, and `re.split` have different signatures.\n\nInstead, pass `count`, `maxsplit`, and `flags` as keyword arguments.\n\n## Example\n```python\nimport re\n\nre.split(\"pattern\", \"replacement\", 1)\n```\n\nUse instead:\n```python\nimport re\n\nre.split(\"pattern\", \"replacement\", maxsplit=1)\n```\n\n## References\n- [Python documentation: `re.sub`](https://docs.python.org/3/library/re.html#re.sub)\n- [Python documentation: `re.subn`](https://docs.python.org/3/library/re.html#re.subn)\n- [Python documentation: `re.split`](https://docs.python.org/3/library/re.html#re.split)\n",
     "nursery": false
   },
   {
@@ -1397,7 +1398,7 @@
       "Class attribute `{name}` is shadowing a Python builtin"
     ],
     "autofix": "Autofix is not available.",
-    "explanation": "## What it does\nChecks for any class attributes that use the same name as a builtin.\n\n## Why is this bad?\nReusing a builtin name for the name of an attribute increases the\ndifficulty of reading and maintaining the code, and can cause\nnon-obvious errors, as readers may mistake the attribute for the\nbuiltin and vice versa.\n\nBuiltins can be marked as exceptions to this rule via the\n[`flake8-builtins.builtins-ignorelist`] configuration option, or\nconverted to the appropriate dunder method.\n\n## Example\n```python\nclass Shadow:\n    def int():\n        return 0\n```\n\nUse instead:\n```python\nclass Shadow:\n    def to_int():\n        return 0\n```\n\nOr:\n```python\nclass Shadow:\n    # Callable as `int(shadow)`\n    def __int__():\n        return 0\n```\n\n## Options\n- `flake8-builtins.builtins-ignorelist`\n\n## References\n- [_Is it bad practice to use a built-in function name as an attribute or method identifier?_](https://stackoverflow.com/questions/9109333/is-it-bad-practice-to-use-a-built-in-function-name-as-an-attribute-or-method-ide)\n- [_Why is it a bad idea to name a variable `id` in Python?_](https://stackoverflow.com/questions/77552/id-is-a-bad-variable-name-in-python)\n",
+    "explanation": "## What it does\nChecks for any class attributes or methods that use the same name as a\nbuiltin.\n\n## Why is this bad?\nReusing a builtin name for the name of an attribute increases the\ndifficulty of reading and maintaining the code, and can cause\nnon-obvious errors, as readers may mistake the attribute for the\nbuiltin and vice versa.\n\nBuiltins can be marked as exceptions to this rule via the\n[`flake8-builtins.builtins-ignorelist`] configuration option, or\nconverted to the appropriate dunder method. Methods decorated with\n`@typing.override` or `@typing_extensions.override` are also\nignored.\n\n## Example\n```python\nclass Shadow:\n    def int():\n        return 0\n```\n\nUse instead:\n```python\nclass Shadow:\n    def to_int():\n        return 0\n```\n\nOr:\n```python\nclass Shadow:\n    # Callable as `int(shadow)`\n    def __int__():\n        return 0\n```\n\n## Options\n- `flake8-builtins.builtins-ignorelist`\n\n## References\n- [_Is it bad practice to use a built-in function name as an attribute or method identifier?_](https://stackoverflow.com/questions/9109333/is-it-bad-practice-to-use-a-built-in-function-name-as-an-attribute-or-method-ide)\n- [_Why is it a bad idea to name a variable `id` in Python?_](https://stackoverflow.com/questions/77552/id-is-a-bad-variable-name-in-python)\n",
     "nursery": false
   },
   {
@@ -1675,7 +1676,7 @@
       "The use of `datetime.datetime()` without `tzinfo` argument is not allowed"
     ],
     "autofix": "Autofix is not available.",
-    "explanation": null,
+    "explanation": "## What it does\nChecks for `datetime` instantiations that lack a `tzinfo` argument.\n\n## Why is this bad?\n`datetime` objects are \"naive\" by default, in that they do not include\ntimezone information. \"Naive\" objects are easy to understand, but ignore\nsome aspects of reality, which can lead to subtle bugs. Timezone-aware\n`datetime` objects are preferred, as they represent a specific moment in\ntime, unlike \"naive\" objects.\n\nBy providing a `tzinfo` value, a `datetime` can be made timezone-aware.\n\n## Example\n```python\nimport datetime\n\ndatetime.datetime(2000, 1, 1, 0, 0, 0)\n```\n\nUse instead:\n```python\nimport datetime\n\ndatetime.datetime(2000, 1, 1, 0, 0, 0, tzinfo=datetime.UTC)\n```\n",
     "nursery": false
   },
   {
@@ -1687,7 +1688,7 @@
       "The use of `datetime.datetime.today()` is not allowed, use `datetime.datetime.now(tz=)` instead"
     ],
     "autofix": "Autofix is not available.",
-    "explanation": null,
+    "explanation": "## What it does\nChecks for usage of `datetime.datetime.today()`.\n\n## Why is this bad?\n`datetime` objects are \"naive\" by default, in that they do not include\ntimezone information. \"Naive\" objects are easy to understand, but ignore\nsome aspects of reality, which can lead to subtle bugs. Timezone-aware\n`datetime` objects are preferred, as they represent a specific moment in\ntime, unlike \"naive\" objects.\n\n`datetime.datetime.today()` crates a \"naive\" object; instead, use\ninstead, use `datetime.datetime.now(tz=)` to create a timezone-aware\nobject.\n\n## Example\n```python\nimport datetime\n\ndatetime.datetime.today()\n```\n\nUse instead:\n```python\nimport datetime\n\ndatetime.datetime.now(tz=datetime.timezone.utc)\n```\n\nOr, for Python 3.11 and later:\n```python\nimport datetime\n\ndatetime.datetime.now(tz=datetime.UTC)\n```\n",
     "nursery": false
   },
   {
@@ -1971,48 +1972,48 @@
     "name": "line-contains-fixme",
     "code": "FIX001",
     "linter": "flake8-fixme",
-    "summary": "Line contains FIXME",
+    "summary": "Line contains FIXME, consider resolving the issue",
     "message_formats": [
-      "Line contains FIXME"
+      "Line contains FIXME, consider resolving the issue"
     ],
     "autofix": "Autofix is not available.",
-    "explanation": null,
+    "explanation": "## What it does\nChecks for \"FIXME\" comments.\n\n## Why is this bad?\n\"FIXME\" comments are used to describe an issue that should be resolved\n(usually, a bug or unexpected behavior).\n\nConsider resolving the issue before deploying the code.\n\nNote that if you use \"FIXME\" comments as a form of documentation, this\nrule may not be appropriate for your project.\n\n## Example\n```python\ndef speed(distance, time):\n    return distance / time  # FIXME: Raises ZeroDivisionError for time = 0.\n```\n",
     "nursery": false
   },
   {
     "name": "line-contains-todo",
     "code": "FIX002",
     "linter": "flake8-fixme",
-    "summary": "Line contains TODO",
+    "summary": "Line contains TODO, consider resolving the issue",
     "message_formats": [
-      "Line contains TODO"
+      "Line contains TODO, consider resolving the issue"
     ],
     "autofix": "Autofix is not available.",
-    "explanation": null,
+    "explanation": "## What it does\nChecks for \"TODO\" comments.\n\n## Why is this bad?\n\"TODO\" comments are used to describe an issue that should be resolved\n(usually, a missing feature, optimization, or refactoring opportunity).\n\nConsider resolving the issue before deploying the code.\n\nNote that if you use \"TODO\" comments as a form of documentation (e.g.,\nto [provide context for future work](https://gist.github.com/dmnd/ed5d8ef8de2e4cfea174bd5dafcda382)),\nthis rule may not be appropriate for your project.\n\n## Example\n```python\ndef greet(name):\n    return f\"Hello, {name}!\"  # TODO: Add support for custom greetings.\n```\n",
     "nursery": false
   },
   {
     "name": "line-contains-xxx",
     "code": "FIX003",
     "linter": "flake8-fixme",
-    "summary": "Line contains XXX",
+    "summary": "Line contains XXX, consider resolving the issue",
     "message_formats": [
-      "Line contains XXX"
+      "Line contains XXX, consider resolving the issue"
     ],
     "autofix": "Autofix is not available.",
-    "explanation": null,
+    "explanation": "## What it does\nChecks for \"XXX\" comments.\n\n## Why is this bad?\n\"XXX\" comments are used to describe an issue that should be resolved.\n\nConsider resolving the issue before deploying the code, or, at minimum,\nusing a more descriptive comment tag (e.g, \"TODO\").\n\n## Example\n```python\ndef speed(distance, time):\n    return distance / time  # XXX: Raises ZeroDivisionError for time = 0.\n```\n",
     "nursery": false
   },
   {
     "name": "line-contains-hack",
     "code": "FIX004",
     "linter": "flake8-fixme",
-    "summary": "Line contains HACK",
+    "summary": "Line contains HACK, consider resolving the issue",
     "message_formats": [
-      "Line contains HACK"
+      "Line contains HACK, consider resolving the issue"
     ],
     "autofix": "Autofix is not available.",
-    "explanation": null,
+    "explanation": "## What it does\nChecks for \"HACK\" comments.\n\n## Why is this bad?\n\"HACK\" comments are used to describe an issue that should be resolved\n(usually, a suboptimal solution or temporary workaround).\n\nConsider resolving the issue before deploying the code.\n\nNote that if you use \"HACK\" comments as a form of documentation, this\nrule may not be appropriate for your project.\n\n## Example\n```python\nimport os\n\n\ndef running_windows():  # HACK: Use platform module instead.\n    try:\n        os.mkdir(\"C:\\\\Windows\\\\System32\\\\\")\n    except FileExistsError:\n        return True\n    else:\n        os.rmdir(\"C:\\\\Windows\\\\System32\\\\\")\n        return False\n```\n",
     "nursery": false
   },
   {
@@ -2048,7 +2049,7 @@
       "f-string is resolved before function call; consider `_(\"string %s\") % arg`"
     ],
     "autofix": "Autofix is not available.",
-    "explanation": null,
+    "explanation": "## What it does\nChecks for f-strings in `gettext` function calls.\n\n## Why is this bad?\nIn the `gettext` API, the `gettext` function (often aliased to `_`) returns\na translation of its input argument by looking it up in a translation\ncatalog.\n\nCalling `gettext` with an f-string as its argument can cause unexpected\nbehavior. Since the f-string is resolved before the function call, the\ntranslation catalog will look up the formatted string, rather than the\nf-string template.\n\nInstead, format the value returned by the function call, rather than\nits argument.\n\n## Example\n```python\nfrom gettext import gettext as _\n\nname = \"Maria\"\n_(f\"Hello, {name}!\")  # Looks for \"Hello, Maria!\".\n```\n\nUse instead:\n```python\nfrom gettext import gettext as _\n\nname = \"Maria\"\n_(\"Hello, %s!\") % name  # Looks for \"Hello, %s!\".\n```\n\n## References\n- [Python documentation: gettext](https://docs.python.org/3/library/gettext.html)\n",
     "nursery": false
   },
   {
@@ -2060,7 +2061,7 @@
       "`format` method argument is resolved before function call; consider `_(\"string %s\") % arg`"
     ],
     "autofix": "Autofix is not available.",
-    "explanation": null,
+    "explanation": "## What it does\nChecks for `str.format` calls in `gettext` function calls.\n\n## Why is this bad?\nIn the `gettext` API, the `gettext` function (often aliased to `_`) returns\na translation of its input argument by looking it up in a translation\ncatalog.\n\nCalling `gettext` with a formatted string as its argument can cause\nunexpected behavior. Since the formatted string is resolved before the\nfunction call, the translation catalog will look up the formatted string,\nrather than the `str.format`-style template.\n\nInstead, format the value returned by the function call, rather than\nits argument.\n\n## Example\n```python\nfrom gettext import gettext as _\n\nname = \"Maria\"\n_(\"Hello, %s!\" % name)  # Looks for \"Hello, Maria!\".\n```\n\nUse instead:\n```python\nfrom gettext import gettext as _\n\nname = \"Maria\"\n_(\"Hello, %s!\") % name  # Looks for \"Hello, %s!\".\n```\n\n## References\n- [Python documentation: gettext](https://docs.python.org/3/library/gettext.html)\n",
     "nursery": false
   },
   {
@@ -2072,7 +2073,7 @@
       "printf-style format is resolved before function call; consider `_(\"string %s\") % arg`"
     ],
     "autofix": "Autofix is not available.",
-    "explanation": null,
+    "explanation": "## What it does\nChecks for printf-style formatted strings in `gettext` function calls.\n\n## Why is this bad?\nIn the `gettext` API, the `gettext` function (often aliased to `_`) returns\na translation of its input argument by looking it up in a translation\ncatalog.\n\nCalling `gettext` with a formatted string as its argument can cause\nunexpected behavior. Since the formatted string is resolved before the\nfunction call, the translation catalog will look up the formatted string,\nrather than the printf-style template.\n\nInstead, format the value returned by the function call, rather than\nits argument.\n\n## Example\n```python\nfrom gettext import gettext as _\n\nname = \"Maria\"\n_(\"Hello, {}!\".format(name))  # Looks for \"Hello, Maria!\".\n```\n\nUse instead:\n```python\nfrom gettext import gettext as _\n\nname = \"Maria\"\n_(\"Hello, %s!\") % name  # Looks for \"Hello, %s!\".\n```\n\n## References\n- [Python documentation: gettext](https://docs.python.org/3/library/gettext.html)\n",
     "nursery": false
   },
   {
@@ -2096,7 +2097,7 @@
       "Implicitly concatenated string literals over multiple lines"
     ],
     "autofix": "Autofix is not available.",
-    "explanation": "## What it does\nChecks for implicitly concatenated strings that span multiple lines.\n\n## Why is this bad?\nFor string literals that wrap across multiple lines, [PEP 8] recommends\nthe use of implicit string concatenation within parentheses instead of\nusing a backslash for line continuation, as the former is more readable\nthan the latter.\n\nBy default, this rule will only trigger if the string literal is\nconcatenated via a backslash. To disallow implicit string concatenation\naltogether, set the `flake8-implicit-str-concat.allow-multiline` option\nto `false`.\n\n## Example\n```python\nz = \"The quick brown fox jumps over the lazy \"\\\n    \"dog.\"\n```\n\nUse instead:\n```python\nz = (\n    \"The quick brown fox jumps over the lazy \"\n    \"dog.\"\n)\n```\n\n## Options\n- `flake8-implicit-str-concat.allow-multiline`\n\n[PEP 8]: https://peps.python.org/pep-0008/#maximum-line-length\n",
+    "explanation": "## What it does\nChecks for implicitly concatenated strings that span multiple lines.\n\n## Why is this bad?\nFor string literals that wrap across multiple lines, [PEP 8] recommends\nthe use of implicit string concatenation within parentheses instead of\nusing a backslash for line continuation, as the former is more readable\nthan the latter.\n\nBy default, this rule will only trigger if the string literal is\nconcatenated via a backslash. To disallow implicit string concatenation\naltogether, set the [`flake8-implicit-str-concat.allow-multiline`] option\nto `false`.\n\n## Example\n```python\nz = \"The quick brown fox jumps over the lazy \"\\\n    \"dog.\"\n```\n\nUse instead:\n```python\nz = (\n    \"The quick brown fox jumps over the lazy \"\n    \"dog.\"\n)\n```\n\n## Options\n- `flake8-implicit-str-concat.allow-multiline`\n\n[PEP 8]: https://peps.python.org/pep-0008/#maximum-line-length\n",
     "nursery": false
   },
   {
@@ -2556,6 +2557,30 @@
     "nursery": false
   },
   {
+    "name": "complex-assignment-in-stub",
+    "code": "PYI017",
+    "linter": "flake8-pyi",
+    "summary": "Stubs should not contain assignments to attributes or multiple targets",
+    "message_formats": [
+      "Stubs should not contain assignments to attributes or multiple targets"
+    ],
+    "autofix": "Autofix is not available.",
+    "explanation": "## What it does\nChecks for assignments with multiple or non-name targets in stub files.\n\n## Why is this bad?\nIn general, stub files should be thought of as \"data files\" for a type\nchecker, and are not intended to be executed. As such, it's useful to\nenforce that only a subset of Python syntax is allowed in a stub file, to\nensure that everything in the stub is unambiguous for the type checker.\n\nThe need to perform multi-assignment, or assignment to a non-name target,\nlikely indicates a misunderstanding of how stub files are intended to be\nused.\n\n## Example\n```python\na = b = int\na.b = int\n```\n\nUse instead:\n```python\na: TypeAlias = int\nb: TypeAlias = int\n\n\nclass a:\n    b: int\n```\n",
+    "nursery": false
+  },
+  {
+    "name": "unused-private-type-var",
+    "code": "PYI018",
+    "linter": "flake8-pyi",
+    "summary": "Private TypeVar `{name}` is never used",
+    "message_formats": [
+      "Private TypeVar `{name}` is never used"
+    ],
+    "autofix": "Autofix is not available.",
+    "explanation": "## What it does\nChecks for the presence of unused private `TypeVar` declarations.\n\n## Why is this bad?\nA private `TypeVar` that is defined but not used is likely a mistake, and\nshould either be used, made public, or removed to avoid confusion.\n\n## Example\n```python\nimport typing\n\n_T = typing.TypeVar(\"_T\")\n```\n",
+    "nursery": false
+  },
+  {
     "name": "quoted-annotation-in-stub",
     "code": "PYI020",
     "linter": "flake8-pyi",
@@ -2601,6 +2626,18 @@
     ],
     "autofix": "Autofix is sometimes available.",
     "explanation": "## What it does\nChecks for `from collections.abc import Set` imports that do not alias\n`Set` to `AbstractSet`.\n\n## Why is this bad?\nThe `Set` type in `collections.abc` is an abstract base class for set-like types.\nIt is easily confused with, and not equivalent to, the `set` builtin.\n\nTo avoid confusion, `Set` should be aliased to `AbstractSet` when imported. This\nmakes it clear that the imported type is an abstract base class, and not the\n`set` builtin.\n\n## Example\n```python\nfrom collections.abc import Set\n```\n\nUse instead:\n```python\nfrom collections.abc import Set as AbstractSet\n```\n",
+    "nursery": false
+  },
+  {
+    "name": "type-alias-without-annotation",
+    "code": "PYI026",
+    "linter": "flake8-pyi",
+    "summary": "Use `typing.TypeAlias` for type alias, e.g., `{name}: typing.TypeAlias = {value}`",
+    "message_formats": [
+      "Use `typing.TypeAlias` for type alias, e.g., `{name}: typing.TypeAlias = {value}`"
+    ],
+    "autofix": "Autofix is always available.",
+    "explanation": "## What it does\nChecks for type alias definitions that are not annotated with\n`typing.TypeAlias`.\n\n## Why is this bad?\nIn Python, a type alias is defined by assigning a type to a variable (e.g.,\n`Vector = list[float]`).\n\nIt's best to annotate type aliases with the `typing.TypeAlias` type to\nmake it clear that the statement is a type alias declaration, as opposed\nto a normal variable assignment.\n\n## Example\n```python\nVector = list[float]\n```\n\nUse instead:\n```python\nfrom typing import TypeAlias\n\nVector: TypeAlias = list[float]\n```\n",
     "nursery": false
   },
   {
@@ -2677,6 +2714,36 @@
     "nursery": false
   },
   {
+    "name": "bad-exit-annotation",
+    "code": "PYI036",
+    "linter": "flake8-pyi",
+    "summary": "Star-args in `{method_name}` should be annotated with `object`",
+    "message_formats": [
+      "Star-args in `{method_name}` should be annotated with `object`",
+      "If there are no star-args, `{method_name}` should have at least 3 non-keyword-only args (excluding `self`)",
+      "All arguments after the first four in `{method_name}` must have a default value",
+      "All keyword-only arguments in `{method_name}` must have a default value",
+      "The first argument in `{method_name}` should be annotated with `object` or `type[BaseException] | None`",
+      "The second argument in `{method_name}` should be annotated with `object` or `BaseException | None`",
+      "The third argument in `{method_name}` should be annotated with `object` or `types.TracebackType | None`"
+    ],
+    "autofix": "Autofix is sometimes available.",
+    "explanation": "## What it does\nChecks for incorrect function signatures on `__exit__` and `__aexit__`\nmethods.\n\n## Why is this bad?\nImproperly-annotated `__exit__` and `__aexit__` methods can cause\nunexpected behavior when interacting with type checkers.\n\n## Example\n```python\nclass Foo:\n    def __exit__(self, typ, exc, tb, extra_arg) -> None:\n        ...\n```\n\nUse instead:\n```python\nclass Foo:\n    def __exit__(\n        self,\n        typ: type[BaseException] | None,\n        exc: BaseException | None,\n        tb: TracebackType | None,\n        extra_arg: int = 0,\n    ) -> None:\n        ...\n```\n",
+    "nursery": false
+  },
+  {
+    "name": "redundant-numeric-union",
+    "code": "PYI041",
+    "linter": "flake8-pyi",
+    "summary": "Use `{supertype}` instead of `{subtype} | {supertype}`",
+    "message_formats": [
+      "Use `{supertype}` instead of `{subtype} | {supertype}`"
+    ],
+    "autofix": "Autofix is not available.",
+    "explanation": "## What it does\nChecks for union annotations that contain redundant numeric types (e.g.,\n`int | float`).\n\n## Why is this bad?\nIn Python, `int` is a subtype of `float`, and `float` is a subtype of\n`complex`. As such, a union that includes both `int` and `float` is\nredundant, as it is equivalent to a union that only includes `float`.\n\nFor more, see [PEP 3141], which defines Python's \"numeric tower\".\n\nUnions with redundant elements are less readable than unions without them.\n\n## Example\n```python\ndef foo(x: float | int) -> None:\n    ...\n```\n\nUse instead:\n```python\ndef foo(x: float) -> None:\n    ...\n```\n\n## References\n- [Python documentation: The numeric tower](https://docs.python.org/3/library/numbers.html#the-numeric-tower)\n\n[PEP 3141]: https://peps.python.org/pep-3141/\n",
+    "nursery": false
+  },
+  {
     "name": "snake-case-type-alias",
     "code": "PYI042",
     "linter": "flake8-pyi",
@@ -2726,6 +2793,30 @@
     "nursery": false
   },
   {
+    "name": "unused-private-protocol",
+    "code": "PYI046",
+    "linter": "flake8-pyi",
+    "summary": "Private protocol `{name}` is never used",
+    "message_formats": [
+      "Private protocol `{name}` is never used"
+    ],
+    "autofix": "Autofix is not available.",
+    "explanation": "## What it does\nChecks for the presence of unused private `typing.Protocol` definitions.\n\n## Why is this bad?\nA private `typing.Protocol` that is defined but not used is likely a\nmistake, and should either be used, made public, or removed to avoid\nconfusion.\n\n## Example\n```python\nimport typing\n\n\nclass _PrivateProtocol(typing.Protocol):\n    foo: int\n```\n\nUse instead:\n```python\nimport typing\n\n\nclass _PrivateProtocol(typing.Protocol):\n    foo: int\n\n\ndef func(arg: _PrivateProtocol) -> None:\n    ...\n```\n",
+    "nursery": false
+  },
+  {
+    "name": "unused-private-type-alias",
+    "code": "PYI047",
+    "linter": "flake8-pyi",
+    "summary": "Private TypeAlias `{name}` is never used",
+    "message_formats": [
+      "Private TypeAlias `{name}` is never used"
+    ],
+    "autofix": "Autofix is not available.",
+    "explanation": "## What it does\nChecks for the presence of unused private `typing.TypeAlias` definitions.\n\n## Why is this bad?\nA private `typing.TypeAlias` that is defined but not used is likely a\nmistake, and should either be used, made public, or removed to avoid\nconfusion.\n\n## Example\n```python\nimport typing\n\n_UnusedTypeAlias: typing.TypeAlias = int\n```\n\nUse instead:\n```python\nimport typing\n\n_UsedTypeAlias: typing.TypeAlias = int\n\n\ndef func(arg: _UsedTypeAlias) -> _UsedTypeAlias:\n    ...\n```\n",
+    "nursery": false
+  },
+  {
     "name": "stub-body-multiple-statements",
     "code": "PYI048",
     "linter": "flake8-pyi",
@@ -2735,6 +2826,18 @@
     ],
     "autofix": "Autofix is not available.",
     "explanation": null,
+    "nursery": false
+  },
+  {
+    "name": "unused-private-typed-dict",
+    "code": "PYI049",
+    "linter": "flake8-pyi",
+    "summary": "Private TypedDict `{name}` is never used",
+    "message_formats": [
+      "Private TypedDict `{name}` is never used"
+    ],
+    "autofix": "Autofix is not available.",
+    "explanation": "## What it does\nChecks for the presence of unused private `typing.TypedDict` definitions.\n\n## Why is this bad?\nA private `typing.TypedDict` that is defined but not used is likely a\nmistake, and should either be used, made public, or removed to avoid\nconfusion.\n\n## Example\n```python\nimport typing\n\n\nclass _UnusedPrivateTypedDict(typing.TypedDict):\n    foo: list[int]\n```\n\nUse instead:\n```python\nimport typing\n\n\nclass _UsedPrivateTypedDict(typing.TypedDict):\n    foo: set[str]\n\n\ndef func(arg: _UsedPrivateTypedDict) -> _UsedPrivateTypedDict:\n    ...\n```\n",
     "nursery": false
   },
   {
@@ -2786,6 +2889,18 @@
     "nursery": false
   },
   {
+    "name": "unsupported-method-call-on-all",
+    "code": "PYI056",
+    "linter": "flake8-pyi",
+    "summary": "Calling `.{name}()` on `__all__` may not be supported by all type checkers (use `+=` instead)",
+    "message_formats": [
+      "Calling `.{name}()` on `__all__` may not be supported by all type checkers (use `+=` instead)"
+    ],
+    "autofix": "Autofix is not available.",
+    "explanation": "## What it does\nChecks that `append`, `extend` and `remove` methods are not called on\n`__all__`.\n\n## Why is this bad?\nDifferent type checkers have varying levels of support for calling these\nmethods on `__all__`. Instead, use the `+=` operator to add items to\n`__all__`, which is known to be supported by all major type checkers.\n\n## Example\n```python\n__all__ = [\"A\"]\n__all__.append(\"B\")\n```\n\nUse instead:\n```python\n__all__ = [\"A\"]\n__all__ += [\"B\"]\n```\n",
+    "nursery": false
+  },
+  {
     "name": "pytest-fixture-incorrect-parentheses-style",
     "code": "PT001",
     "linter": "flake8-pytest-style",
@@ -2794,7 +2909,7 @@
       "Use `@pytest.fixture{expected}` over `@pytest.fixture{actual}`"
     ],
     "autofix": "Autofix is always available.",
-    "explanation": null,
+    "explanation": "## What it does\nChecks for parameter-free `@pytest.fixture()` decorators with or without\nparentheses, depending on the `flake8-pytest-style.fixture-parentheses`\nsetting.\n\n## Why is this bad?\nIf a `@pytext.fixture()` doesn't take any arguments, the parentheses are\noptional.\n\nEither removing those unnecessary parentheses _or_ requiring them for all\nfixtures is fine, but it's best to be consistent.\n\n## Example\n```python\n@pytest.fixture\ndef my_fixture():\n    ...\n```\n\nUse instead:\n```python\n@pytest.fixture()\ndef my_fixture():\n    ...\n```\n\n## Options\n- `flake8-pytest-style.fixture-parentheses`\n\n## References\n- [`pytest` documentation: API Reference: Fixtures](https://docs.pytest.org/en/latest/reference/reference.html#fixtures-api)\n",
     "nursery": false
   },
   {
@@ -2902,7 +3017,7 @@
       "set the expected exception in `pytest.raises()`"
     ],
     "autofix": "Autofix is not available.",
-    "explanation": null,
+    "explanation": "## What it does\nChecks for `pytest.raises` calls without an expected exception.\n\n## Why is this bad?\n`pytest.raises` expects to receive an expected exception as its first\nargument. If omitted, the `pytest.raises` call will fail at runtime.\n\n## Example\n```python\nimport pytest\n\n\ndef test_foo():\n    with pytest.raises():\n        do_something()\n```\n\nUse instead:\n```python\nimport pytest\n\n\ndef test_foo():\n    with pytest.raises(SomeException):\n        do_something()\n```\n\n## References\n- [`pytest` documentation: `pytest.raises`](https://docs.pytest.org/en/latest/reference/reference.html#pytest-raises)\n",
     "nursery": false
   },
   {
@@ -2962,7 +3077,7 @@
       "No message passed to `pytest.fail()`"
     ],
     "autofix": "Autofix is not available.",
-    "explanation": null,
+    "explanation": "## What it does\nChecks for `pytest.fail` calls without a message.\n\n## Why is this bad?\n`pytest.fail` calls without a message make it harder to understand and debug test failures.\n\n## Example\n```python\nimport pytest\n\n\ndef test_foo():\n    pytest.fail()\n\n\ndef test_bar():\n    pytest.fail(\"\")\n\n\ndef test_baz():\n    pytest.fail(reason=\"\")\n```\n\nUse instead:\n```python\nimport pytest\n\n\ndef test_foo():\n    pytest.fail(\"...\")\n\n\ndef test_bar():\n    pytest.fail(reason=\"...\")\n```\n\n## References\n- [`pytest` documentation: `pytest.fail`](https://docs.pytest.org/en/latest/reference/reference.html#pytest-fail)\n",
     "nursery": false
   },
   {
@@ -2974,7 +3089,7 @@
       "Found assertion on exception `{name}` in `except` block, use `pytest.raises()` instead"
     ],
     "autofix": "Autofix is not available.",
-    "explanation": null,
+    "explanation": "## What it does\nChecks for `assert` statements in `except` clauses.\n\n## Why is this bad?\nWhen testing for exceptions, `pytest.raises()` should be used instead of\n`assert` statements in `except` clauses, as it's more explicit and\nidiomatic. Further, `pytest.raises()` will fail if the exception is _not_\nraised, unlike the `assert` statement.\n\n## Example\n```python\ndef test_foo():\n    try:\n        1 / 0\n    except ZeroDivisionError as e:\n        assert e.args\n```\n\nUse instead:\n```python\ndef test_foo():\n    with pytest.raises(ZeroDivisionError) as exc_info:\n        1 / 0\n    assert exc_info.value.args\n```\n\n## References\n- [`pytest` documentation: `pytest.raises`](https://docs.pytest.org/en/latest/reference/reference.html#pytest-raises)\n",
     "nursery": false
   },
   {
@@ -2998,7 +3113,7 @@
       "Fixture `{name}` without value is injected as parameter, use `@pytest.mark.usefixtures` instead"
     ],
     "autofix": "Autofix is not available.",
-    "explanation": null,
+    "explanation": "## What it does\nChecks for `pytest` test functions that should be decorated with\n`@pytest.mark.usefixtures`.\n\n## Why is this bad?\nIn `pytest`, fixture injection is used to activate fixtures in a test\nfunction.\n\nFixtures can be injected either by passing them as parameters to the test\nfunction, or by using the `@pytest.mark.usefixtures` decorator.\n\nIf the test function depends on the fixture being activated, but does not\nuse it in the test body or otherwise rely on its return value, prefer\nthe `@pytest.mark.usefixtures` decorator, to make the dependency explicit\nand avoid the confusion caused by unused arguments.\n\n## Example\n```python\n@pytest.fixture\ndef _patch_something():\n    ...\n\n\ndef test_foo(_patch_something):\n    ...\n```\n\nUse instead:\n```python\n@pytest.fixture\ndef _patch_something():\n    ...\n\n\n@pytest.mark.usefixtures(\"_patch_something\")\ndef test_foo():\n    ...\n```\n\n## References\n- [`pytest` documentation: `pytest.mark.usefixtures`](https://docs.pytest.org/en/latest/reference/reference.html#pytest-mark-usefixtures)\n",
     "nursery": false
   },
   {
@@ -3010,7 +3125,7 @@
       "`@pytest.yield_fixture` is deprecated, use `@pytest.fixture`"
     ],
     "autofix": "Autofix is not available.",
-    "explanation": null,
+    "explanation": "## What it does\nChecks for `pytest.yield_fixture` usage.\n\n## Why is this bad?\n`pytest.yield_fixture` is deprecated. `pytest.fixture` should be used instead.\n\n## Example\n```python\nimport pytest\n\n\n@pytest.yield_fixture()\ndef my_fixture():\n    obj = SomeClass()\n    yield obj\n    obj.cleanup()\n```\n\nUse instead:\n```python\nimport pytest\n\n\n@pytest.fixture()\ndef my_fixture():\n    obj = SomeClass()\n    yield obj\n    obj.cleanup()\n```\n\n## References\n- [`pytest` documentation: `yield_fixture` functions](https://docs.pytest.org/en/latest/yieldfixture.html)\n",
     "nursery": false
   },
   {
@@ -3022,7 +3137,7 @@
       "Use `yield` instead of `request.addfinalizer`"
     ],
     "autofix": "Autofix is not available.",
-    "explanation": null,
+    "explanation": "## What it does\nChecks for unnecessary `request.addfinalizer` usages in `pytest` fixtures.\n\n## Why is this bad?\n`pytest` offers two ways to perform cleanup in fixture code. The first is\nsequential (via the `yield` statement), the second callback-based (via\n`request.addfinalizer`).\n\nThe sequential approach is more readable and should be preferred, unless\nthe fixture uses the \"factory as fixture\" pattern.\n\n## Example\n```python\n@pytest.fixture()\ndef my_fixture(request):\n    resource = acquire_resource()\n    request.addfinalizer(resource.release)\n    return resource\n```\n\nUse instead:\n```python\n@pytest.fixture()\ndef my_fixture():\n    resource = acquire_resource()\n    yield resource\n    resource.release()\n\n\n# \"factory-as-fixture\" pattern\n@pytest.fixture()\ndef my_factory(request):\n    def create_resource(arg):\n        resource = acquire_resource(arg)\n        request.addfinalizer(resource.release)\n        return resource\n\n    return create_resource\n```\n\n## References\n- [`pytest` documentation: Adding finalizers directly](https://docs.pytest.org/en/latest/how-to/fixtures.html#adding-finalizers-directly)\n- [`pytest` documentation: Factories as fixtures](https://docs.pytest.org/en/latest/how-to/fixtures.html#factories-as-fixtures)\n",
     "nursery": false
   },
   {
@@ -3034,7 +3149,7 @@
       "No teardown in fixture `{name}`, use `return` instead of `yield`"
     ],
     "autofix": "Autofix is always available.",
-    "explanation": null,
+    "explanation": "## What it does\nChecks for unnecessary `yield` expressions in `pytest` fixtures.\n\n## Why is this bad?\nIn `pytest` fixtures, the `yield` expression should only be used for fixtures\nthat include teardown code, to clean up the fixture after the test function\nhas finished executing.\n\n## Example\n```python\n@pytest.fixture()\ndef my_fixture():\n    resource = acquire_resource()\n    yield resource\n```\n\nUse instead:\n```python\n@pytest.fixture()\ndef my_fixture_with_teardown():\n    resource = acquire_resource()\n    yield resource\n    resource.release()\n\n\n@pytest.fixture()\ndef my_fixture_without_teardown():\n    resource = acquire_resource()\n    return resource\n```\n\n## References\n- [`pytest` documentation: Teardown/Cleanup](https://docs.pytest.org/en/latest/how-to/fixtures.html#teardown-cleanup-aka-fixture-finalization)\n",
     "nursery": false
   },
   {
@@ -3046,7 +3161,7 @@
       "Use `@pytest.mark.{mark_name}{expected_parens}` over `@pytest.mark.{mark_name}{actual_parens}`"
     ],
     "autofix": "Autofix is always available.",
-    "explanation": null,
+    "explanation": "## What it does\nChecks for parameter-free `@pytest.mark.<marker>()` decorators with or\nwithout parentheses, depending on the `flake8-pytest-style.mark-parentheses`\nsetting.\n\n## Why is this bad?\nIf a `@pytest.mark.<marker>()` doesn't take any arguments, the parentheses are\noptional.\n\nEither removing those unnecessary parentheses _or_ requiring them for all\nfixtures is fine, but it's best to be consistent.\n\n## Example\n```python\n@pytest.mark.foo\ndef test_something():\n    ...\n```\n\nUse instead:\n```python\n@pytest.mark.foo()\ndef test_something():\n    ...\n```\n\n## Options\n- `flake8-pytest-style.mark-parentheses`\n\n## References\n- [`pytest` documentation: Marks](https://docs.pytest.org/en/latest/reference/reference.html#marks)\n",
     "nursery": false
   },
   {
@@ -3058,7 +3173,7 @@
       "`pytest.mark.asyncio` is unnecessary for fixtures"
     ],
     "autofix": "Autofix is always available.",
-    "explanation": null,
+    "explanation": "## What it does\nChecks for unnecessary `@pytest.mark.asyncio` decorators applied to fixtures.\n\n## Why is this bad?\n`pytest.mark.asyncio` is unnecessary for fixtures.\n\n## Example\n```python\n@pytest.mark.asyncio()\n@pytest.fixture()\nasync def my_fixture():\n    return 0\n```\n\nUse instead:\n```python\n@pytest.fixture()\nasync def my_fixture():\n    return 0\n```\n\n## References\n- [`pytest-asyncio`](https://pypi.org/project/pytest-asyncio/)\n",
     "nursery": false
   },
   {
@@ -3345,9 +3460,9 @@
     "name": "reimplemented-builtin",
     "code": "SIM110",
     "linter": "flake8-simplify",
-    "summary": "Use `{repl}` instead of `for` loop",
+    "summary": "Use `{replacement}` instead of `for` loop",
     "message_formats": [
-      "Use `{repl}` instead of `for` loop"
+      "Use `{replacement}` instead of `for` loop"
     ],
     "autofix": "Autofix is sometimes available.",
     "explanation": "## What it does\nChecks for `for` loops that can be replaced with a builtin function, like\n`any` or `all`.\n\n## Why is this bad?\nUsing a builtin function is more concise and readable. Builtins are also\nmore efficient than `for` loops.\n\n## Example\n```python\nfor item in iterable:\n    if predicate(item):\n        return True\nreturn False\n```\n\nUse instead:\n```python\nreturn any(predicate(item) for item in iterable)\n```\n\n## References\n- [Python documentation: `any`](https://docs.python.org/3/library/functions.html#any)\n- [Python documentation: `all`](https://docs.python.org/3/library/functions.html#all)\n",
@@ -3417,9 +3532,9 @@
     "name": "in-dict-keys",
     "code": "SIM118",
     "linter": "flake8-simplify",
-    "summary": "Use `{key} in {dict}` instead of `{key} in {dict}.keys()`",
+    "summary": "Use `{key} {operator} {dict}` instead of `{key} {operator} {dict}.keys()`",
     "message_formats": [
-      "Use `{key} in {dict}` instead of `{key} in {dict}.keys()`"
+      "Use `{key} {operator} {dict}` instead of `{key} {operator} {dict}.keys()`"
     ],
     "autofix": "Autofix is always available.",
     "explanation": "## What it does\nChecks for key-existence checks against `dict.keys()` calls.\n\n## Why is this bad?\nWhen checking for the existence of a key in a given dictionary, using\n`key in dict` is more readable and efficient than `key in dict.keys()`,\nwhile having the same semantics.\n\n## Example\n```python\nkey in foo.keys()\n```\n\nUse instead:\n```python\nkey in foo\n```\n\n## References\n- [Python documentation: Mapping Types](https://docs.python.org/3/library/stdtypes.html#mapping-types-dict)\n",
@@ -3856,7 +3971,7 @@
       "`os.path.abspath()` should be replaced by `Path.resolve()`"
     ],
     "autofix": "Autofix is not available.",
-    "explanation": null,
+    "explanation": "## What it does\nChecks for uses of `os.path.abspath`.\n\n## Why is this bad?\n`pathlib` offers a high-level API for path manipulation, as compared to\nthe lower-level API offered by `os`. When possible, using `Path` object\nmethods such as `Path.resolve()` can improve readability over the `os`\nmodule's counterparts (e.g., `os.path.abspath()`).\n\nNote that `os` functions may be preferable if performance is a concern,\ne.g., in hot loops.\n\n## Examples\n```python\nimport os\n\nfile_path = os.path.abspath(\"../path/to/file\")\n```\n\nUse instead:\n```python\nfrom pathlib import Path\n\nfile_path = Path(\"../path/to/file\").resolve()\n```\n\n## References\n- [Python documentation: `Path.resolve`](https://docs.python.org/3/library/pathlib.html#pathlib.Path.resolve)\n- [Python documentation: `os.path.abspath`](https://docs.python.org/3/library/os.path.html#os.path.abspath)\n- [PEP 428](https://peps.python.org/pep-0428/)\n- [Correspondence between `os` and `pathlib`](https://docs.python.org/3/library/pathlib.html#correspondence-to-tools-in-the-os-module)\n- [Why you should be using pathlib](https://treyhunner.com/2018/12/why-you-should-be-using-pathlib/)\n- [No really, pathlib is great](https://treyhunner.com/2019/01/no-really-pathlib-is-great/)\n",
     "nursery": false
   },
   {
@@ -3868,7 +3983,7 @@
       "`os.chmod()` should be replaced by `Path.chmod()`"
     ],
     "autofix": "Autofix is not available.",
-    "explanation": null,
+    "explanation": "## What it does\nChecks for uses of `os.chmod`.\n\n## Why is this bad?\n`pathlib` offers a high-level API for path manipulation, as compared to\nthe lower-level API offered by `os`. When possible, using `Path` object\nmethods such as `Path.chmod()` can improve readability over the `os`\nmodule's counterparts (e.g., `os.chmod()`).\n\nNote that `os` functions may be preferable if performance is a concern,\ne.g., in hot loops.\n\n## Examples\n```python\nimport os\n\nos.chmod(\"file.py\", 0o444)\n```\n\nUse instead:\n```python\nfrom pathlib import Path\n\nPath(\"file.py\").chmod(0o444)\n```\n\n## References\n- [Python documentation: `Path.chmod`](https://docs.python.org/3/library/pathlib.html#pathlib.Path.chmod)\n- [Python documentation: `os.chmod`](https://docs.python.org/3/library/os.html#os.chmod)\n- [PEP 428](https://peps.python.org/pep-0428/)\n- [Correspondence between `os` and `pathlib`](https://docs.python.org/3/library/pathlib.html#correspondence-to-tools-in-the-os-module)\n- [Why you should be using pathlib](https://treyhunner.com/2018/12/why-you-should-be-using-pathlib/)\n- [No really, pathlib is great](https://treyhunner.com/2019/01/no-really-pathlib-is-great/)\n",
     "nursery": false
   },
   {
@@ -3880,7 +3995,7 @@
       "`os.mkdir()` should be replaced by `Path.mkdir()`"
     ],
     "autofix": "Autofix is not available.",
-    "explanation": null,
+    "explanation": "## What it does\nChecks for uses of `os.mkdir`.\n\n## Why is this bad?\n`pathlib` offers a high-level API for path manipulation, as compared to\nthe lower-level API offered by `os`. When possible, using `Path` object\nmethods such as `Path.mkdir()` can improve readability over the `os`\nmodule's counterparts (e.g., `os.mkdir()`).\n\nNote that `os` functions may be preferable if performance is a concern,\ne.g., in hot loops.\n\n## Examples\n```python\nimport os\n\nos.mkdir(\"./directory/\")\n```\n\nUse instead:\n```python\nfrom pathlib import Path\n\nPath(\"./directory/\").mkdir()\n```\n\n## References\n- [Python documentation: `Path.mkdir`](https://docs.python.org/3/library/pathlib.html#pathlib.Path.mkdir)\n- [Python documentation: `os.mkdir`](https://docs.python.org/3/library/os.html#os.mkdir)\n- [PEP 428](https://peps.python.org/pep-0428/)\n- [Correspondence between `os` and `pathlib`](https://docs.python.org/3/library/pathlib.html#correspondence-to-tools-in-the-os-module)\n- [Why you should be using pathlib](https://treyhunner.com/2018/12/why-you-should-be-using-pathlib/)\n- [No really, pathlib is great](https://treyhunner.com/2019/01/no-really-pathlib-is-great/)\n",
     "nursery": false
   },
   {
@@ -3892,7 +4007,7 @@
       "`os.makedirs()` should be replaced by `Path.mkdir(parents=True)`"
     ],
     "autofix": "Autofix is not available.",
-    "explanation": null,
+    "explanation": "## What it does\nChecks for uses of `os.makedirs`.\n\n## Why is this bad?\n`pathlib` offers a high-level API for path manipulation, as compared to\nthe lower-level API offered by `os`. When possible, using `Path` object\nmethods such as `Path.mkdir(parents=True)` can improve readability over the\n`os` module's counterparts (e.g., `os.makedirs()`.\n\nNote that `os` functions may be preferable if performance is a concern,\ne.g., in hot loops.\n\n## Examples\n```python\nimport os\n\nos.makedirs(\"./nested/directory/\")\n```\n\nUse instead:\n```python\nfrom pathlib import Path\n\nPath(\"./nested/directory/\").mkdir(parents=True)\n```\n\n## References\n- [Python documentation: `Path.mkdir`](https://docs.python.org/3/library/pathlib.html#pathlib.Path.mkdir)\n- [Python documentation: `os.makedirs`](https://docs.python.org/3/library/os.html#os.makedirs)\n- [PEP 428](https://peps.python.org/pep-0428/)\n- [Correspondence between `os` and `pathlib`](https://docs.python.org/3/library/pathlib.html#correspondence-to-tools-in-the-os-module)\n- [Why you should be using pathlib](https://treyhunner.com/2018/12/why-you-should-be-using-pathlib/)\n- [No really, pathlib is great](https://treyhunner.com/2019/01/no-really-pathlib-is-great/)\n",
     "nursery": false
   },
   {
@@ -3904,7 +4019,7 @@
       "`os.rename()` should be replaced by `Path.rename()`"
     ],
     "autofix": "Autofix is not available.",
-    "explanation": null,
+    "explanation": "## What it does\nChecks for uses of `os.rename`.\n\n## Why is this bad?\n`pathlib` offers a high-level API for path manipulation, as compared to\nthe lower-level API offered by `os`. When possible, using `Path` object\nmethods such as `Path.rename()` can improve readability over the `os`\nmodule's counterparts (e.g., `os.rename()`).\n\nNote that `os` functions may be preferable if performance is a concern,\ne.g., in hot loops.\n\n## Examples\n```python\nimport os\n\nos.rename(\"old.py\", \"new.py\")\n```\n\nUse instead:\n```python\nfrom pathlib import Path\n\nPath(\"old.py\").rename(\"new.py\")\n```\n\n## References\n- [Python documentation: `Path.rename`](https://docs.python.org/3/library/pathlib.html#pathlib.Path.rename)\n- [Python documentation: `os.rename`](https://docs.python.org/3/library/os.html#os.rename)\n- [PEP 428](https://peps.python.org/pep-0428/)\n- [Correspondence between `os` and `pathlib`](https://docs.python.org/3/library/pathlib.html#correspondence-to-tools-in-the-os-module)\n- [Why you should be using pathlib](https://treyhunner.com/2018/12/why-you-should-be-using-pathlib/)\n- [No really, pathlib is great](https://treyhunner.com/2019/01/no-really-pathlib-is-great/)\n",
     "nursery": false
   },
   {
@@ -3916,7 +4031,7 @@
       "`os.replace()` should be replaced by `Path.replace()`"
     ],
     "autofix": "Autofix is not available.",
-    "explanation": null,
+    "explanation": "## What it does\nChecks for uses of `os.replace`.\n\n## Why is this bad?\n`pathlib` offers a high-level API for path manipulation, as compared to\nthe lower-level API offered by `os`. When possible, using `Path` object\nmethods such as `Path.replace()` can improve readability over the `os`\nmodule's counterparts (e.g., `os.replace()`).\n\nNote that `os` functions may be preferable if performance is a concern,\ne.g., in hot loops.\n\n## Examples\n```python\nimport os\n\nos.replace(\"old.py\", \"new.py\")\n```\n\nUse instead:\n```python\nfrom pathlib import Path\n\nPath(\"old.py\").replace(\"new.py\")\n```\n\n## References\n- [Python documentation: `Path.replace`](https://docs.python.org/3/library/pathlib.html#pathlib.Path.replace)\n- [Python documentation: `os.replace`](https://docs.python.org/3/library/os.html#os.replace)\n- [PEP 428](https://peps.python.org/pep-0428/)\n- [Correspondence between `os` and `pathlib`](https://docs.python.org/3/library/pathlib.html#correspondence-to-tools-in-the-os-module)\n- [Why you should be using pathlib](https://treyhunner.com/2018/12/why-you-should-be-using-pathlib/)\n- [No really, pathlib is great](https://treyhunner.com/2019/01/no-really-pathlib-is-great/)\n",
     "nursery": false
   },
   {
@@ -3928,7 +4043,7 @@
       "`os.rmdir()` should be replaced by `Path.rmdir()`"
     ],
     "autofix": "Autofix is not available.",
-    "explanation": null,
+    "explanation": "## What it does\nChecks for uses of `os.rmdir`.\n\n## Why is this bad?\n`pathlib` offers a high-level API for path manipulation, as compared to\nthe lower-level API offered by `os`. When possible, using `Path` object\nmethods such as `Path.rmdir()` can improve readability over the `os`\nmodule's counterparts (e.g., `os.rmdir()`).\n\nNote that `os` functions may be preferable if performance is a concern,\ne.g., in hot loops.\n\n## Examples\n```python\nimport os\n\nos.rmdir(\"folder/\")\n```\n\nUse instead:\n```python\nfrom pathlib import Path\n\nPath(\"folder/\").rmdir()\n```\n\n## References\n- [Python documentation: `Path.rmdir`](https://docs.python.org/3/library/pathlib.html#pathlib.Path.rmdir)\n- [Python documentation: `os.rmdir`](https://docs.python.org/3/library/os.html#os.rmdir)\n- [PEP 428](https://peps.python.org/pep-0428/)\n- [Correspondence between `os` and `pathlib`](https://docs.python.org/3/library/pathlib.html#correspondence-to-tools-in-the-os-module)\n- [Why you should be using pathlib](https://treyhunner.com/2018/12/why-you-should-be-using-pathlib/)\n- [No really, pathlib is great](https://treyhunner.com/2019/01/no-really-pathlib-is-great/)\n",
     "nursery": false
   },
   {
@@ -3940,7 +4055,7 @@
       "`os.remove()` should be replaced by `Path.unlink()`"
     ],
     "autofix": "Autofix is not available.",
-    "explanation": null,
+    "explanation": "## What it does\nChecks for uses of `os.remove`.\n\n## Why is this bad?\n`pathlib` offers a high-level API for path manipulation, as compared to\nthe lower-level API offered by `os`. When possible, using `Path` object\nmethods such as `Path.unlink()` can improve readability over the `os`\nmodule's counterparts (e.g., `os.remove()`).\n\nNote that `os` functions may be preferable if performance is a concern,\ne.g., in hot loops.\n\n## Examples\n```python\nimport os\n\nos.remove(\"file.py\")\n```\n\nUse instead:\n```python\nfrom pathlib import Path\n\nPath(\"file.py\").unlink()\n```\n\n## References\n- [Python documentation: `Path.unlink`](https://docs.python.org/3/library/pathlib.html#pathlib.Path.unlink)\n- [Python documentation: `os.remove`](https://docs.python.org/3/library/os.html#os.remove)\n- [PEP 428](https://peps.python.org/pep-0428/)\n- [Correspondence between `os` and `pathlib`](https://docs.python.org/3/library/pathlib.html#correspondence-to-tools-in-the-os-module)\n- [Why you should be using pathlib](https://treyhunner.com/2018/12/why-you-should-be-using-pathlib/)\n- [No really, pathlib is great](https://treyhunner.com/2019/01/no-really-pathlib-is-great/)\n",
     "nursery": false
   },
   {
@@ -3952,7 +4067,7 @@
       "`os.unlink()` should be replaced by `Path.unlink()`"
     ],
     "autofix": "Autofix is not available.",
-    "explanation": null,
+    "explanation": "## What it does\nChecks for uses of `os.unlink`.\n\n## Why is this bad?\n`pathlib` offers a high-level API for path manipulation, as compared to\nthe lower-level API offered by `os`. When possible, using `Path` object\nmethods such as `Path.unlink()` can improve readability over the `os`\nmodule's counterparts (e.g., `os.unlink()`).\n\nNote that `os` functions may be preferable if performance is a concern,\ne.g., in hot loops.\n\n## Examples\n```python\nimport os\n\nos.unlink(\"file.py\")\n```\n\nUse instead:\n```python\nfrom pathlib import Path\n\nPath(\"file.py\").unlink()\n```\n\n## References\n- [Python documentation: `Path.unlink`](https://docs.python.org/3/library/pathlib.html#pathlib.Path.unlink)\n- [Python documentation: `os.unlink`](https://docs.python.org/3/library/os.html#os.unlink)\n- [PEP 428](https://peps.python.org/pep-0428/)\n- [Correspondence between `os` and `pathlib`](https://docs.python.org/3/library/pathlib.html#correspondence-to-tools-in-the-os-module)\n- [Why you should be using pathlib](https://treyhunner.com/2018/12/why-you-should-be-using-pathlib/)\n- [No really, pathlib is great](https://treyhunner.com/2019/01/no-really-pathlib-is-great/)\n",
     "nursery": false
   },
   {
@@ -3964,7 +4079,7 @@
       "`os.getcwd()` should be replaced by `Path.cwd()`"
     ],
     "autofix": "Autofix is not available.",
-    "explanation": null,
+    "explanation": "## What it does\nChecks for uses of `os.getcwd` and `os.getcwdb`.\n\n## Why is this bad?\n`pathlib` offers a high-level API for path manipulation, as compared to\nthe lower-level API offered by `os`. When possible, using `Path` object\nmethods such as `Path.cwd()` can improve readability over the `os`\nmodule's counterparts (e.g., `os.getcwd()`).\n\nNote that `os` functions may be preferable if performance is a concern,\ne.g., in hot loops.\n\n## Examples\n```python\nimport os\n\ncwd = os.getcwd()\n```\n\nUse instead:\n```python\nfrom pathlib import Path\n\ncwd = Path.cwd()\n```\n\n## References\n- [Python documentation: `Path.cwd`](https://docs.python.org/3/library/pathlib.html#pathlib.Path.cwd)\n- [Python documentation: `os.getcwd`](https://docs.python.org/3/library/os.html#os.getcwd)\n- [Python documentation: `os.getcwdb`](https://docs.python.org/3/library/os.html#os.getcwdb)\n- [PEP 428](https://peps.python.org/pep-0428/)\n- [Correspondence between `os` and `pathlib`](https://docs.python.org/3/library/pathlib.html#correspondence-to-tools-in-the-os-module)\n- [Why you should be using pathlib](https://treyhunner.com/2018/12/why-you-should-be-using-pathlib/)\n- [No really, pathlib is great](https://treyhunner.com/2019/01/no-really-pathlib-is-great/)\n",
     "nursery": false
   },
   {
@@ -3976,7 +4091,7 @@
       "`os.path.exists()` should be replaced by `Path.exists()`"
     ],
     "autofix": "Autofix is not available.",
-    "explanation": null,
+    "explanation": "## What it does\nChecks for uses of `os.path.exists`.\n\n## Why is this bad?\n`pathlib` offers a high-level API for path manipulation, as compared to\nthe lower-level API offered by `os`. When possible, using `Path` object\nmethods such as `Path.exists()` can improve readability over the `os`\nmodule's counterparts (e.g., `os.path.exists()`).\n\nNote that `os` functions may be preferable if performance is a concern,\ne.g., in hot loops.\n\n## Examples\n```python\nimport os\n\nos.path.exists(\"file.py\")\n```\n\nUse instead:\n```python\nfrom pathlib import Path\n\nPath(\"file.py\").exists()\n```\n\n## References\n- [Python documentation: `Path.exists`](https://docs.python.org/3/library/pathlib.html#pathlib.Path.exists)\n- [Python documentation: `os.path.exists`](https://docs.python.org/3/library/os.path.html#os.path.exists)\n- [PEP 428](https://peps.python.org/pep-0428/)\n- [Correspondence between `os` and `pathlib`](https://docs.python.org/3/library/pathlib.html#correspondence-to-tools-in-the-os-module)\n- [Why you should be using pathlib](https://treyhunner.com/2018/12/why-you-should-be-using-pathlib/)\n- [No really, pathlib is great](https://treyhunner.com/2019/01/no-really-pathlib-is-great/)\n",
     "nursery": false
   },
   {
@@ -3988,7 +4103,7 @@
       "`os.path.expanduser()` should be replaced by `Path.expanduser()`"
     ],
     "autofix": "Autofix is not available.",
-    "explanation": null,
+    "explanation": "## What it does\nChecks for uses of `os.path.expanduser`.\n\n## Why is this bad?\n`pathlib` offers a high-level API for path manipulation, as compared to\nthe lower-level API offered by `os`. When possible, using `Path` object\nmethods such as `Path.expanduser()` can improve readability over the `os`\nmodule's counterparts (e.g., as `os.path.expanduser()`).\n\nNote that `os` functions may be preferable if performance is a concern,\ne.g., in hot loops.\n\n## Examples\n```python\nimport os\n\nos.path.expanduser(\"~/films/Monty Python\")\n```\n\nUse instead:\n```python\nfrom pathlib import Path\n\nPath(\"~/films/Monty Python\").expanduser()\n```\n\n## References\n- [Python documentation: `Path.expanduser`](https://docs.python.org/3/library/pathlib.html#pathlib.Path.expanduser)\n- [Python documentation: `os.path.expanduser`](https://docs.python.org/3/library/os.path.html#os.path.expanduser)\n- [PEP 428](https://peps.python.org/pep-0428/)\n- [Correspondence between `os` and `pathlib`](https://docs.python.org/3/library/pathlib.html#correspondence-to-tools-in-the-os-module)\n- [Why you should be using pathlib](https://treyhunner.com/2018/12/why-you-should-be-using-pathlib/)\n- [No really, pathlib is great](https://treyhunner.com/2019/01/no-really-pathlib-is-great/)\n",
     "nursery": false
   },
   {
@@ -4000,7 +4115,7 @@
       "`os.path.isdir()` should be replaced by `Path.is_dir()`"
     ],
     "autofix": "Autofix is not available.",
-    "explanation": null,
+    "explanation": "## What it does\nChecks for uses of `os.path.isdir`.\n\n## Why is this bad?\n`pathlib` offers a high-level API for path manipulation, as compared to\nthe lower-level API offered by `os`. When possible, using `Path` object\nmethods such as `Path.is_dir()` can improve readability over the `os`\nmodule's counterparts (e.g., `os.path.isdir()`).\n\nNote that `os` functions may be preferable if performance is a concern,\ne.g., in hot loops.\n\n## Examples\n```python\nimport os\n\nos.path.isdir(\"docs\")\n```\n\nUse instead:\n```python\nfrom pathlib import Path\n\nPath(\"docs\").is_dir()\n```\n\n## References\n- [Python documentation: `Path.is_dir`](https://docs.python.org/3/library/pathlib.html#pathlib.Path.is_dir)\n- [Python documentation: `os.path.isdir`](https://docs.python.org/3/library/os.path.html#os.path.isdir)\n- [PEP 428](https://peps.python.org/pep-0428/)\n- [Correspondence between `os` and `pathlib`](https://docs.python.org/3/library/pathlib.html#correspondence-to-tools-in-the-os-module)\n- [Why you should be using pathlib](https://treyhunner.com/2018/12/why-you-should-be-using-pathlib/)\n- [No really, pathlib is great](https://treyhunner.com/2019/01/no-really-pathlib-is-great/)\n",
     "nursery": false
   },
   {
@@ -4012,7 +4127,7 @@
       "`os.path.isfile()` should be replaced by `Path.is_file()`"
     ],
     "autofix": "Autofix is not available.",
-    "explanation": null,
+    "explanation": "## What it does\nChecks for uses of `os.path.isfile`.\n\n## Why is this bad?\n`pathlib` offers a high-level API for path manipulation, as compared to\nthe lower-level API offered by `os`. When possible, using `Path` object\nmethods such as `Path.is_file()` can improve readability over the `os`\nmodule's counterparts (e.g., `os.path.isfile()`).\n\nNote that `os` functions may be preferable if performance is a concern,\ne.g., in hot loops.\n\n## Examples\n```python\nimport os\n\nos.path.isfile(\"docs\")\n```\n\nUse instead:\n```python\nfrom pathlib import Path\n\nPath(\"docs\").is_file()\n```\n\n## References\n- [Python documentation: `Path.is_file`](https://docs.python.org/3/library/pathlib.html#pathlib.Path.is_file)\n- [Python documentation: `os.path.isfile`](https://docs.python.org/3/library/os.path.html#os.path.isfile)\n- [PEP 428](https://peps.python.org/pep-0428/)\n- [Correspondence between `os` and `pathlib`](https://docs.python.org/3/library/pathlib.html#correspondence-to-tools-in-the-os-module)\n- [Why you should be using pathlib](https://treyhunner.com/2018/12/why-you-should-be-using-pathlib/)\n- [No really, pathlib is great](https://treyhunner.com/2019/01/no-really-pathlib-is-great/)\n",
     "nursery": false
   },
   {
@@ -4024,7 +4139,7 @@
       "`os.path.islink()` should be replaced by `Path.is_symlink()`"
     ],
     "autofix": "Autofix is not available.",
-    "explanation": null,
+    "explanation": "## What it does\nChecks for uses of `os.path.islink`.\n\n## Why is this bad?\n`pathlib` offers a high-level API for path manipulation, as compared to\nthe lower-level API offered by `os`. When possible, using `Path` object\nmethods such as `Path.is_link()` can improve readability over the `os`\nmodule's counterparts (e.g., `os.path.islink()`).\n\nNote that `os` functions may be preferable if performance is a concern,\ne.g., in hot loops.\n\n## Examples\n```python\nimport os\n\nos.path.islink(\"docs\")\n```\n\nUse instead:\n```python\nfrom pathlib import Path\n\nPath(\"docs\").is_link()\n```\n\n## References\n- [Python documentation: `Path.is_link`](https://docs.python.org/3/library/pathlib.html#pathlib.Path.is_link)\n- [Python documentation: `os.path.islink`](https://docs.python.org/3/library/os.path.html#os.path.islink)\n- [PEP 428](https://peps.python.org/pep-0428/)\n- [Correspondence between `os` and `pathlib`](https://docs.python.org/3/library/pathlib.html#correspondence-to-tools-in-the-os-module)\n- [Why you should be using pathlib](https://treyhunner.com/2018/12/why-you-should-be-using-pathlib/)\n- [No really, pathlib is great](https://treyhunner.com/2019/01/no-really-pathlib-is-great/)\n",
     "nursery": false
   },
   {
@@ -4036,7 +4151,7 @@
       "`os.readlink()` should be replaced by `Path.readlink()`"
     ],
     "autofix": "Autofix is not available.",
-    "explanation": null,
+    "explanation": "## What it does\nChecks for uses of `os.readlink`.\n\n## Why is this bad?\n`pathlib` offers a high-level API for path manipulation, as compared to\nthe lower-level API offered by `os`. When possible, using `Path` object\nmethods such as `Path.readlink()` can improve readability over the `os`\nmodule's counterparts (e.g., `os.readlink()`).\n\nNote that `os` functions may be preferable if performance is a concern,\ne.g., in hot loops.\n\n## Examples\n```python\nimport os\n\nos.readlink(file_name)\n```\n\nUse instead:\n```python\nfrom pathlib import Path\n\nPath(file_name).readlink()\n```\n\n## References\n- [Python documentation: `Path.readlink`](https://docs.python.org/3/library/pathlib.html#pathlib.Path.readline)\n- [Python documentation: `os.readlink`](https://docs.python.org/3/library/os.html#os.readlink)\n- [PEP 428](https://peps.python.org/pep-0428/)\n- [Correspondence between `os` and `pathlib`](https://docs.python.org/3/library/pathlib.html#correspondence-to-tools-in-the-os-module)\n- [Why you should be using pathlib](https://treyhunner.com/2018/12/why-you-should-be-using-pathlib/)\n- [No really, pathlib is great](https://treyhunner.com/2019/01/no-really-pathlib-is-great/)\n",
     "nursery": false
   },
   {
@@ -4048,7 +4163,7 @@
       "`os.stat()` should be replaced by `Path.stat()`, `Path.owner()`, or `Path.group()`"
     ],
     "autofix": "Autofix is not available.",
-    "explanation": null,
+    "explanation": "## What it does\nChecks for uses of `os.stat`.\n\n## Why is this bad?\n`pathlib` offers a high-level API for path manipulation, as compared to\nthe lower-level API offered by `os`. When possible, using `Path` object\nmethods such as `Path.stat()` can improve readability over the `os`\nmodule's counterparts (e.g., `os.path.stat()`).\n\nNote that `os` functions may be preferable if performance is a concern,\ne.g., in hot loops.\n\n## Examples\n```python\nimport os\n\nimport os\nfrom pwd import getpwuid\nfrom grp import getgrgid\n\nstat = os.stat(file_name)\nowner_name = getpwuid(stat.st_uid).pw_name\ngroup_name = getgrgid(stat.st_gid).gr_name\n```\n\nUse instead:\n```python\nfrom pathlib import Path\n\nfrom pathlib import Path\n\nfile_path = Path(file_name)\nstat = file_path.stat()\nowner_name = file_path.owner()\ngroup_name = file_path.group()\n```\n\n## References\n- [Python documentation: `Path.stat`](https://docs.python.org/3/library/pathlib.html#pathlib.Path.group)\n- [Python documentation: `Path.group`](https://docs.python.org/3/library/pathlib.html#pathlib.Path.group)\n- [Python documentation: `Path.owner`](https://docs.python.org/3/library/pathlib.html#pathlib.Path.owner)\n- [Python documentation: `os.stat`](https://docs.python.org/3/library/os.html#os.stat)\n- [PEP 428](https://peps.python.org/pep-0428/)\n- [Correspondence between `os` and `pathlib`](https://docs.python.org/3/library/pathlib.html#correspondence-to-tools-in-the-os-module)\n- [Why you should be using pathlib](https://treyhunner.com/2018/12/why-you-should-be-using-pathlib/)\n- [No really, pathlib is great](https://treyhunner.com/2019/01/no-really-pathlib-is-great/)\n",
     "nursery": false
   },
   {
@@ -4060,19 +4175,19 @@
       "`os.path.isabs()` should be replaced by `Path.is_absolute()`"
     ],
     "autofix": "Autofix is not available.",
-    "explanation": null,
+    "explanation": "## What it does\nChecks for uses of `os.path.isabs`.\n\n## Why is this bad?\n`pathlib` offers a high-level API for path manipulation, as compared to\nthe lower-level API offered by `os`. When possible, using `Path` object\nmethods such as `Path.is_absolute()` can improve readability over the `os`\nmodule's counterparts (e.g.,  as `os.path.isabs()`).\n\nNote that `os` functions may be preferable if performance is a concern,\ne.g., in hot loops.\n\n## Examples\n```python\nimport os\n\nif os.path.isabs(file_name):\n    print(\"Absolute path!\")\n```\n\nUse instead:\n```python\nfrom pathlib import Path\n\nif Path(file_name).is_absolute():\n    print(\"Absolute path!\")\n```\n\n## References\n- [Python documentation: `PurePath.is_absolute`](https://docs.python.org/3/library/pathlib.html#pathlib.PurePath.is_absolute)\n- [Python documentation: `os.path.isabs`](https://docs.python.org/3/library/os.path.html#os.path.isabs)\n- [PEP 428](https://peps.python.org/pep-0428/)\n- [Correspondence between `os` and `pathlib`](https://docs.python.org/3/library/pathlib.html#correspondence-to-tools-in-the-os-module)\n- [Why you should be using pathlib](https://treyhunner.com/2018/12/why-you-should-be-using-pathlib/)\n- [No really, pathlib is great](https://treyhunner.com/2019/01/no-really-pathlib-is-great/)\n",
     "nursery": false
   },
   {
     "name": "os-path-join",
     "code": "PTH118",
     "linter": "flake8-use-pathlib",
-    "summary": "`os.path.join()` should be replaced by `Path` with `/` operator",
+    "summary": "`os.{module}.join()` should be replaced by `Path` with `/` operator",
     "message_formats": [
-      "`os.path.join()` should be replaced by `Path` with `/` operator"
+      "`os.{module}.join()` should be replaced by `Path` with `/` operator"
     ],
     "autofix": "Autofix is not available.",
-    "explanation": null,
+    "explanation": "## What it does\nChecks for uses of `os.path.join`.\n\n## Why is this bad?\n`pathlib` offers a high-level API for path manipulation, as compared to\nthe lower-level API offered by `os`. When possible, using `Path` object\nmethods such as `Path.joinpath()` can improve readability over the `os`\nmodule's counterparts (e.g., `os.path.join()`).\n\nNote that `os` functions may be preferable if performance is a concern,\ne.g., in hot loops.\n\n## Examples\n```python\nimport os\n\nos.path.join(os.path.join(ROOT_PATH, \"folder\"), \"file.py\")\n```\n\nUse instead:\n```python\nfrom pathlib import Path\n\nPath(ROOT_PATH) / \"folder\" / \"file.py\"\n```\n\n## References\n- [Python documentation: `PurePath.joinpath`](https://docs.python.org/3/library/pathlib.html#pathlib.PurePath.joinpath)\n- [Python documentation: `os.path.join`](https://docs.python.org/3/library/os.path.html#os.path.join)\n- [PEP 428](https://peps.python.org/pep-0428/)\n- [Correspondence between `os` and `pathlib`](https://docs.python.org/3/library/pathlib.html#correspondence-to-tools-in-the-os-module)\n- [Why you should be using pathlib](https://treyhunner.com/2018/12/why-you-should-be-using-pathlib/)\n- [No really, pathlib is great](https://treyhunner.com/2019/01/no-really-pathlib-is-great/)\n",
     "nursery": false
   },
   {
@@ -4084,7 +4199,7 @@
       "`os.path.basename()` should be replaced by `Path.name`"
     ],
     "autofix": "Autofix is not available.",
-    "explanation": null,
+    "explanation": "## What it does\nChecks for uses of `os.path.basename`.\n\n## Why is this bad?\n`pathlib` offers a high-level API for path manipulation, as compared to\nthe lower-level API offered by `os`. When possible, using `Path` object\nmethods such as `Path.name` can improve readability over the `os`\nmodule's counterparts (e.g., `os.path.basename()`).\n\nNote that `os` functions may be preferable if performance is a concern,\ne.g., in hot loops.\n\n## Examples\n```python\nimport os\n\nos.path.basename(__file__)\n```\n\nUse instead:\n```python\nfrom pathlib import Path\n\nPath(__file__).name\n```\n\n## References\n- [Python documentation: `PurePath.name`](https://docs.python.org/3/library/pathlib.html#pathlib.PurePath.name)\n- [Python documentation: `os.path.basename`](https://docs.python.org/3/library/os.path.html#os.path.basename)\n- [PEP 428](https://peps.python.org/pep-0428/)\n- [Correspondence between `os` and `pathlib`](https://docs.python.org/3/library/pathlib.html#correspondence-to-tools-in-the-os-module)\n- [Why you should be using pathlib](https://treyhunner.com/2018/12/why-you-should-be-using-pathlib/)\n- [No really, pathlib is great](https://treyhunner.com/2019/01/no-really-pathlib-is-great/)\n",
     "nursery": false
   },
   {
@@ -4096,7 +4211,7 @@
       "`os.path.dirname()` should be replaced by `Path.parent`"
     ],
     "autofix": "Autofix is not available.",
-    "explanation": null,
+    "explanation": "## What it does\nChecks for uses of `os.path.dirname`.\n\n## Why is this bad?\n`pathlib` offers a high-level API for path manipulation, as compared to\nthe lower-level API offered by `os`. When possible, using `Path` object\nmethods such as `Path.parent` can improve readability over the `os`\nmodule's counterparts (e.g., `os.path.dirname()`).\n\nNote that `os` functions may be preferable if performance is a concern,\ne.g., in hot loops.\n\n## Examples\n```python\nimport os\n\nos.path.dirname(__file__)\n```\n\nUse instead:\n```python\nfrom pathlib import Path\n\nPath(__file__).parent\n```\n\n## References\n- [Python documentation: `PurePath.parent`](https://docs.python.org/3/library/pathlib.html#pathlib.PurePath.parent)\n- [Python documentation: `os.path.dirname`](https://docs.python.org/3/library/os.path.html#os.path.dirname)\n- [PEP 428](https://peps.python.org/pep-0428/)\n- [Correspondence between `os` and `pathlib`](https://docs.python.org/3/library/pathlib.html#correspondence-to-tools-in-the-os-module)\n- [Why you should be using pathlib](https://treyhunner.com/2018/12/why-you-should-be-using-pathlib/)\n- [No really, pathlib is great](https://treyhunner.com/2019/01/no-really-pathlib-is-great/)\n",
     "nursery": false
   },
   {
@@ -4108,7 +4223,7 @@
       "`os.path.samefile()` should be replaced by `Path.samefile()`"
     ],
     "autofix": "Autofix is not available.",
-    "explanation": null,
+    "explanation": "## What it does\nChecks for uses of `os.path.samefile`.\n\n## Why is this bad?\n`pathlib` offers a high-level API for path manipulation, as compared to\nthe lower-level API offered by `os`. When possible, using `Path` object\nmethods such as `Path.samefile()` can improve readability over the `os`\nmodule's counterparts (e.g., `os.path.samefile()`).\n\nNote that `os` functions may be preferable if performance is a concern,\ne.g., in hot loops.\n\n## Examples\n```python\nimport os\n\nos.path.samefile(\"f1.py\", \"f2.py\")\n```\n\nUse instead:\n```python\nfrom pathlib import Path\n\nPath(\"f1.py\").samefile(\"f2.py\")\n```\n\n## References\n- [Python documentation: `Path.samefile`](https://docs.python.org/3/library/pathlib.html#pathlib.Path.samefile)\n- [Python documentation: `os.path.samefile`](https://docs.python.org/3/library/os.path.html#os.path.samefile)\n- [PEP 428](https://peps.python.org/pep-0428/)\n- [Correspondence between `os` and `pathlib`](https://docs.python.org/3/library/pathlib.html#correspondence-to-tools-in-the-os-module)\n- [Why you should be using pathlib](https://treyhunner.com/2018/12/why-you-should-be-using-pathlib/)\n- [No really, pathlib is great](https://treyhunner.com/2019/01/no-really-pathlib-is-great/)\n",
     "nursery": false
   },
   {
@@ -4120,7 +4235,7 @@
       "`os.path.splitext()` should be replaced by `Path.suffix`"
     ],
     "autofix": "Autofix is not available.",
-    "explanation": null,
+    "explanation": "## What it does\nChecks for uses of `os.path.splitext`.\n\n## Why is this bad?\n`pathlib` offers a high-level API for path manipulation, as compared to\nthe lower-level API offered by `os`. When possible, using `Path` object\nmethods such as `Path.suffix` can improve readability over the `os`\nmodule's counterparts (e.g., `os.path.splitext()`).\n\nNote that `os` functions may be preferable if performance is a concern,\ne.g., in hot loops.\n\n## Examples\n```python\nimport os\n\nos.path.splitext(\"f1.py\")\n```\n\nUse instead:\n```python\nfrom pathlib import Path\n\nPath(\"f1.py\").suffix\n```\n\n## References\n- [Python documentation: `Path.suffix`](https://docs.python.org/3/library/pathlib.html#pathlib.PurePath.suffix)\n- [Python documentation: `Path.suffixes`](https://docs.python.org/3/library/pathlib.html#pathlib.PurePath.suffixes)\n- [Python documentation: `os.path.splitext`](https://docs.python.org/3/library/os.path.html#os.path.splitext)\n- [PEP 428](https://peps.python.org/pep-0428/)\n- [Correspondence between `os` and `pathlib`](https://docs.python.org/3/library/pathlib.html#correspondence-to-tools-in-the-os-module)\n- [Why you should be using pathlib](https://treyhunner.com/2018/12/why-you-should-be-using-pathlib/)\n- [No really, pathlib is great](https://treyhunner.com/2019/01/no-really-pathlib-is-great/)\n",
     "nursery": false
   },
   {
@@ -4132,7 +4247,7 @@
       "`open()` should be replaced by `Path.open()`"
     ],
     "autofix": "Autofix is not available.",
-    "explanation": null,
+    "explanation": "## What it does\nChecks for uses of the `open` builtin.\n\n## Why is this bad?\n`pathlib` offers a high-level API for path manipulation. When possible,\nusing `Path` object methods such as `Path.open()` can improve readability\nover the `open` builtin.\n\n## Examples\n```python\nwith open(\"f1.py\", \"wb\") as fp:\n    ...\n```\n\nUse instead:\n```python\nfrom pathlib import Path\n\nwith Path(\"f1.py\").open(\"wb\") as fp:\n    ...\n```\n\n## References\n- [Python documentation: `Path.open`](https://docs.python.org/3/library/pathlib.html#pathlib.Path.open)\n- [Python documentation: `open`](https://docs.python.org/3/library/functions.html#open)\n- [PEP 428](https://peps.python.org/pep-0428/)\n- [Correspondence between `os` and `pathlib`](https://docs.python.org/3/library/pathlib.html#correspondence-to-tools-in-the-os-module)\n- [Why you should be using pathlib](https://treyhunner.com/2018/12/why-you-should-be-using-pathlib/)\n- [No really, pathlib is great](https://treyhunner.com/2019/01/no-really-pathlib-is-great/)\n",
     "nursery": false
   },
   {
@@ -4144,7 +4259,91 @@
       "`py.path` is in maintenance mode, use `pathlib` instead"
     ],
     "autofix": "Autofix is not available.",
-    "explanation": null,
+    "explanation": "## What it does\nChecks for uses of the `py.path` library.\n\n## Why is this bad?\nThe `py.path` library is in maintenance mode. Instead, prefer the standard\nlibrary's `pathlib` module, or third-party modules like `path` (formerly\n`py.path`).\n\n## Examples\n```python\nimport py.path\n\np = py.path.local(\"/foo/bar\").join(\"baz/qux\")\n```\n\nUse instead:\n```python\nfrom pathlib import Path\n\np = Path(\"/foo/bar\") / \"bar\" / \"qux\"\n```\n\n## References\n- [Python documentation: `Pathlib`](https://docs.python.org/3/library/pathlib.html)\n- [Path repository](https://github.com/jaraco/path)\n",
+    "nursery": false
+  },
+  {
+    "name": "path-constructor-current-directory",
+    "code": "PTH201",
+    "linter": "flake8-use-pathlib",
+    "summary": "Do not pass the current directory explicitly to `Path`",
+    "message_formats": [
+      "Do not pass the current directory explicitly to `Path`"
+    ],
+    "autofix": "Autofix is always available.",
+    "explanation": "## What it does\nChecks for `pathlib.Path` objects that are initialized with the current\ndirectory.\n\n## Why is this bad?\nThe `Path()` constructor defaults to the current directory, so passing it\nin explicitly (as `\".\"`) is unnecessary.\n\n## Example\n```python\nfrom pathlib import Path\n\n_ = Path(\".\")\n```\n\nUse instead:\n```python\nfrom pathlib import Path\n\n_ = Path()\n```\n\n## References\n- [Python documentation: `Path`](https://docs.python.org/3/library/pathlib.html#pathlib.Path)\n",
+    "nursery": false
+  },
+  {
+    "name": "os-path-getsize",
+    "code": "PTH202",
+    "linter": "flake8-use-pathlib",
+    "summary": "`os.path.getsize` should be replaced by `Path.stat().st_size`",
+    "message_formats": [
+      "`os.path.getsize` should be replaced by `Path.stat().st_size`"
+    ],
+    "autofix": "Autofix is not available.",
+    "explanation": "## What it does\nChecks for uses of `os.path.getsize`.\n\n## Why is this bad?\n`pathlib` offers a high-level API for path manipulation, as compared to\nthe lower-level API offered by `os`.\n\nWhen possible, using `Path` object methods such as `Path.stat()` can\nimprove readability over the `os` module's counterparts (e.g.,\n`os.path.getsize()`).\n\nNote that `os` functions may be preferable if performance is a concern,\ne.g., in hot loops.\n\n## Examples\n```python\nimport os\n\nos.path.getsize(__file__)\n```\n\nUse instead:\n```python\nfrom pathlib import Path\n\nPath(__file__).stat().st_size\n```\n\n## References\n- [Python documentation: `Path.stat`](https://docs.python.org/3/library/pathlib.html#pathlib.Path.stat)\n- [Python documentation: `os.path.getsize`](https://docs.python.org/3/library/os.path.html#os.path.getsize)\n- [PEP 428](https://peps.python.org/pep-0428/)\n- [Correspondence between `os` and `pathlib`](https://docs.python.org/3/library/pathlib.html#correspondence-to-tools-in-the-os-module)\n- [Why you should be using pathlib](https://treyhunner.com/2018/12/why-you-should-be-using-pathlib/)\n- [No really, pathlib is great](https://treyhunner.com/2019/01/no-really-pathlib-is-great/)\n",
+    "nursery": false
+  },
+  {
+    "name": "os-path-getatime",
+    "code": "PTH203",
+    "linter": "flake8-use-pathlib",
+    "summary": "`os.path.getatime` should be replaced by `Path.stat().st_atime`",
+    "message_formats": [
+      "`os.path.getatime` should be replaced by `Path.stat().st_atime`"
+    ],
+    "autofix": "Autofix is not available.",
+    "explanation": "## What it does\nChecks for uses of `os.path.getatime`.\n\n## Why is this bad?\n`pathlib` offers a high-level API for path manipulation, as compared to\nthe lower-level API offered by `os`.\n\nWhen possible, using `Path` object methods such as `Path.stat()` can\nimprove readability over the `os` module's counterparts (e.g.,\n`os.path.getsize()`).\n\nNote that `os` functions may be preferable if performance is a concern,\ne.g., in hot loops.\n\n## Examples\n```python\nimport os\n\nos.path.getsize(__file__)\n```\n\nUse instead:\n```python\nfrom pathlib import Path\n\nPath(__file__).stat().st_size\n```\n\n## References\n- [Python documentation: `Path.stat`](https://docs.python.org/3/library/pathlib.html#pathlib.Path.stat)\n- [Python documentation: `os.path.getsize`](https://docs.python.org/3/library/os.path.html#os.path.getsize)\n- [PEP 428](https://peps.python.org/pep-0428/)\n- [Correspondence between `os` and `pathlib`](https://docs.python.org/3/library/pathlib.html#correspondence-to-tools-in-the-os-module)\n- [Why you should be using pathlib](https://treyhunner.com/2018/12/why-you-should-be-using-pathlib/)\n- [No really, pathlib is great](https://treyhunner.com/2019/01/no-really-pathlib-is-great/)\n",
+    "nursery": false
+  },
+  {
+    "name": "os-path-getmtime",
+    "code": "PTH204",
+    "linter": "flake8-use-pathlib",
+    "summary": "`os.path.getmtime` should be replaced by `Path.stat().st_mtime`",
+    "message_formats": [
+      "`os.path.getmtime` should be replaced by `Path.stat().st_mtime`"
+    ],
+    "autofix": "Autofix is not available.",
+    "explanation": "## What it does\nChecks for uses of `os.path.getatime`.\n\n## Why is this bad?\n`pathlib` offers a high-level API for path manipulation, as compared to\nthe lower-level API offered by `os`.\n\nWhen possible, using `Path` object methods such as `Path.stat()` can\nimprove readability over the `os` module's counterparts (e.g.,\n`os.path.getsize()`).\n\nNote that `os` functions may be preferable if performance is a concern,\ne.g., in hot loops.\n\n## Examples\n```python\nimport os\n\nos.path.getsize(__file__)\n```\n\nUse instead:\n```python\nfrom pathlib import Path\n\nPath(__file__).stat().st_size\n```\n\n## References\n- [Python documentation: `Path.stat`](https://docs.python.org/3/library/pathlib.html#pathlib.Path.stat)\n- [Python documentation: `os.path.getsize`](https://docs.python.org/3/library/os.path.html#os.path.getsize)\n- [PEP 428](https://peps.python.org/pep-0428/)\n- [Correspondence between `os` and `pathlib`](https://docs.python.org/3/library/pathlib.html#correspondence-to-tools-in-the-os-module)\n- [Why you should be using pathlib](https://treyhunner.com/2018/12/why-you-should-be-using-pathlib/)\n- [No really, pathlib is great](https://treyhunner.com/2019/01/no-really-pathlib-is-great/)\n",
+    "nursery": false
+  },
+  {
+    "name": "os-path-getctime",
+    "code": "PTH205",
+    "linter": "flake8-use-pathlib",
+    "summary": "`os.path.getctime` should be replaced by `Path.stat().st_ctime`",
+    "message_formats": [
+      "`os.path.getctime` should be replaced by `Path.stat().st_ctime`"
+    ],
+    "autofix": "Autofix is not available.",
+    "explanation": "## What it does\nChecks for uses of `os.path.getatime`.\n\n## Why is this bad?\n`pathlib` offers a high-level API for path manipulation, as compared to\nthe lower-level API offered by `os`.\n\nWhen possible, using `Path` object methods such as `Path.stat()` can\nimprove readability over the `os` module's counterparts (e.g.,\n`os.path.getsize()`).\n\nNote that `os` functions may be preferable if performance is a concern,\ne.g., in hot loops.\n\n## Examples\n```python\nimport os\n\nos.path.getsize(__file__)\n```\n\nUse instead:\n```python\nfrom pathlib import Path\n\nPath(__file__).stat().st_size\n```\n\n## References\n- [Python documentation: `Path.stat`](https://docs.python.org/3/library/pathlib.html#pathlib.Path.stat)\n- [Python documentation: `os.path.getsize`](https://docs.python.org/3/library/os.path.html#os.path.getsize)\n- [PEP 428](https://peps.python.org/pep-0428/)\n- [Correspondence between `os` and `pathlib`](https://docs.python.org/3/library/pathlib.html#correspondence-to-tools-in-the-os-module)\n- [Why you should be using pathlib](https://treyhunner.com/2018/12/why-you-should-be-using-pathlib/)\n- [No really, pathlib is great](https://treyhunner.com/2019/01/no-really-pathlib-is-great/)\n",
+    "nursery": false
+  },
+  {
+    "name": "os-sep-split",
+    "code": "PTH206",
+    "linter": "flake8-use-pathlib",
+    "summary": "Replace `.split(os.sep)` with `Path.parts`",
+    "message_formats": [
+      "Replace `.split(os.sep)` with `Path.parts`"
+    ],
+    "autofix": "Autofix is not available.",
+    "explanation": "## What it does\nChecks for uses of `.split(os.sep)`\n\n## Why is this bad?\nThe `pathlib` module in the standard library should be used for path\nmanipulation. It provides a high-level API with the functionality\nneeded for common operations on `Path` objects.\n\n## Example\nIf not all parts of the path are needed, then the `name` and `parent`\nattributes of the `Path` object should be used. Otherwise, the `parts`\nattribute can be used as shown in the last example.\n```python\nimport os\n\n\"path/to/file_name.txt\".split(os.sep)[-1]\n\n\"path/to/file_name.txt\".split(os.sep)[-2]\n\n# Iterating over the path parts\nif any(part in blocklist for part in \"my/file/path\".split(os.sep)):\n    ...\n```\n\nUse instead:\n```python\nfrom pathlib import Path\n\nPath(\"path/to/file_name.txt\").name\n\nPath(\"path/to/file_name.txt\").parent.name\n\n# Iterating over the path parts\nif any(part in blocklist for part in Path(\"my/file/path\").parts):\n    ...\n```\n",
+    "nursery": false
+  },
+  {
+    "name": "glob",
+    "code": "PTH207",
+    "linter": "flake8-use-pathlib",
+    "summary": "Replace `{function}` with `Path.glob` or `Path.rglob`",
+    "message_formats": [
+      "Replace `{function}` with `Path.glob` or `Path.rglob`"
+    ],
+    "autofix": "Autofix is not available.",
+    "explanation": "## What it does\nChecks for the use of `glob` and `iglob`.\n\n## Why is this bad?\n`pathlib` offers a high-level API for path manipulation, as compared to\nthe lower-level API offered by `os` and `glob`.\n\nWhen possible, using `Path` object methods such as `Path.glob()` can\nimprove readability over their low-level counterparts (e.g.,\n`glob.glob()`).\n\nNote that `glob.glob` and `Path.glob` are not exact equivalents:\n\n|                   | `glob`                                                                                                                                                             | `Path.glob`                                                                                                                                |\n|-------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------|\n| Hidden files      | Excludes hidden files by default. From Python 3.11 onwards, the `include_hidden` keyword can used to include hidden directories.                                   | Includes hidden files by default.                                                                                                          |\n| Iterator          | `iglob` returns an iterator. Under the hood, `glob` simply converts the iterator to a list.                                                                        | `Path.glob` returns an iterator.                                                                                                           |\n| Working directory | `glob` takes a `root_dir` keyword to set the current working directory.                                                                                            | `Path.rglob` can be used to return the relative path.                                                                                      |\n| Globstar (`**`)   | `glob` requires the `recursive` flag to be set to `True` for the `**` pattern to match any files and zero or more directories, subdirectories, and symbolic links. | The `**` pattern in `Path.glob` means \"this directory and all subdirectories, recursively\". In other words, it enables recursive globbing. |\n\n## Example\n```python\nimport glob\nimport os\n\nglob.glob(os.path.join(path, \"requirements*.txt\"))\n```\n\nUse instead:\n```python\nfrom pathlib import Path\n\nPath(path).glob(\"requirements*.txt\")\n```\n\n## References\n- [Python documentation: `Path.glob`](https://docs.python.org/3/library/pathlib.html#pathlib.Path.glob)\n- [Python documentation: `Path.rglob`](https://docs.python.org/3/library/pathlib.html#pathlib.Path.rglob)\n- [Python documentation: `glob.glob`](https://docs.python.org/3/library/glob.html#glob.glob)\n- [Python documentation: `glob.iglob`](https://docs.python.org/3/library/glob.html#glob.iglob)\n",
     "nursery": false
   },
   {
@@ -4156,7 +4355,7 @@
       "Consider `{expr}` instead of string join"
     ],
     "autofix": "Autofix is always available.",
-    "explanation": null,
+    "explanation": "## What it does\nChecks for `str#join` calls that can be replaced with f-strings.\n\n## Why is this bad?\nf-strings are more readable and generally preferred over `str#join` calls.\n\n## Example\n```python\n\" \".join((foo, bar))\n```\n\nUse instead:\n```python\nf\"{foo} {bar}\"\n```\n\n## References\n- [Python documentation: f-strings](https://docs.python.org/3/reference/lexical_analysis.html#f-strings)\n",
     "nursery": false
   },
   {
@@ -4523,12 +4722,12 @@
     "name": "pandas-use-of-dot-read-table",
     "code": "PD012",
     "linter": "pandas-vet",
-    "summary": "`.read_csv` is preferred to `.read_table`; provides same functionality",
+    "summary": "Use `.read_csv` instead of `.read_table` to read CSV files",
     "message_formats": [
-      "`.read_csv` is preferred to `.read_table`; provides same functionality"
+      "Use `.read_csv` instead of `.read_table` to read CSV files"
     ],
     "autofix": "Autofix is not available.",
-    "explanation": null,
+    "explanation": "## What it does\nChecks for uses of `pd.read_table` to read CSV files.\n\n## Why is this bad?\nIn the Pandas API, `pd.read_csv` and `pd.read_table` are equivalent apart\nfrom their default separator: `pd.read_csv` defaults to a comma (`,`),\nwhile `pd.read_table` defaults to a tab (`\\t`) as the default separator.\n\nPrefer `pd.read_csv` over `pd.read_table` when reading comma-separated\ndata (like CSV files), as it is more idiomatic.\n\n## Example\n```python\nimport pandas as pd\n\ncities_df = pd.read_table(\"cities.csv\", sep=\",\")\n```\n\nUse instead:\n```python\nimport pandas as pd\n\ncities_df = pd.read_csv(\"cities.csv\")\n```\n\n## References\n- [Pandas documentation: `read_csv`](https://pandas.pydata.org/docs/reference/api/pandas.read_csv.html#pandas.read_csv)\n- [Pandas documentation: `read_table`](https://pandas.pydata.org/docs/reference/api/pandas.read_table.html#pandas.read_table)\n",
     "nursery": false
   },
   {
@@ -4553,6 +4752,18 @@
     ],
     "autofix": "Autofix is not available.",
     "explanation": "## What it does\nChecks for uses of `pd.merge` on Pandas objects.\n\n## Why is this bad?\nIn Pandas, the `.merge` method (exposed on, e.g., DataFrame objects) and\nthe `pd.merge` function (exposed on the Pandas module) are equivalent.\n\nFor consistency, prefer calling `.merge` on an object over calling\n`pd.merge` on the Pandas module, as the former is more idiomatic.\n\nFurther, `pd.merge` is not a method, but a function, which prohibits it\nfrom being used in method chains, a common pattern in Pandas code.\n\n## Example\n```python\nimport pandas as pd\n\ncats_df = pd.read_csv(\"cats.csv\")\ndogs_df = pd.read_csv(\"dogs.csv\")\nrabbits_df = pd.read_csv(\"rabbits.csv\")\npets_df = pd.merge(pd.merge(cats_df, dogs_df), rabbits_df)  # Hard to read.\n```\n\nUse instead:\n```python\nimport pandas as pd\n\ncats_df = pd.read_csv(\"cats.csv\")\ndogs_df = pd.read_csv(\"dogs.csv\")\nrabbits_df = pd.read_csv(\"rabbits.csv\")\npets_df = cats_df.merge(dogs_df).merge(rabbits_df)\n```\n\n## References\n- [Pandas documentation: `merge`](https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.merge.html#pandas.DataFrame.merge)\n- [Pandas documentation: `pd.merge`](https://pandas.pydata.org/docs/reference/api/pandas.merge.html#pandas.merge)\n",
+    "nursery": false
+  },
+  {
+    "name": "pandas-nunique-constant-series-check",
+    "code": "PD101",
+    "linter": "pandas-vet",
+    "summary": "Using `series.nunique()` for checking that a series is constant is inefficient",
+    "message_formats": [
+      "Using `series.nunique()` for checking that a series is constant is inefficient"
+    ],
+    "autofix": "Autofix is not available.",
+    "explanation": "## What it does\nCheck for uses of `.nunique()` to check if a Pandas Series is constant\n(i.e., contains only one unique value).\n\n## Why is this bad?\n`.nunique()` is computationally inefficient for checking if a Series is\nconstant.\n\nConsider, for example, a Series of length `n` that consists of increasing\ninteger values (e.g., 1, 2, 3, 4). The `.nunique()` method will iterate\nover the entire Series to count the number of unique values. But in this\ncase, we can detect that the Series is non-constant after visiting the\nfirst two values, which are non-equal.\n\nIn general, `.nunique()` requires iterating over the entire Series, while a\nmore efficient approach allows short-circuiting the operation as soon as a\nnon-equal value is found.\n\nInstead of calling `.nunique()`, convert the Series to a NumPy array, and\ncheck if all values in the array are equal to the first observed value.\n\n## Example\n```python\nimport pandas as pd\n\ndata = pd.Series(range(1000))\nif data.nunique() <= 1:\n    print(\"Series is constant\")\n```\n\nUse instead:\n```python\nimport pandas as pd\n\ndata = pd.Series(range(1000))\narray = data.to_numpy()\nif array.shape[0] == 0 or (array[0] == array).all():\n    print(\"Series is constant\")\n```\n\n## References\n- [Pandas Cookbook: \"Constant Series\"](https://pandas.pydata.org/docs/user_guide/cookbook.html#constant-series)\n- [Pandas documentation: `nunique`](https://pandas.pydata.org/docs/reference/api/pandas.Series.nunique.html)\n",
     "nursery": false
   },
   {
@@ -4588,7 +4799,7 @@
       "When using only the {subset} of a dict use the `{subset}()` method"
     ],
     "autofix": "Autofix is always available.",
-    "explanation": "## What it does\nChecks for uses of `dict.items()` that discard either the key or the value\nwhen iterating over the dictionary.\n\n## Why is this bad?\nIf you only need the keys or values of a dictionary, you should use\n`dict.keys()` or `dict.values()` respectively, instead of `dict.items()`.\nThese specialized methods are more efficient than `dict.items()`, as they\navoid allocating tuples for every item in the dictionary. They also\ncommunicate the intent of the code more clearly.\n\nNote that, as with all `perflint` rules, this is only intended as a\nmicro-optimization, and will have a negligible impact on performance in\nmost cases.\n\n## Example\n```python\nsome_dict = {\"a\": 1, \"b\": 2}\nfor _, val in some_dict.items():\n    print(val)\n```\n\nUse instead:\n```python\nsome_dict = {\"a\": 1, \"b\": 2}\nfor val in some_dict.values():\n    print(val)\n```\n",
+    "explanation": "## What it does\nChecks for uses of `dict.items()` that discard either the key or the value\nwhen iterating over the dictionary.\n\n## Why is this bad?\nIf you only need the keys or values of a dictionary, you should use\n`dict.keys()` or `dict.values()` respectively, instead of `dict.items()`.\nThese specialized methods are more efficient than `dict.items()`, as they\navoid allocating tuples for every item in the dictionary. They also\ncommunicate the intent of the code more clearly.\n\nNote that, as with all `perflint` rules, this is only intended as a\nmicro-optimization, and will have a negligible impact on performance in\nmost cases.\n\n## Example\n```python\nobj = {\"a\": 1, \"b\": 2}\nfor key, value in obj.items():\n    print(value)\n```\n\nUse instead:\n```python\nobj = {\"a\": 1, \"b\": 2}\nfor value in obj.values():\n    print(value)\n```\n",
     "nursery": false
   },
   {
@@ -4769,7 +4980,7 @@
       "Whitespace before '{bracket}'"
     ],
     "autofix": "Autofix is always available.",
-    "explanation": null,
+    "explanation": "## What it does\nChecks for extraneous whitespace immediately preceding an open parenthesis\nor bracket.\n\n## Why is this bad?\nAccording to [PEP 8], open parentheses and brackets should not be preceded\nby any trailing whitespace.\n\n## Example\n```python\nspam (1)\n```\n\nUse instead:\n```python\nspam(1)\n```\n\n[PEP 8]: https://peps.python.org/pep-0008/#pet-peeves\n",
     "nursery": true
   },
   {
@@ -4829,7 +5040,7 @@
       "Missing whitespace around operator"
     ],
     "autofix": "Autofix is not available.",
-    "explanation": null,
+    "explanation": "## What it does\nChecks for missing whitespace around all operators.\n\n## Why is this bad?\nAccording to [PEP 8], there should be one space before and after all\noperators.\n\n## Example\n```python\nif number==42:\n    print('you have found the meaning of life')\n```\n\nUse instead:\n```python\nif number == 42:\n    print('you have found the meaning of life')\n```\n\n[PEP 8]: https://peps.python.org/pep-0008/#pet-peeves\n",
     "nursery": true
   },
   {
@@ -4841,7 +5052,7 @@
       "Missing whitespace around arithmetic operator"
     ],
     "autofix": "Autofix is not available.",
-    "explanation": null,
+    "explanation": "## What it does\nChecks for missing whitespace arithmetic operators.\n\n## Why is this bad?\nAccording to [PEP 8], there should be one space before and after an\narithmetic operator (+, -, /, and *).\n\n## Example\n```python\nnumber = 40+2\n```\n\nUse instead:\n```python\nnumber = 40 + 2\n```\n\n[PEP 8]: https://peps.python.org/pep-0008/#pet-peeves\n",
     "nursery": true
   },
   {
@@ -4853,7 +5064,7 @@
       "Missing whitespace around bitwise or shift operator"
     ],
     "autofix": "Autofix is not available.",
-    "explanation": null,
+    "explanation": "## What it does\nChecks for missing whitespace around bitwise and shift operators.\n\n## Why is this bad?\nAccording to [PEP 8], there should be one space before and after bitwise and\nshift operators (<<, >>, &, |, ^).\n\n## Example\n```python\nx = 128<<1\n```\n\nUse instead:\n```python\nx = 128 << 1\n```\n\n[PEP 8]: https://peps.python.org/pep-0008/#pet-peeves\n",
     "nursery": true
   },
   {
@@ -4865,7 +5076,7 @@
       "Missing whitespace around modulo operator"
     ],
     "autofix": "Autofix is not available.",
-    "explanation": null,
+    "explanation": "## What it does\nChecks for missing whitespace around the modulo operator.\n\n## Why is this bad?\nAccording to [PEP 8], the modulo operator (%) should have whitespace on\neither side of it.\n\n## Example\n```python\nremainder = 10%2\n```\n\nUse instead:\n```python\nremainder = 10 % 2\n```\n\n[PEP 8]: https://peps.python.org/pep-0008/#other-recommendations\n",
     "nursery": true
   },
   {
@@ -4878,6 +5089,30 @@
     ],
     "autofix": "Autofix is always available.",
     "explanation": null,
+    "nursery": true
+  },
+  {
+    "name": "multiple-spaces-after-comma",
+    "code": "E241",
+    "linter": "pycodestyle",
+    "summary": "Multiple spaces after comma",
+    "message_formats": [
+      "Multiple spaces after comma"
+    ],
+    "autofix": "Autofix is not available.",
+    "explanation": "## What it does\nChecks for extraneous whitespace after a comma.\n\n## Why is this bad?\nAccording to the `black` code style, commas should be followed by a single space.\n\n## Example\n```python\na = 4,    5\n```\n\nUse instead:\n```python\na = 4, 5\n```\n",
+    "nursery": true
+  },
+  {
+    "name": "tab-after-comma",
+    "code": "E242",
+    "linter": "pycodestyle",
+    "summary": "Tab after comma",
+    "message_formats": [
+      "Tab after comma"
+    ],
+    "autofix": "Autofix is not available.",
+    "explanation": "## What it does\nChecks for extraneous tabs after a comma.\n\n## Why is this bad?\nCommas should be followed by one space, never tabs.\n\n## Example\n```python\na = 4,\\t5\n```\n\nUse instead:\n```python\na = 4, 3\n```\n\n",
     "nursery": true
   },
   {
@@ -5045,7 +5280,7 @@
       "Line too long ({width} > {limit} characters)"
     ],
     "autofix": "Autofix is not available.",
-    "explanation": "## What it does\nChecks for lines that exceed the specified maximum character length.\n\n## Why is this bad?\nOverlong lines can hurt readability. [PEP 8], for example, recommends\nlimiting lines to 79 characters.\n\nIn the interest of pragmatism, this rule makes a few exceptions when\ndetermining whether a line is overlong. Namely, it ignores lines that\nconsist of a single \"word\" (i.e., without any whitespace between its\ncharacters), and lines that end with a URL (as long as the URL starts\nbefore the line-length threshold).\n\nIf `pycodestyle.ignore_overlong_task_comments` is `true`, this rule will\nalso ignore comments that start with any of the specified `task-tags`\n(e.g., `# TODO:`).\n\n## Example\n```python\nmy_function(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10)\n```\n\nUse instead:\n```python\nmy_function(\n    param1, param2, param3, param4, param5,\n    param6, param7, param8, param9, param10\n)\n```\n\n## Options\n- `task-tags`\n- `pycodestyle.ignore-overlong-task-comments`\n\n[PEP 8]: https://peps.python.org/pep-0008/#maximum-line-length\n",
+    "explanation": "## What it does\nChecks for lines that exceed the specified maximum character length.\n\n## Why is this bad?\nOverlong lines can hurt readability. [PEP 8], for example, recommends\nlimiting lines to 79 characters.\n\nIn the interest of pragmatism, this rule makes a few exceptions when\ndetermining whether a line is overlong. Namely, it ignores lines that\nconsist of a single \"word\" (i.e., without any whitespace between its\ncharacters), and lines that end with a URL (as long as the URL starts\nbefore the line-length threshold).\n\nIf [`pycodestyle.ignore-overlong-task-comments`] is `true`, this rule will\nalso ignore comments that start with any of the specified [`task-tags`]\n(e.g., `# TODO:`).\n\n## Example\n```python\nmy_function(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10)\n```\n\nUse instead:\n```python\nmy_function(\n    param1, param2, param3, param4, param5,\n    param6, param7, param8, param9, param10\n)\n```\n\n## Options\n- `task-tags`\n- `pycodestyle.ignore-overlong-task-comments`\n\n[PEP 8]: https://peps.python.org/pep-0008/#maximum-line-length\n",
     "nursery": false
   },
   {
@@ -5241,7 +5476,7 @@
       "Indentation contains tabs"
     ],
     "autofix": "Autofix is not available.",
-    "explanation": null,
+    "explanation": "## What it does\nChecks for indentation that uses tabs.\n\n## Why is this bad?\nAccording to [PEP 8], spaces are preferred over tabs (unless used to remain\nconsistent with code that is already indented with tabs).\n\n## Example\n```python\nif True:\n\ta = 1\n```\n\nUse instead:\n```python\nif True:\n    a = 1\n```\n\n[PEP 8]: https://peps.python.org/pep-0008/#tabs-or-spaces\n",
     "nursery": false
   },
   {
@@ -5289,7 +5524,7 @@
       "Doc line too long ({width} > {limit} characters)"
     ],
     "autofix": "Autofix is not available.",
-    "explanation": "## What it does\nChecks for doc lines that exceed the specified maximum character length.\n\n## Why is this bad?\nFor flowing long blocks of text (docstrings or comments), overlong lines\ncan hurt readability. [PEP 8], for example, recommends that such lines be\nlimited to 72 characters.\n\nIn the context of this rule, a \"doc line\" is defined as a line consisting\nof either a standalone comment or a standalone string, like a docstring.\n\nIn the interest of pragmatism, this rule makes a few exceptions when\ndetermining whether a line is overlong. Namely, it ignores lines that\nconsist of a single \"word\" (i.e., without any whitespace between its\ncharacters), and lines that end with a URL (as long as the URL starts\nbefore the line-length threshold).\n\nIf `pycodestyle.ignore_overlong_task_comments` is `true`, this rule will\nalso ignore comments that start with any of the specified `task-tags`\n(e.g., `# TODO:`).\n\n## Example\n```python\ndef function(x):\n    \"\"\"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis auctor purus ut ex fermentum, at maximus est hendrerit.\"\"\"\n```\n\nUse instead:\n```python\ndef function(x):\n    \"\"\"\n    Lorem ipsum dolor sit amet, consectetur adipiscing elit.\n    Duis auctor purus ut ex fermentum, at maximus est hendrerit.\n    \"\"\"\n```\n\n\n## Options\n- `task-tags`\n- `pycodestyle.ignore-overlong-task-comments`\n\n[PEP 8]: https://peps.python.org/pep-0008/#maximum-line-length\n",
+    "explanation": "## What it does\nChecks for doc lines that exceed the specified maximum character length.\n\n## Why is this bad?\nFor flowing long blocks of text (docstrings or comments), overlong lines\ncan hurt readability. [PEP 8], for example, recommends that such lines be\nlimited to 72 characters.\n\nIn the context of this rule, a \"doc line\" is defined as a line consisting\nof either a standalone comment or a standalone string, like a docstring.\n\nIn the interest of pragmatism, this rule makes a few exceptions when\ndetermining whether a line is overlong. Namely, it ignores lines that\nconsist of a single \"word\" (i.e., without any whitespace between its\ncharacters), and lines that end with a URL (as long as the URL starts\nbefore the line-length threshold).\n\nNote that this rule will only be enforced after providing a value for\n[`pycodestyle.max-doc-length`] in your Ruff configuration file. If no\nvalue is provided, this rule will be ignored, even if it's added to your\n`--select` list.\n\nIf [`pycodestyle.ignore-overlong-task-comments`] is `true`, this rule will\nalso ignore comments that start with any of the specified [`task-tags`]\n(e.g., `# TODO:`).\n\n## Example\n```python\ndef function(x):\n    \"\"\"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis auctor purus ut ex fermentum, at maximus est hendrerit.\"\"\"\n```\n\nUse instead:\n```python\ndef function(x):\n    \"\"\"\n    Lorem ipsum dolor sit amet, consectetur adipiscing elit.\n    Duis auctor purus ut ex fermentum, at maximus est hendrerit.\n    \"\"\"\n```\n\n## Options\n- `task-tags`\n- `pycodestyle.max-doc-length`\n- `pycodestyle.ignore-overlong-task-comments`\n\n[PEP 8]: https://peps.python.org/pep-0008/#maximum-line-length\n",
     "nursery": false
   },
   {
@@ -5542,7 +5777,7 @@
       "No blank lines allowed before class docstring"
     ],
     "autofix": "Autofix is always available.",
-    "explanation": "## What it does\nChecks for docstrings on class definitions that are preceded by a blank\nline.\n\n## Why is this bad?\nAvoid introducing any blank lines between a class definition and its\ndocstring, for consistency.\n\nThis rule may not apply to all projects; its applicability is a matter of\nconvention. By default, this rule is enabled when using the `google`,\n`numpy`, and `pep257` conventions.\n\nFor an alternative, see [D203].\n\n## Example\n```python\nclass PhotoMetadata:\n    \"\"\"Metadata about a photo.\"\"\"\n```\n\nUse instead:\n```python\nclass PhotoMetadata:\n\n    \"\"\"Metadata about a photo.\"\"\"\n```\n\n## Options\n- `pydocstyle.convention`\n\n[D203]: https://beta.ruff.rs/docs/rules/one-blank-line-before-class\n",
+    "explanation": "## What it does\nChecks for docstrings on class definitions that are preceded by a blank\nline.\n\n## Why is this bad?\nAvoid introducing any blank lines between a class definition and its\ndocstring, for consistency.\n\nThis rule may not apply to all projects; its applicability is a matter of\nconvention. By default, this rule is enabled when using the `google`,\n`numpy`, and `pep257` conventions.\n\nFor an alternative, see [D203].\n\n## Example\n```python\nclass PhotoMetadata:\n\n    \"\"\"Metadata about a photo.\"\"\"\n```\n\nUse instead:\n```python\nclass PhotoMetadata:\n    \"\"\"Metadata about a photo.\"\"\"\n```\n\n## Options\n- `pydocstyle.convention`\n\n[D203]: https://beta.ruff.rs/docs/rules/one-blank-line-before-class\n",
     "nursery": false
   },
   {
@@ -5590,7 +5825,7 @@
       "Section underline is over-indented (\"{name}\")"
     ],
     "autofix": "Autofix is always available.",
-    "explanation": "## What it does\nChecks for over-indented section underlines in docstrings.\n\n## Why is this bad?\nMulti-line docstrings are typically composed of a summary line, followed by\na blank line, followed by a series of sections, each with a section header\nand a section body.\n\nSome docstring formats (like reStructuredText) use underlines to separate\nsection bodies from section headers.\n\nAvoid over-indenting the section underlines, as this can cause syntax\nerrors in reStructuredText.\n\nBy default, this rule is enabled when using the `numpy` convention, and\ndisabled when using the `google` or `pep257` conventions.\n\n## Example\n```python\ndef calculate_speed(distance: float, time: float) -> float:\n    \"\"\"Calculate speed as distance divided by time.\n\n    Parameters\n        ----------\n    distance : float\n        Distance traveled.\n    time : float\n        Time spent traveling.\n\n    Returns\n    -------\n    float\n        Speed as distance divided by time.\n\n    Raises\n    ------\n    FasterThanLightError\n        If speed is greater than the speed of light.\n    \"\"\"\n    try:\n        return distance / time\n    except ZeroDivisionError as exc:\n        raise FasterThanLightError from exc\n```\n\nUse instead:\n```python\ndef calculate_speed(distance: float, time: float) -> float:\n    \"\"\"Calculate speed as distance divided by time.\n\n    Parameters\n    ----------\n    distance : float\n        Distance traveled.\n    time : float\n        Time spent traveling.\n\n    Returns\n    -------\n    float\n        Speed as distance divided by time.\n\n    Raises\n    ------\n    FasterThanLightError\n        If speed is greater than the speed of light.\n    \"\"\"\n    try:\n        return distance / time\n    except ZeroDivisionError as exc:\n        raise FasterThanLightError from exc\n```\n\n## Options\n- `pydocstyle.convention`\n\n## References\n- [PEP 257 – Docstring Conventions](https://peps.python.org/pep-0257/)\n- [PEP 287 – reStructuredText Docstring Format](https://peps.python.org/pep-0287/)\n- [NumPy Style Guide](https://numpydoc.readthedocs.io/en/latest/format.html)\n",
+    "explanation": "## What it does\nChecks for over-indented section underlines in docstrings.\n\n## Why is this bad?\nMulti-line docstrings are typically composed of a summary line, followed by\na blank line, followed by a series of sections, each with a section header\nand a section body.\n\nSome docstring formats (like reStructuredText) use underlines to separate\nsection bodies from section headers.\n\nAvoid over-indenting the section underlines, as this can cause syntax\nerrors in reStructuredText.\n\nThis rule is enabled when using the `numpy` convention, and disabled when\nusing the `google` or `pep257` conventions.\n\n## Example\n```python\ndef calculate_speed(distance: float, time: float) -> float:\n    \"\"\"Calculate speed as distance divided by time.\n\n    Parameters\n        ----------\n    distance : float\n        Distance traveled.\n    time : float\n        Time spent traveling.\n\n    Returns\n    -------\n    float\n        Speed as distance divided by time.\n\n    Raises\n    ------\n    FasterThanLightError\n        If speed is greater than the speed of light.\n    \"\"\"\n    try:\n        return distance / time\n    except ZeroDivisionError as exc:\n        raise FasterThanLightError from exc\n```\n\nUse instead:\n```python\ndef calculate_speed(distance: float, time: float) -> float:\n    \"\"\"Calculate speed as distance divided by time.\n\n    Parameters\n    ----------\n    distance : float\n        Distance traveled.\n    time : float\n        Time spent traveling.\n\n    Returns\n    -------\n    float\n        Speed as distance divided by time.\n\n    Raises\n    ------\n    FasterThanLightError\n        If speed is greater than the speed of light.\n    \"\"\"\n    try:\n        return distance / time\n    except ZeroDivisionError as exc:\n        raise FasterThanLightError from exc\n```\n\n## Options\n- `pydocstyle.convention`\n\n## References\n- [PEP 257 – Docstring Conventions](https://peps.python.org/pep-0257/)\n- [PEP 287 – reStructuredText Docstring Format](https://peps.python.org/pep-0287/)\n- [NumPy Style Guide](https://numpydoc.readthedocs.io/en/latest/format.html)\n",
     "nursery": false
   },
   {
@@ -5783,7 +6018,7 @@
       "Missing blank line after last section (\"{name}\")"
     ],
     "autofix": "Autofix is always available.",
-    "explanation": "## What it does\nChecks for missing blank lines after the last section of a multi-line\ndocstring.\n\n## Why is this bad?\nMulti-line docstrings are typically composed of a summary line, followed by\na blank line, followed by a series of sections, each with a section header\nand a section body.\n\nThe last section in a docstring should be separated by a blank line, for\nconsistency and compatibility with documentation tooling.\n\nThis rule is enabled when using the `numpy` convention, and disabled when\nusing the `pep257` and `google` conventions.\n\n## Example\n```python\ndef calculate_speed(distance: float, time: float) -> float:\n    \"\"\"Calculate speed as distance divided by time.\n\n    Parameters\n    ----------\n    distance : float\n        Distance traveled.\n    time : float\n        Time spent traveling.\n    Returns\n    -------\n    float\n        Speed as distance divided by time.\n    Raises\n    ------\n    FasterThanLightError\n        If speed is greater than the speed of light.\"\"\"\n    try:\n        return distance / time\n    except ZeroDivisionError as exc:\n        raise FasterThanLightError from exc\n```\n\nUse instead:\n```python\ndef calculate_speed(distance: float, time: float) -> float:\n    \"\"\"Calculate speed as distance divided by time.\n\n    Parameters\n    ----------\n    distance : float\n        Distance traveled.\n    time : float\n        Time spent traveling.\n\n    Returns\n    -------\n    float\n        Speed as distance divided by time.\n\n    Raises\n    ------\n    FasterThanLightError\n        If speed is greater than the speed of light.\n    \"\"\"\n    try:\n        return distance / time\n    except ZeroDivisionError as exc:\n        raise FasterThanLightError from exc\n```\n\n## Options\n- `pydocstyle.convention`\n\n## References\n- [PEP 257 – Docstring Conventions](https://peps.python.org/pep-0257/)\n- [PEP 287 – reStructuredText Docstring Format](https://peps.python.org/pep-0287/)\n- [NumPy Style Guide](https://numpydoc.readthedocs.io/en/latest/format.html)\n",
+    "explanation": "## What it does\nChecks for missing blank lines after the last section of a multi-line\ndocstring.\n\n## Why is this bad?\nMulti-line docstrings are typically composed of a summary line, followed by\na blank line, followed by a series of sections, each with a section header\nand a section body.\n\nIn some projects, the last section of a docstring is followed by a blank line,\nfor consistency and compatibility.\n\nThis rule may not apply to all projects; its applicability is a matter of\nconvention. By default, this rule is disabled when using the `google`,\n`numpy`, and `pep257` conventions.\n\n## Example\n```python\ndef calculate_speed(distance: float, time: float) -> float:\n    \"\"\"Calculate speed as distance divided by time.\n\n    Parameters\n    ----------\n    distance : float\n        Distance traveled.\n    time : float\n        Time spent traveling.\n    Returns\n    -------\n    float\n        Speed as distance divided by time.\n    Raises\n    ------\n    FasterThanLightError\n        If speed is greater than the speed of light.\n    \"\"\"\n    try:\n        return distance / time\n    except ZeroDivisionError as exc:\n        raise FasterThanLightError from exc\n```\n\nUse instead:\n```python\ndef calculate_speed(distance: float, time: float) -> float:\n    \"\"\"Calculate speed as distance divided by time.\n\n    Parameters\n    ----------\n    distance : float\n        Distance traveled.\n    time : float\n        Time spent traveling.\n\n    Returns\n    -------\n    float\n        Speed as distance divided by time.\n\n    Raises\n    ------\n    FasterThanLightError\n        If speed is greater than the speed of light.\n\n    \"\"\"\n    try:\n        return distance / time\n    except ZeroDivisionError as exc:\n        raise FasterThanLightError from exc\n```\n\n## Options\n- `pydocstyle.convention`\n\n## References\n- [PEP 257 – Docstring Conventions](https://peps.python.org/pep-0257/)\n- [PEP 287 – reStructuredText Docstring Format](https://peps.python.org/pep-0287/)\n- [NumPy Style Guide](https://numpydoc.readthedocs.io/en/latest/format.html)\n",
     "nursery": false
   },
   {
@@ -5826,10 +6061,10 @@
     "name": "undocumented-param",
     "code": "D417",
     "linter": "pydocstyle",
-    "summary": "Missing argument description in the docstring: `{name}`",
+    "summary": "Missing argument description in the docstring for `{definition}`: `{name}`",
     "message_formats": [
-      "Missing argument description in the docstring: `{name}`",
-      "Missing argument descriptions in the docstring: {names}"
+      "Missing argument description in the docstring for `{definition}`: `{name}`",
+      "Missing argument descriptions in the docstring for `{definition}`: {names}"
     ],
     "autofix": "Autofix is not available.",
     "explanation": "## What it does\nChecks for function docstrings that do not include documentation for all\nparameters in the function.\n\n## Why is this bad?\nMulti-line docstrings are typically composed of a summary line, followed by\na blank line, followed by a series of sections, each with a section header\nand a section body.\n\nFunction docstrings often include a section for function arguments, which\nshould include documentation for every argument. Undocumented arguments are\nindicative of missing documentation.\n\nThis rule is enabled when using the `google` convention, and disabled when\nusing the `pep257` and `numpy` conventions.\n\n## Example\n```python\ndef calculate_speed(distance: float, time: float) -> float:\n    \"\"\"Calculate speed as distance divided by time.\n\n    Args:\n        distance: Distance traveled.\n\n    Returns:\n        Speed as distance divided by time.\n\n    Raises:\n        FasterThanLightError: If speed is greater than the speed of light.\n    \"\"\"\n    try:\n        return distance / time\n    except ZeroDivisionError as exc:\n        raise FasterThanLightError from exc\n```\n\nUse instead:\n```python\ndef calculate_speed(distance: float, time: float) -> float:\n    \"\"\"Calculate speed as distance divided by time.\n\n    Args:\n        distance: Distance traveled.\n        time: Time spent traveling.\n\n    Returns:\n        Speed as distance divided by time.\n\n    Raises:\n        FasterThanLightError: If speed is greater than the speed of light.\n    \"\"\"\n    try:\n        return distance / time\n    except ZeroDivisionError as exc:\n        raise FasterThanLightError from exc\n```\n\n## Options\n- `pydocstyle.convention`\n\n## References\n- [PEP 257 – Docstring Conventions](https://peps.python.org/pep-0257/)\n- [PEP 287 – reStructuredText Docstring Format](https://peps.python.org/pep-0287/)\n- [Google Python Style Guide - Docstrings](https://google.github.io/styleguide/pyguide.html#38-comments-and-docstrings)\n",
@@ -5913,9 +6148,9 @@
     "name": "undefined-local-with-import-star-usage",
     "code": "F405",
     "linter": "Pyflakes",
-    "summary": "`{name}` may be undefined, or defined from star imports: {sources}",
+    "summary": "`{name}` may be undefined, or defined from star imports",
     "message_formats": [
-      "`{name}` may be undefined, or defined from star imports: {sources}"
+      "`{name}` may be undefined, or defined from star imports"
     ],
     "autofix": "Autofix is not available.",
     "explanation": "## What it does\nChecks for names that might be undefined, but may also be defined in a\nwildcard import.\n\n## Why is this bad?\nWildcard imports (e.g., `from module import *`) make it hard to determine\nwhich symbols are available in the current namespace. If a module contains\na wildcard import, and a name in the current namespace has not been\nexplicitly defined or imported, then it's unclear whether the name is\nundefined or was imported by the wildcard import.\n\nIf the name _is_ defined in via a wildcard import, that member should be\nimported explicitly to avoid confusion.\n\nIf the name is _not_ defined in a wildcard import, it should be defined or\nimported.\n\n## Example\n```python\nfrom math import *\n\n\ndef area(radius):\n    return pi * radius**2\n```\n\nUse instead:\n```python\nfrom math import pi\n\n\ndef area(radius):\n    return pi * radius**2\n```\n",
@@ -6122,7 +6357,7 @@
       "f-string without any placeholders"
     ],
     "autofix": "Autofix is always available.",
-    "explanation": "## What it does\nChecks for f-strings that do not contain any placeholder expressions.\n\n## Why is this bad?\nF-strings are a convenient way to format strings, but they are not\nnecessary if there are no placeholder expressions to format. In this\ncase, a regular string should be used instead, as an f-string without\nplaceholders can be confusing for readers, who may expect such a\nplaceholder to be present.\n\nAn f-string without any placeholders could also indicate that the\nauthor forgot to add a placeholder expression.\n\n## Example\n```python\nf\"Hello, world!\"\n```\n\nUse instead:\n```python\n\"Hello, world!\"\n```\n\n## References\n- [PEP 498](https://www.python.org/dev/peps/pep-0498/)\n",
+    "explanation": "## What it does\nChecks for f-strings that do not contain any placeholder expressions.\n\n## Why is this bad?\nf-strings are a convenient way to format strings, but they are not\nnecessary if there are no placeholder expressions to format. In this\ncase, a regular string should be used instead, as an f-string without\nplaceholders can be confusing for readers, who may expect such a\nplaceholder to be present.\n\nAn f-string without any placeholders could also indicate that the\nauthor forgot to add a placeholder expression.\n\n## Example\n```python\nf\"Hello, world!\"\n```\n\nUse instead:\n```python\n\"Hello, world!\"\n```\n\n## References\n- [PEP 498](https://www.python.org/dev/peps/pep-0498/)\n",
     "nursery": false
   },
   {
@@ -6521,7 +6756,7 @@
       "`{existing}` can be simplified to `{replacement}` as an empty string is falsey"
     ],
     "autofix": "Autofix is not available.",
-    "explanation": "## What it does\nChecks for comparisons to empty strings.\n\n## Why is this bad?\nAn empty string is falsy, so it is unnecessary to compare it to `\"\"`. If\nthe value can be something else Python considers falsy, such as `None` or\n`0` or another empty container, then the code is not equivalent.\n\n## Example\n```python\ndef foo(x):\n    if x == \"\":\n        print(\"x is empty\")\n```\n\nUse instead:\n```python\ndef foo(x):\n    if not x:\n        print(\"x is empty\")\n```\n\n## References\n- [Python documentation: Truth Value Testing](https://docs.python.org/3/library/stdtypes.html#truth-value-testing)\n",
+    "explanation": "## What it does\nChecks for comparisons to empty strings.\n\n## Why is this bad?\nAn empty string is falsy, so it is unnecessary to compare it to `\"\"`. If\nthe value can be something else Python considers falsy, such as `None` or\n`0` or another empty container, then the code is not equivalent.\n\n## Known problems\nHigh false positive rate, as the check is context-insensitive and does not\nconsider the type of the variable being compared ([#4282]).\n\n## Example\n```python\nx: str = ...\n\nif x == \"\":\n    print(\"x is empty\")\n```\n\nUse instead:\n```python\nx: str = ...\n\nif not x:\n    print(\"x is empty\")\n```\n\n## References\n- [Python documentation: Truth Value Testing](https://docs.python.org/3/library/stdtypes.html#truth-value-testing)\n\n[#4282]: https://github.com/astral-sh/ruff/issues/4282\n",
     "nursery": true
   },
   {
@@ -6714,7 +6949,7 @@
       "String `{strip}` call contains duplicate characters"
     ],
     "autofix": "Autofix is not available.",
-    "explanation": "## What it does\nChecks duplicate characters in `str#strip` calls.\n\n## Why is this bad?\nAll characters in `str#strip` calls are removed from both the leading and\ntrailing ends of the string. Including duplicate characters in the call\nis redundant and often indicative of a mistake.\n\nIn Python 3.9 and later, you can use `str#removeprefix` and\n`str#removesuffix` to remove an exact prefix or suffix from a string,\nrespectively, which should be preferred when possible.\n\n## Example\n```python\n# Evaluates to \"foo\".\n\"bar foo baz\".strip(\"bar baz \")\n```\n\nUse instead:\n```python\n# Evaluates to \"foo\".\n\"bar foo baz\".strip(\"abrz \")  # \"foo\"\n```\n\nOr:\n```python\n# Evaluates to \"foo\".\n\"bar foo baz\".removeprefix(\"bar \").removesuffix(\" baz\")\n\n## Options\n- `target-version`\n\n## References\n- [Python documentation: `str.strip`](https://docs.python.org/3/library/stdtypes.html?highlight=strip#str.strip)\n",
+    "explanation": "## What it does\nChecks duplicate characters in `str#strip` calls.\n\n## Why is this bad?\nAll characters in `str#strip` calls are removed from both the leading and\ntrailing ends of the string. Including duplicate characters in the call\nis redundant and often indicative of a mistake.\n\nIn Python 3.9 and later, you can use `str#removeprefix` and\n`str#removesuffix` to remove an exact prefix or suffix from a string,\nrespectively, which should be preferred when possible.\n\n## Example\n```python\n# Evaluates to \"foo\".\n\"bar foo baz\".strip(\"bar baz \")\n```\n\nUse instead:\n```python\n# Evaluates to \"foo\".\n\"bar foo baz\".strip(\"abrz \")  # \"foo\"\n```\n\nOr:\n```python\n# Evaluates to \"foo\".\n\"bar foo baz\".removeprefix(\"bar \").removesuffix(\" baz\")\n```\n\n## Options\n- `target-version`\n\n## References\n- [Python documentation: `str.strip`](https://docs.python.org/3/library/stdtypes.html?highlight=strip#str.strip)\n",
     "nursery": false
   },
   {
@@ -6934,6 +7169,18 @@
     "nursery": false
   },
   {
+    "name": "repeated-equality-comparison-target",
+    "code": "PLR1714",
+    "linter": "Pylint",
+    "summary": "Consider merging multiple comparisons: `{expr}`. Use a `set` if the elements are hashable.",
+    "message_formats": [
+      "Consider merging multiple comparisons: `{expr}`. Use a `set` if the elements are hashable."
+    ],
+    "autofix": "Autofix is not available.",
+    "explanation": "## What it does\nChecks for repeated equality comparisons that can rewritten as a membership\ntest.\n\n## Why is this bad?\nTo check if a variable is equal to one of many values, it is common to\nwrite a series of equality comparisons (e.g.,\n`foo == \"bar\" or foo == \"baz\"`).\n\nInstead, prefer to combine the values into a collection and use the `in`\noperator to check for membership, which is more performant and succinct.\nIf the items are hashable, use a `set` for efficiency; otherwise, use a\n`tuple`.\n\n## Example\n```python\nfoo == \"bar\" or foo == \"baz\" or foo == \"qux\"\n```\n\nUse instead:\n```python\nfoo in {\"bar\", \"baz\", \"qux\"}\n```\n\n## References\n- [Python documentation: Comparisons](https://docs.python.org/3/reference/expressions.html#comparisons)\n- [Python documentation: Membership test operations](https://docs.python.org/3/reference/expressions.html#membership-test-operations)\n- [Python documentation: `set`](https://docs.python.org/3/library/stdtypes.html#set)\n",
+    "nursery": false
+  },
+  {
     "name": "sys-exit-alias",
     "code": "PLR1722",
     "linter": "Pylint",
@@ -6979,6 +7226,18 @@
     ],
     "autofix": "Autofix is not available.",
     "explanation": "## What it does\nChecks for `else` clauses on loops without a `break` statement.\n\n## Why is this bad?\nWhen a loop includes an `else` statement, the code inside the `else` clause\nwill be executed if the loop terminates \"normally\" (i.e., without a\n`break`).\n\nIf a loop _always_ terminates \"normally\" (i.e., does _not_ contain a\n`break`), then the `else` clause is redundant, as the code inside the\n`else` clause will always be executed.\n\nIn such cases, the code inside the `else` clause can be moved outside the\nloop entirely, and the `else` clause can be removed.\n\n## Example\n```python\nfor item in items:\n    print(item)\nelse:\n    print(\"All items printed\")\n```\n\nUse instead:\n```python\nfor item in items:\n    print(item)\nprint(\"All items printed\")\n```\n\n## References\n- [Python documentation: `break` and `continue` Statements, and `else` Clauses on Loops](https://docs.python.org/3/tutorial/controlflow.html#break-and-continue-statements-and-else-clauses-on-loops)\n",
+    "nursery": false
+  },
+  {
+    "name": "self-assigning-variable",
+    "code": "PLW0127",
+    "linter": "Pylint",
+    "summary": "Self-assignment of variable `{name}`",
+    "message_formats": [
+      "Self-assignment of variable `{name}`"
+    ],
+    "autofix": "Autofix is not available.",
+    "explanation": "## What it does\nChecks for self-assignment of variables.\n\n## Why is this bad?\nSelf-assignment of variables is redundant and likely a mistake.\n\n## Example\n```python\ncountry = \"Poland\"\ncountry = country\n```\n\nUse instead:\n```python\ncountry = \"Poland\"\n```\n",
     "nursery": false
   },
   {
@@ -7069,6 +7328,30 @@
     "nursery": false
   },
   {
+    "name": "subprocess-popen-preexec-fn",
+    "code": "PLW1509",
+    "linter": "Pylint",
+    "summary": "`preexec_fn` argument is unsafe when using threads",
+    "message_formats": [
+      "`preexec_fn` argument is unsafe when using threads"
+    ],
+    "autofix": "Autofix is not available.",
+    "explanation": "## What it does\nChecks for uses of `subprocess.Popen` with a `preexec_fn` argument.\n\n## Why is this bad?\nThe `preexec_fn` argument is unsafe within threads as it can lead to\ndeadlocks. Furthermore, `preexec_fn` is [targeted for deprecation].\n\nInstead, consider using task-specific arguments such as `env`,\n`start_new_session`, and `process_group`. These are not prone to deadlocks\nand are more explicit.\n\n## Example\n```python\nimport os, subprocess\n\nsubprocess.Popen(foo, preexec_fn=os.setsid)\nsubprocess.Popen(bar, preexec_fn=os.setpgid(0, 0))\n```\n\nUse instead:\n```python\nimport subprocess\n\nsubprocess.Popen(foo, start_new_session=True)\nsubprocess.Popen(bar, process_group=0)  # Introduced in Python 3.11\n```\n\n## References\n- [Python documentation: `subprocess.Popen`](https://docs.python.org/3/library/subprocess.html#popen-constructor)\n- [Why `preexec_fn` in `subprocess.Popen` may lead to deadlock?](https://discuss.python.org/t/why-preexec-fn-in-subprocess-popen-may-lead-to-deadlock/16908/2)\n\n[targeted for deprecation]: https://github.com/python/cpython/issues/82616\n",
+    "nursery": false
+  },
+  {
+    "name": "eq-without-hash",
+    "code": "PLW1641",
+    "linter": "Pylint",
+    "summary": "Object does not implement `__hash__` method",
+    "message_formats": [
+      "Object does not implement `__hash__` method"
+    ],
+    "autofix": "Autofix is not available.",
+    "explanation": "## What it does\nChecks for classes that implement `__eq__` but not `__hash__`.\n\n## Why is this bad?\nA class that implements `__eq__` but not `__hash__` will have its hash\nmethod implicitly set to `None`. This will cause the class to be\nunhashable, will in turn cause issues when using the class as a key in a\ndictionary or a member of a set.\n\n## Known problems\nDoes not check for `__hash__` implementations in superclasses.\n\n## Example\n```python\nclass Person:\n    def __init__(self):\n        self.name = \"monty\"\n\n    def __eq__(self, other):\n        return isinstance(other, Person) and other.name == self.name\n```\n\nUse instead:\n```python\nclass Person:\n    def __init__(self):\n        self.name = \"monty\"\n\n    def __eq__(self, other):\n        return isinstance(other, Person) and other.name == self.name\n\n    def __hash__(self):\n        return hash(self.name)\n```\n",
+    "nursery": true
+  },
+  {
     "name": "redefined-loop-name",
     "code": "PLW2901",
     "linter": "Pylint",
@@ -7150,7 +7433,7 @@
       "Use `{to}` instead of `{from}` for type annotation"
     ],
     "autofix": "Autofix is sometimes available.",
-    "explanation": "## What it does\nChecks for the use of generics that can be replaced with standard library\nvariants based on [PEP 585].\n\n## Why is this bad?\n[PEP 585] enabled collections in the Python standard library (like `list`)\nto be used as generics directly, instead of importing analogous members\nfrom the `typing` module (like `typing.List`).\n\nWhen available, the [PEP 585] syntax should be used instead of importing\nmembers from the `typing` module, as it's more concise and readable.\nImporting those members from `typing` is considered deprecated as of PEP\n585.\n\n## Example\n```python\nfrom typing import List\n\nfoo: List[int] = [1, 2, 3]\n```\n\nUse instead:\n```python\nfoo: list[int] = [1, 2, 3]\n```\n\n## Options\n- `target-version`\n\n[PEP 585]: https://peps.python.org/pep-0585/\n",
+    "explanation": "## What it does\nChecks for the use of generics that can be replaced with standard library\nvariants based on [PEP 585].\n\n## Why is this bad?\n[PEP 585] enabled collections in the Python standard library (like `list`)\nto be used as generics directly, instead of importing analogous members\nfrom the `typing` module (like `typing.List`).\n\nWhen available, the [PEP 585] syntax should be used instead of importing\nmembers from the `typing` module, as it's more concise and readable.\nImporting those members from `typing` is considered deprecated as of PEP\n585.\n\n## Example\n```python\nfrom typing import List\n\nfoo: List[int] = [1, 2, 3]\n```\n\nUse instead:\n```python\nfoo: list[int] = [1, 2, 3]\n```\n\n## Options\n- `target-version`\n- `pyupgrade.keep-runtime-typing`\n\n[PEP 585]: https://peps.python.org/pep-0585/\n",
     "nursery": false
   },
   {
@@ -7162,7 +7445,7 @@
       "Use `X | Y` for type annotations"
     ],
     "autofix": "Autofix is sometimes available.",
-    "explanation": "## What it does\nCheck for type annotations that can be rewritten based on [PEP 604] syntax.\n\n## Why is this bad?\n[PEP 604] introduced a new syntax for union type annotations based on the\n`|` operator. This syntax is more concise and readable than the previous\n`typing.Union` and `typing.Optional` syntaxes.\n\n## Example\n```python\nfrom typing import Union\n\nfoo: Union[int, str] = 1\n```\n\nUse instead:\n```python\nfoo: int | str = 1\n```\n\n## Options\n- `target-version`\n\n[PEP 604]: https://peps.python.org/pep-0604/\n",
+    "explanation": "## What it does\nCheck for type annotations that can be rewritten based on [PEP 604] syntax.\n\n## Why is this bad?\n[PEP 604] introduced a new syntax for union type annotations based on the\n`|` operator. This syntax is more concise and readable than the previous\n`typing.Union` and `typing.Optional` syntaxes.\n\n## Example\n```python\nfrom typing import Union\n\nfoo: Union[int, str] = 1\n```\n\nUse instead:\n```python\nfoo: int | str = 1\n```\n\n## Options\n- `target-version`\n- `pyupgrade.keep-runtime-typing`\n\n[PEP 604]: https://peps.python.org/pep-0604/\n",
     "nursery": false
   },
   {
@@ -7279,12 +7562,12 @@
     "name": "native-literals",
     "code": "UP018",
     "linter": "pyupgrade",
-    "summary": "Unnecessary call to `{literal_type}`",
+    "summary": "Unnecessary `{literal_type}` call (rewrite as a literal)",
     "message_formats": [
-      "Unnecessary call to `{literal_type}`"
+      "Unnecessary `{literal_type}` call (rewrite as a literal)"
     ],
     "autofix": "Autofix is always available.",
-    "explanation": "## What it does\nChecks for unnecessary calls to `str` and `bytes`.\n\n## Why is this bad?\nThe `str` and `bytes` constructors can be replaced with string and bytes\nliterals, which are more readable and idiomatic.\n\n## Example\n```python\nstr(\"foo\")\n```\n\nUse instead:\n```python\n\"foo\"\n```\n\n## References\n- [Python documentation: `str`](https://docs.python.org/3/library/stdtypes.html#str)\n- [Python documentation: `bytes`](https://docs.python.org/3/library/stdtypes.html#bytes)\n",
+    "explanation": "## What it does\nChecks for unnecessary calls to `str`, `bytes`, `int`, `float`, and `bool`.\n\n## Why is this bad?\nThe mentioned constructors can be replaced with their respective literal\nforms, which are more readable and idiomatic.\n\n## Example\n```python\nstr(\"foo\")\n```\n\nUse instead:\n```python\n\"foo\"\n```\n\n## References\n- [Python documentation: `str`](https://docs.python.org/3/library/stdtypes.html#str)\n- [Python documentation: `bytes`](https://docs.python.org/3/library/stdtypes.html#bytes)\n- [Python documentation: `int`](https://docs.python.org/3/library/functions.html#int)\n- [Python documentation: `float`](https://docs.python.org/3/library/functions.html#float)\n- [Python documentation: `bool`](https://docs.python.org/3/library/functions.html#bool)\n",
     "nursery": false
   },
   {
@@ -7690,13 +7973,12 @@
     "name": "unnecessary-iterable-allocation-for-first-element",
     "code": "RUF015",
     "linter": "Ruff-specific rules",
-    "summary": "Prefer `next(iter({iterable}))` over `list({iterable})[0]`",
+    "summary": "Prefer `next({iterable})` over single element slice",
     "message_formats": [
-      "Prefer `next(iter({iterable}))` over `list({iterable})[0]`",
-      "Prefer `[next(iter({iterable}))]` over `list({iterable})[:1]`"
+      "Prefer `next({iterable})` over single element slice"
     ],
     "autofix": "Autofix is always available.",
-    "explanation": "## What it does\nChecks for uses of `list(...)[0]` that can be replaced with\n`next(iter(...))`.\n\n## Why is this bad?\nCalling `list(...)` will create a new list of the entire collection, which\ncan be very expensive for large collections. If you only need the first\nelement of the collection, you can use `next(iter(...))` to lazily fetch\nthe first element without creating a new list.\n\nNote that migrating from `list(...)[0]` to `next(iter(...))` can change\nthe behavior of your program in two ways:\n\n1. First, `list(...)` will eagerly evaluate the entire collection, while\n   `next(iter(...))` will only evaluate the first element. As such, any\n   side effects that occur during iteration will be delayed.\n2. Second, `list(...)[0]` will raise `IndexError` if the collection is\n  empty, while `next(iter(...))` will raise `StopIteration`.\n\n## Example\n```python\nhead = list(range(1000000000000))[0]\n```\n\nUse instead:\n```python\nhead = next(iter(range(1000000000000)))\n```\n\n## References\n- [Iterators and Iterables in Python: Run Efficient Iterations](https://realpython.com/python-iterators-iterables/#when-to-use-an-iterator-in-python)\n",
+    "explanation": "## What it does\nChecks for uses of `list(...)[0]` that can be replaced with\n`next(iter(...))`.\n\n## Why is this bad?\nCalling `list(...)` will create a new list of the entire collection, which\ncan be very expensive for large collections. If you only need the first\nelement of the collection, you can use `next(...)` or `next(iter(...)` to\nlazily fetch the first element.\n\nNote that migrating from `list(...)[0]` to `next(iter(...))` can change\nthe behavior of your program in two ways:\n\n1. First, `list(...)` will eagerly evaluate the entire collection, while\n   `next(iter(...))` will only evaluate the first element. As such, any\n   side effects that occur during iteration will be delayed.\n2. Second, `list(...)[0]` will raise `IndexError` if the collection is\n   empty, while `next(iter(...))` will raise `StopIteration`.\n\n## Example\n```python\nhead = list(x)[0]\nhead = [x * x for x in range(10)][0]\n```\n\nUse instead:\n```python\nhead = next(iter(x))\nhead = next(x * x for x in range(10))\n```\n\n## References\n- [Iterators and Iterables in Python: Run Efficient Iterations](https://realpython.com/python-iterators-iterables/#when-to-use-an-iterator-in-python)\n",
     "nursery": false
   },
   {
@@ -7794,7 +8076,7 @@
     "message_formats": [
       "Use `raise` without specifying exception name"
     ],
-    "autofix": "Autofix is not available.",
+    "autofix": "Autofix is always available.",
     "explanation": "## What it does\nChecks for needless exception names in `raise` statements.\n\n## Why is this bad?\nIt's redundant to specify the exception name in a `raise` statement if the\nexception is being re-raised.\n\n## Example\n```python\ndef foo():\n    try:\n        ...\n    except ValueError as exc:\n        raise exc\n```\n\nUse instead:\n```python\ndef foo():\n    try:\n        ...\n    except ValueError:\n        raise\n```\n",
     "nursery": false
   },
