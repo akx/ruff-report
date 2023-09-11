@@ -320,7 +320,7 @@
       "Use of `assert` detected"
     ],
     "autofix": "Autofix is not available.",
-    "explanation": "## What it does\nChecks for uses of the `assert` keyword.\n\n## Why is this bad?\nAssertions are removed when Python is run with optimization requested\n(i.e., when the `-O` flag is present), which is a common practice in\nproduction environments. As such, assertions should not be used for runtime\nvalidation of user input or to enforce  interface constraints.\n\nConsider raising a meaningful error instead of using `assert`.\n\n## Example\n```python\nassert x > 0, \"Expected positive value.\"\n```\n\nUse instead:\n```python\nif x <= 0:\n    raise ValueError(\"Expected positive value.\")\n```\n",
+    "explanation": "## What it does\nChecks for uses of the `assert` keyword.\n\n## Why is this bad?\nAssertions are removed when Python is run with optimization requested\n(i.e., when the `-O` flag is present), which is a common practice in\nproduction environments. As such, assertions should not be used for runtime\nvalidation of user input or to enforce  interface constraints.\n\nConsider raising a meaningful error instead of using `assert`.\n\n## Example\n```python\nassert x > 0, \"Expected positive value.\"\n```\n\nUse instead:\n```python\nif not x > 0:\n    raise ValueError(\"Expected positive value.\")\n\n# or even better:\nif x <= 0:\n    raise ValueError(\"Expected positive value.\")\n```\n",
     "nursery": false
   },
   {
@@ -465,7 +465,7 @@
       "Deserialization with the `marshal` module is possibly dangerous"
     ],
     "autofix": "Autofix is not available.",
-    "explanation": "## What it does\nChecks for calls to `marshal` functions.\n\n## Why is this bad?\nDeserializing untrusted data with `marshal` is insecure as it can allow for\nthe creation of arbitrary objects, which can then be used to achieve\narbitrary code execution and otherwise unexpected behavior.\n\nAvoid deserializing untrusted data with `marshal`. Instead, consider safer\nformats, such as JSON.\n\nIf you must deserialize untrusted data with `marshal`, consider signing the\ndata with a secret key and verifying the signature before deserializing the\npayload, This will prevent an attacker from injecting arbitrary objects\ninto the serialized data.\n\n## Example\n```python\nimport marshal\n\nwith open(\"foo.marshal\", \"rb\") as file:\n    foo = pickle.load(file)\n```\n\nUse instead:\n```python\nimport json\n\nwith open(\"foo.json\", \"rb\") as file:\n    foo = json.load(file)\n```\n\n## References\n- [Python documentation: `marshal` — Internal Python object serialization](https://docs.python.org/3/library/marshal.html)\n- [Common Weakness Enumeration: CWE-502](https://cwe.mitre.org/data/definitions/502.html)\n",
+    "explanation": "## What it does\nChecks for calls to `marshal` functions.\n\n## Why is this bad?\nDeserializing untrusted data with `marshal` is insecure as it can allow for\nthe creation of arbitrary objects, which can then be used to achieve\narbitrary code execution and otherwise unexpected behavior.\n\nAvoid deserializing untrusted data with `marshal`. Instead, consider safer\nformats, such as JSON.\n\nIf you must deserialize untrusted data with `marshal`, consider signing the\ndata with a secret key and verifying the signature before deserializing the\npayload, This will prevent an attacker from injecting arbitrary objects\ninto the serialized data.\n\n## Example\n```python\nimport marshal\n\nwith open(\"foo.marshal\", \"rb\") as file:\n    foo = marshal.load(file)\n```\n\nUse instead:\n```python\nimport json\n\nwith open(\"foo.json\", \"rb\") as file:\n    foo = json.load(file)\n```\n\n## References\n- [Python documentation: `marshal` — Internal Python object serialization](https://docs.python.org/3/library/marshal.html)\n- [Common Weakness Enumeration: CWE-502](https://cwe.mitre.org/data/definitions/502.html)\n",
     "nursery": false
   },
   {
@@ -779,7 +779,7 @@
       "`subprocess` call with `shell=True` identified, security issue"
     ],
     "autofix": "Autofix is not available.",
-    "explanation": null,
+    "explanation": "## What it does\nCheck for method calls that initiate a subprocess with a shell.\n\n## Why is this bad?\nStarting a subprocess with a shell can allow attackers to execute arbitrary\nshell commands. Consider starting the process without a shell call and\nsanitize the input to mitigate the risk of shell injection.\n\n## Example\n```python\nimport subprocess\n\nsubprocess.run(\"ls -l\", shell=True)\n```\n\nUse instead:\n```python\nimport subprocess\n\nsubprocess.run([\"ls\", \"-l\"])\n```\n\n## References\n- [Python documentation: `subprocess` — Subprocess management](https://docs.python.org/3/library/subprocess.html)\n- [Common Weakness Enumeration: CWE-78](https://cwe.mitre.org/data/definitions/78.html)\n",
     "nursery": false
   },
   {
@@ -791,7 +791,7 @@
       "`subprocess` call: check for execution of untrusted input"
     ],
     "autofix": "Autofix is not available.",
-    "explanation": null,
+    "explanation": "## What it does\nCheck for method calls that initiate a subprocess without a shell.\n\n## Why is this bad?\nStarting a subprocess without a shell can prevent attackers from executing\narbitrary shell commands; however, it is still error-prone. Consider\nvalidating the input.\n\n## Known problems\nProne to false positives as it is difficult to determine whether the\npassed arguments have been validated ([#4045]).\n\n## Example\n```python\nimport subprocess\n\ncmd = input(\"Enter a command: \").split()\nsubprocess.run(cmd)\n```\n\n## References\n- [Python documentation: `subprocess` — Subprocess management](https://docs.python.org/3/library/subprocess.html)\n\n[#4045]: https://github.com/astral-sh/ruff/issues/4045\n",
     "nursery": false
   },
   {
@@ -905,31 +905,31 @@
     "nursery": false
   },
   {
-    "name": "boolean-positional-arg-in-function-definition",
+    "name": "boolean-type-hint-positional-argument",
     "code": "FBT001",
     "linter": "flake8-boolean-trap",
-    "summary": "Boolean positional arg in function definition",
+    "summary": "Boolean-typed positional argument in function definition",
     "message_formats": [
-      "Boolean positional arg in function definition"
+      "Boolean-typed positional argument in function definition"
     ],
     "autofix": "Autofix is not available.",
-    "explanation": "## What it does\nChecks for boolean positional arguments in function definitions.\n\n## Why is this bad?\nCalling a function with boolean positional arguments is confusing as the\nmeaning of the boolean value is not clear to the caller, and to future\nreaders of the code.\n\nThe use of a boolean will also limit the function to only two possible\nbehaviors, which makes the function difficult to extend in the future.\n\n## Example\n```python\nfrom math import ceil, floor\n\n\ndef round_number(number: float, up: bool) -> int:\n    return ceil(number) if up else floor(number)\n\n\nround_number(1.5, True)  # What does `True` mean?\nround_number(1.5, False)  # What does `False` mean?\n```\n\nInstead, refactor into separate implementations:\n```python\nfrom math import ceil, floor\n\n\ndef round_up(number: float) -> int:\n    return ceil(number)\n\n\ndef round_down(number: float) -> int:\n    return floor(number)\n\n\nround_up(1.5)\nround_down(1.5)\n```\n\nOr, refactor to use an `Enum`:\n```python\nfrom enum import Enum\n\n\nclass RoundingMethod(Enum):\n    UP = 1\n    DOWN = 2\n\n\ndef round_number(value: float, method: RoundingMethod) -> float:\n    ...\n```\n\n## References\n- [Python documentation: Calls](https://docs.python.org/3/reference/expressions.html#calls)\n- [_How to Avoid “The Boolean Trap”_ by Adam Johnson](https://adamj.eu/tech/2021/07/10/python-type-hints-how-to-avoid-the-boolean-trap/)\n",
+    "explanation": "## What it does\nChecks for the use of boolean positional arguments in function definitions,\nas determined by the presence of a `bool` type hint.\n\n## Why is this bad?\nCalling a function with boolean positional arguments is confusing as the\nmeaning of the boolean value is not clear to the caller and to future\nreaders of the code.\n\nThe use of a boolean will also limit the function to only two possible\nbehaviors, which makes the function difficult to extend in the future.\n\nInstead, consider refactoring into separate implementations for the\n`True` and `False` cases, using an `Enum`, or making the argument a\nkeyword-only argument, to force callers to be explicit when providing\nthe argument.\n\n## Example\n```python\nfrom math import ceil, floor\n\n\ndef round_number(number: float, up: bool) -> int:\n    return ceil(number) if up else floor(number)\n\n\nround_number(1.5, True)  # What does `True` mean?\nround_number(1.5, False)  # What does `False` mean?\n```\n\nInstead, refactor into separate implementations:\n```python\nfrom math import ceil, floor\n\n\ndef round_up(number: float) -> int:\n    return ceil(number)\n\n\ndef round_down(number: float) -> int:\n    return floor(number)\n\n\nround_up(1.5)\nround_down(1.5)\n```\n\nOr, refactor to use an `Enum`:\n```python\nfrom enum import Enum\n\n\nclass RoundingMethod(Enum):\n    UP = 1\n    DOWN = 2\n\n\ndef round_number(value: float, method: RoundingMethod) -> float:\n    ...\n```\n\nOr, make the argument a keyword-only argument:\n```python\nfrom math import ceil, floor\n\n\ndef round_number(number: float, *, up: bool) -> int:\n    return ceil(number) if up else floor(number)\n\n\nround_number(1.5, up=True)\nround_number(1.5, up=False)\n```\n\n## References\n- [Python documentation: Calls](https://docs.python.org/3/reference/expressions.html#calls)\n- [_How to Avoid “The Boolean Trap”_ by Adam Johnson](https://adamj.eu/tech/2021/07/10/python-type-hints-how-to-avoid-the-boolean-trap/)\n",
     "nursery": false
   },
   {
-    "name": "boolean-default-value-in-function-definition",
+    "name": "boolean-default-value-positional-argument",
     "code": "FBT002",
     "linter": "flake8-boolean-trap",
-    "summary": "Boolean default value in function definition",
+    "summary": "Boolean default positional argument in function definition",
     "message_formats": [
-      "Boolean default value in function definition"
+      "Boolean default positional argument in function definition"
     ],
     "autofix": "Autofix is not available.",
-    "explanation": "## What it does\nChecks for the use of booleans as default values in function definitions.\n\n## Why is this bad?\nCalling a function with boolean default means that the keyword argument\nargument can be omitted, which makes the function call ambiguous.\n\nInstead, define the relevant argument as keyword-only.\n\n## Example\n```python\nfrom math import ceil, floor\n\n\ndef round_number(number: float, *, up: bool = True) -> int:\n    return ceil(number) if up else floor(number)\n\n\nround_number(1.5)\nround_number(1.5, up=False)\n```\n\nUse instead:\n```python\nfrom math import ceil, floor\n\n\ndef round_number(number: float, *, up: bool) -> int:\n    return ceil(number) if up else floor(number)\n\n\nround_number(1.5, up=True)\nround_number(1.5, up=False)\n```\n\n## References\n- [Python documentation: Calls](https://docs.python.org/3/reference/expressions.html#calls)\n- [_How to Avoid “The Boolean Trap”_ by Adam Johnson](https://adamj.eu/tech/2021/07/10/python-type-hints-how-to-avoid-the-boolean-trap/)\n",
+    "explanation": "## What it does\nChecks for the use of boolean positional arguments in function definitions,\nas determined by the presence of a boolean default value.\n\n## Why is this bad?\nCalling a function with boolean positional arguments is confusing as the\nmeaning of the boolean value is not clear to the caller and to future\nreaders of the code.\n\nThe use of a boolean will also limit the function to only two possible\nbehaviors, which makes the function difficult to extend in the future.\n\nInstead, consider refactoring into separate implementations for the\n`True` and `False` cases, using an `Enum`, or making the argument a\nkeyword-only argument, to force callers to be explicit when providing\nthe argument.\n\n## Example\n```python\nfrom math import ceil, floor\n\n\ndef round_number(number, up=True):\n    return ceil(number) if up else floor(number)\n\n\nround_number(1.5, True)  # What does `True` mean?\nround_number(1.5, False)  # What does `False` mean?\n```\n\nInstead, refactor into separate implementations:\n```python\nfrom math import ceil, floor\n\n\ndef round_up(number):\n    return ceil(number)\n\n\ndef round_down(number):\n    return floor(number)\n\n\nround_up(1.5)\nround_down(1.5)\n```\n\nOr, refactor to use an `Enum`:\n```python\nfrom enum import Enum\n\n\nclass RoundingMethod(Enum):\n    UP = 1\n    DOWN = 2\n\n\ndef round_number(value, method):\n    ...\n```\n\nOr, make the argument a keyword-only argument:\n```python\nfrom math import ceil, floor\n\n\ndef round_number(number, *, up=True):\n    return ceil(number) if up else floor(number)\n\n\nround_number(1.5, up=True)\nround_number(1.5, up=False)\n```\n\n## References\n- [Python documentation: Calls](https://docs.python.org/3/reference/expressions.html#calls)\n- [_How to Avoid “The Boolean Trap”_ by Adam Johnson](https://adamj.eu/tech/2021/07/10/python-type-hints-how-to-avoid-the-boolean-trap/)\n",
     "nursery": false
   },
   {
-    "name": "boolean-positional-value-in-function-call",
+    "name": "boolean-positional-value-in-call",
     "code": "FBT003",
     "linter": "flake8-boolean-trap",
     "summary": "Boolean positional value in function call",
@@ -937,7 +937,7 @@
       "Boolean positional value in function call"
     ],
     "autofix": "Autofix is not available.",
-    "explanation": "## What it does\nChecks for boolean positional arguments in function calls.\n\n## Why is this bad?\nCalling a function with boolean positional arguments is confusing as the\nmeaning of the boolean value is not clear to the caller, and to future\nreaders of the code.\n\n## Example\n```python\ndef foo(flag: bool) -> None:\n    ...\n\n\nfoo(True)\n```\n\nUse instead:\n```python\ndef foo(flag: bool) -> None:\n    ...\n\n\nfoo(flag=True)\n```\n\n## References\n- [Python documentation: Calls](https://docs.python.org/3/reference/expressions.html#calls)\n- [_How to Avoid “The Boolean Trap”_ by Adam Johnson](https://adamj.eu/tech/2021/07/10/python-type-hints-how-to-avoid-the-boolean-trap/)\n",
+    "explanation": "## What it does\nChecks for boolean positional arguments in function calls.\n\n## Why is this bad?\nCalling a function with boolean positional arguments is confusing as the\nmeaning of the boolean value is not clear to the caller, and to future\nreaders of the code.\n\n## Example\n```python\ndef func(flag: bool) -> None:\n    ...\n\n\nfunc(True)\n```\n\nUse instead:\n```python\ndef func(flag: bool) -> None:\n    ...\n\n\nfunc(flag=True)\n```\n\n## References\n- [Python documentation: Calls](https://docs.python.org/3/reference/expressions.html#calls)\n- [_How to Avoid “The Boolean Trap”_ by Adam Johnson](https://adamj.eu/tech/2021/07/10/python-type-hints-how-to-avoid-the-boolean-trap/)\n",
     "nursery": false
   },
   {
@@ -997,8 +997,8 @@
     "message_formats": [
       "Do not use mutable data structures for argument defaults"
     ],
-    "autofix": "Autofix is not available.",
-    "explanation": "## What it does\nChecks for uses of mutable objects as function argument defaults.\n\n## Why is this bad?\nFunction defaults are evaluated once, when the function is defined.\n\nThe same mutable object is then shared across all calls to the function.\nIf the object is modified, those modifications will persist across calls,\nwhich can lead to unexpected behavior.\n\nInstead, prefer to use immutable data structures, or take `None` as a\ndefault, and initialize a new mutable object inside the function body\nfor each call.\n\n## Example\n```python\ndef add_to_list(item, some_list=[]):\n    some_list.append(item)\n    return some_list\n\n\nl1 = add_to_list(0)  # [0]\nl2 = add_to_list(1)  # [0, 1]\n```\n\nUse instead:\n```python\ndef add_to_list(item, some_list=None):\n    if some_list is None:\n        some_list = []\n    some_list.append(item)\n    return some_list\n\n\nl1 = add_to_list(0)  # [0]\nl2 = add_to_list(1)  # [1]\n```\n\n## References\n- [Python documentation: Default Argument Values](https://docs.python.org/3/tutorial/controlflow.html#default-argument-values)\n",
+    "autofix": "Autofix is sometimes available.",
+    "explanation": "## What it does\nChecks for uses of mutable objects as function argument defaults.\n\n## Why is this bad?\nFunction defaults are evaluated once, when the function is defined.\n\nThe same mutable object is then shared across all calls to the function.\nIf the object is modified, those modifications will persist across calls,\nwhich can lead to unexpected behavior.\n\nInstead, prefer to use immutable data structures, or take `None` as a\ndefault, and initialize a new mutable object inside the function body\nfor each call.\n\nArguments with immutable type annotations will be ignored by this rule.\nTypes outside of the standard library can be marked as immutable with the\n[`flake8-bugbear.extend-immutable-calls`] configuration option.\n\n## Example\n```python\ndef add_to_list(item, some_list=[]):\n    some_list.append(item)\n    return some_list\n\n\nl1 = add_to_list(0)  # [0]\nl2 = add_to_list(1)  # [0, 1]\n```\n\nUse instead:\n```python\ndef add_to_list(item, some_list=None):\n    if some_list is None:\n        some_list = []\n    some_list.append(item)\n    return some_list\n\n\nl1 = add_to_list(0)  # [0]\nl2 = add_to_list(1)  # [1]\n```\n\n## Options\n- `flake8-bugbear.extend-immutable-calls`\n\n## References\n- [Python documentation: Default Argument Values](https://docs.python.org/3/tutorial/controlflow.html#default-argument-values)\n",
     "nursery": false
   },
   {
@@ -1024,7 +1024,7 @@
       "Do not perform function call in argument defaults"
     ],
     "autofix": "Autofix is not available.",
-    "explanation": "## What it does\nChecks for function calls in default function arguments.\n\n## Why is this bad?\nAny function call that's used in a default argument will only be performed\nonce, at definition time. The returned value will then be reused by all\ncalls to the function, which can lead to unexpected behaviour.\n\n## Example\n```python\ndef create_list() -> list[int]:\n    return [1, 2, 3]\n\n\ndef mutable_default(arg: list[int] = create_list()) -> list[int]:\n    arg.append(4)\n    return arg\n```\n\nUse instead:\n```python\ndef better(arg: list[int] | None = None) -> list[int]:\n    if arg is None:\n        arg = create_list()\n\n    arg.append(4)\n    return arg\n```\n\n## Options\n- `flake8-bugbear.extend-immutable-calls`\n",
+    "explanation": "## What it does\nChecks for function calls in default function arguments.\n\n## Why is this bad?\nAny function call that's used in a default argument will only be performed\nonce, at definition time. The returned value will then be reused by all\ncalls to the function, which can lead to unexpected behaviour.\n\nCalls can be marked as an exception to this rule with the\n[`flake8-bugbear.extend-immutable-calls`] configuration option.\n\nArguments with immutable type annotations will be ignored by this rule.\nTypes outside of the standard library can be marked as immutable with the\n[`flake8-bugbear.extend-immutable-calls`] configuration option as well.\n\n## Example\n```python\ndef create_list() -> list[int]:\n    return [1, 2, 3]\n\n\ndef mutable_default(arg: list[int] = create_list()) -> list[int]:\n    arg.append(4)\n    return arg\n```\n\nUse instead:\n```python\ndef better(arg: list[int] | None = None) -> list[int]:\n    if arg is None:\n        arg = create_list()\n\n    arg.append(4)\n    return arg\n```\n\n## Options\n- `flake8-bugbear.extend-immutable-calls`\n",
     "nursery": false
   },
   {
@@ -1676,7 +1676,7 @@
       "The use of `datetime.datetime()` without `tzinfo` argument is not allowed"
     ],
     "autofix": "Autofix is not available.",
-    "explanation": "## What it does\nChecks for `datetime` instantiations that lack a `tzinfo` argument.\n\n## Why is this bad?\n`datetime` objects are \"naive\" by default, in that they do not include\ntimezone information. \"Naive\" objects are easy to understand, but ignore\nsome aspects of reality, which can lead to subtle bugs. Timezone-aware\n`datetime` objects are preferred, as they represent a specific moment in\ntime, unlike \"naive\" objects.\n\nBy providing a `tzinfo` value, a `datetime` can be made timezone-aware.\n\n## Example\n```python\nimport datetime\n\ndatetime.datetime(2000, 1, 1, 0, 0, 0)\n```\n\nUse instead:\n```python\nimport datetime\n\ndatetime.datetime(2000, 1, 1, 0, 0, 0, tzinfo=datetime.UTC)\n```\n",
+    "explanation": "## What it does\nChecks for `datetime` instantiations that lack a `tzinfo` argument.\n\n## Why is this bad?\n`datetime` objects are \"naive\" by default, in that they do not include\ntimezone information. \"Naive\" objects are easy to understand, but ignore\nsome aspects of reality, which can lead to subtle bugs. Timezone-aware\n`datetime` objects are preferred, as they represent a specific moment in\ntime, unlike \"naive\" objects.\n\nBy providing a `tzinfo` value, a `datetime` can be made timezone-aware.\n\n## Example\n```python\nimport datetime\n\ndatetime.datetime(2000, 1, 1, 0, 0, 0)\n```\n\nUse instead:\n```python\nimport datetime\n\ndatetime.datetime(2000, 1, 1, 0, 0, 0, tzinfo=datetime.timezone.utc)\n```\n\nOr, for Python 3.11 and later:\n```python\nimport datetime\n\ndatetime.datetime(2000, 1, 1, 0, 0, 0, tzinfo=datetime.UTC)\n```\n",
     "nursery": false
   },
   {
@@ -1688,7 +1688,7 @@
       "The use of `datetime.datetime.today()` is not allowed, use `datetime.datetime.now(tz=)` instead"
     ],
     "autofix": "Autofix is not available.",
-    "explanation": "## What it does\nChecks for usage of `datetime.datetime.today()`.\n\n## Why is this bad?\n`datetime` objects are \"naive\" by default, in that they do not include\ntimezone information. \"Naive\" objects are easy to understand, but ignore\nsome aspects of reality, which can lead to subtle bugs. Timezone-aware\n`datetime` objects are preferred, as they represent a specific moment in\ntime, unlike \"naive\" objects.\n\n`datetime.datetime.today()` crates a \"naive\" object; instead, use\ninstead, use `datetime.datetime.now(tz=)` to create a timezone-aware\nobject.\n\n## Example\n```python\nimport datetime\n\ndatetime.datetime.today()\n```\n\nUse instead:\n```python\nimport datetime\n\ndatetime.datetime.now(tz=datetime.timezone.utc)\n```\n\nOr, for Python 3.11 and later:\n```python\nimport datetime\n\ndatetime.datetime.now(tz=datetime.UTC)\n```\n",
+    "explanation": "## What it does\nChecks for usage of `datetime.datetime.today()`.\n\n## Why is this bad?\n`datetime` objects are \"naive\" by default, in that they do not include\ntimezone information. \"Naive\" objects are easy to understand, but ignore\nsome aspects of reality, which can lead to subtle bugs. Timezone-aware\n`datetime` objects are preferred, as they represent a specific moment in\ntime, unlike \"naive\" objects.\n\n`datetime.datetime.today()` creates a \"naive\" object; instead, use\n`datetime.datetime.now(tz=)` to create a timezone-aware object.\n\n## Example\n```python\nimport datetime\n\ndatetime.datetime.today()\n```\n\nUse instead:\n```python\nimport datetime\n\ndatetime.datetime.now(tz=datetime.timezone.utc)\n```\n\nOr, for Python 3.11 and later:\n```python\nimport datetime\n\ndatetime.datetime.now(tz=datetime.UTC)\n```\n",
     "nursery": false
   },
   {
@@ -1700,7 +1700,7 @@
       "The use of `datetime.datetime.utcnow()` is not allowed, use `datetime.datetime.now(tz=)` instead"
     ],
     "autofix": "Autofix is not available.",
-    "explanation": null,
+    "explanation": "## What it does\nChecks for usage of `datetime.datetime.utcnow()`.\n\n## Why is this bad?\nPython datetime objects can be naive or timezone-aware. While an aware\nobject represents a specific moment in time, a naive object does not\ncontain enough information to unambiguously locate itself relative to other\ndatetime objects. Since this can lead to errors, it is recommended to\nalways use timezone-aware objects.\n\n`datetime.datetime.utcnow()` returns a naive datetime object; instead, use\n`datetime.datetime.now(tz=)` to return a timezone-aware object.\n\n## Example\n```python\nimport datetime\n\ndatetime.datetime.utcnow()\n```\n\nUse instead:\n```python\nimport datetime\n\ndatetime.datetime.now(tz=datetime.timezone.utc)\n```\n\nOr, for Python 3.11 and later:\n```python\nimport datetime\n\ndatetime.datetime.now(tz=datetime.UTC)\n```\n\n## References\n- [Python documentation: Aware and Naive Objects](https://docs.python.org/3/library/datetime.html#aware-and-naive-objects)\n",
     "nursery": false
   },
   {
@@ -1712,7 +1712,7 @@
       "The use of `datetime.datetime.utcfromtimestamp()` is not allowed, use `datetime.datetime.fromtimestamp(ts, tz=)` instead"
     ],
     "autofix": "Autofix is not available.",
-    "explanation": null,
+    "explanation": "## What it does\nChecks for usage of `datetime.datetime.utcfromtimestamp()`.\n\n## Why is this bad?\nPython datetime objects can be naive or timezone-aware. While an aware\nobject represents a specific moment in time, a naive object does not\ncontain enough information to unambiguously locate itself relative to other\ndatetime objects. Since this can lead to errors, it is recommended to\nalways use timezone-aware objects.\n\n`datetime.datetime.utcfromtimestamp()` returns a naive datetime object;\ninstead, use `datetime.datetime.fromtimestamp(ts, tz=)` to return a\ntimezone-aware object.\n\n## Example\n```python\nimport datetime\n\ndatetime.datetime.utcfromtimestamp()\n```\n\nUse instead:\n```python\nimport datetime\n\ndatetime.datetime.fromtimestamp(946684800, tz=datetime.timezone.utc)\n```\n\nOr, for Python 3.11 and later:\n```python\nimport datetime\n\ndatetime.datetime.fromtimestamp(946684800, tz=datetime.UTC)\n```\n\n## References\n- [Python documentation: Aware and Naive Objects](https://docs.python.org/3/library/datetime.html#aware-and-naive-objects)\n",
     "nursery": false
   },
   {
@@ -1724,7 +1724,7 @@
       "The use of `datetime.datetime.now()` without `tz` argument is not allowed"
     ],
     "autofix": "Autofix is not available.",
-    "explanation": null,
+    "explanation": "## What it does\nChecks for usage of `datetime.datetime.now()` without a `tz` argument.\n\n## Why is this bad?\nPython datetime objects can be naive or timezone-aware. While an aware\nobject represents a specific moment in time, a naive object does not\ncontain enough information to unambiguously locate itself relative to other\ndatetime objects. Since this can lead to errors, it is recommended to\nalways use timezone-aware objects.\n\n`datetime.datetime.now()` returns a naive datetime object. Instead, use\n`datetime.datetime.now(tz=)` to return a timezone-aware object.\n\n## Example\n```python\nimport datetime\n\ndatetime.datetime.now()\n```\n\nUse instead:\n```python\nimport datetime\n\ndatetime.datetime.now(tz=datetime.timezone.utc)\n```\n\nOr, for Python 3.11 and later:\n```python\nimport datetime\n\ndatetime.datetime.now(tz=datetime.UTC)\n```\n\n## References\n- [Python documentation: Aware and Naive Objects](https://docs.python.org/3/library/datetime.html#aware-and-naive-objects)\n",
     "nursery": false
   },
   {
@@ -1736,7 +1736,7 @@
       "The use of `datetime.datetime.fromtimestamp()` without `tz` argument is not allowed"
     ],
     "autofix": "Autofix is not available.",
-    "explanation": null,
+    "explanation": "## What it does\nChecks for usage of `datetime.datetime.fromtimestamp()` without a `tz`\nargument.\n\n## Why is this bad?\nPython datetime objects can be naive or timezone-aware. While an aware\nobject represents a specific moment in time, a naive object does not\ncontain enough information to unambiguously locate itself relative to other\ndatetime objects. Since this can lead to errors, it is recommended to\nalways use timezone-aware objects.\n\n`datetime.datetime.fromtimestamp(ts)` returns a naive datetime object.\nInstead, use `datetime.datetime.fromtimestamp(ts, tz=)` to return a\ntimezone-aware object.\n\n## Example\n```python\nimport datetime\n\ndatetime.datetime.fromtimestamp(946684800)\n```\n\nUse instead:\n```python\nimport datetime\n\ndatetime.datetime.fromtimestamp(946684800, tz=datetime.timezone.utc)\n```\n\nOr, for Python 3.11 and later:\n```python\nimport datetime\n\ndatetime.datetime.fromtimestamp(946684800, tz=datetime.UTC)\n```\n\n## References\n- [Python documentation: Aware and Naive Objects](https://docs.python.org/3/library/datetime.html#aware-and-naive-objects)\n",
     "nursery": false
   },
   {
@@ -1748,7 +1748,7 @@
       "The use of `datetime.datetime.strptime()` without %z must be followed by `.replace(tzinfo=)` or `.astimezone()`"
     ],
     "autofix": "Autofix is not available.",
-    "explanation": null,
+    "explanation": "## What it does\nChecks for uses of `datetime.datetime.strptime()` that lead to naive\ndatetime objects.\n\n## Why is this bad?\nPython datetime objects can be naive or timezone-aware. While an aware\nobject represents a specific moment in time, a naive object does not\ncontain enough information to unambiguously locate itself relative to other\ndatetime objects. Since this can lead to errors, it is recommended to\nalways use timezone-aware objects.\n\n`datetime.datetime.strptime()` without `%z` returns a naive datetime\nobject. Follow it with `.replace(tzinfo=)` or `.astimezone()`.\n\n## Example\n```python\nimport datetime\n\ndatetime.datetime.strptime(\"2022/01/31\", \"%Y/%m/%d\")\n```\n\nInstead, use `.replace(tzinfo=)`:\n```python\nimport datetime\n\ndatetime.datetime.strptime(\"2022/01/31\", \"%Y/%m/%d\").replace(\n    tzinfo=datetime.timezone.utc\n)\n```\n\nOr, use `.astimezone()`:\n```python\nimport datetime\n\ndatetime.datetime.strptime(\"2022/01/31\", \"%Y/%m/%d\").astimezone(datetime.timezone.utc)\n```\n\nOn Python 3.11 and later, `datetime.timezone.utc` can be replaced with\n`datetime.UTC`.\n\n## References\n- [Python documentation: Aware and Naive Objects](https://docs.python.org/3/library/datetime.html#aware-and-naive-objects)\n- [Python documentation: `strftime()` and `strptime()` Behavior](https://docs.python.org/3/library/datetime.html#strftime-and-strptime-behavior)\n",
     "nursery": false
   },
   {
@@ -1760,7 +1760,7 @@
       "The use of `datetime.date.today()` is not allowed, use `datetime.datetime.now(tz=).date()` instead"
     ],
     "autofix": "Autofix is not available.",
-    "explanation": null,
+    "explanation": "## What it does\nChecks for usage of `datetime.date.today()`.\n\n## Why is this bad?\nPython datetime objects can be naive or timezone-aware. While an aware\nobject represents a specific moment in time, a naive object does not\ncontain enough information to unambiguously locate itself relative to other\ndatetime objects. Since this can lead to errors, it is recommended to\nalways use timezone-aware objects.\n\n`datetime.date.today` returns a naive datetime object. Instead, use\n`datetime.datetime.now(tz=).date()` to return a timezone-aware object.\n\n## Example\n```python\nimport datetime\n\ndatetime.datetime.today()\n```\n\nUse instead:\n```python\nimport datetime\n\ndatetime.datetime.now(tz=datetime.timezone.utc).date()\n```\n\nOr, for Python 3.11 and later:\n```python\nimport datetime\n\ndatetime.datetime.now(tz=datetime.UTC).date()\n```\n\n## References\n- [Python documentation: Aware and Naive Objects](https://docs.python.org/3/library/datetime.html#aware-and-naive-objects)\n",
     "nursery": false
   },
   {
@@ -1772,7 +1772,7 @@
       "The use of `datetime.date.fromtimestamp()` is not allowed, use `datetime.datetime.fromtimestamp(ts, tz=).date()` instead"
     ],
     "autofix": "Autofix is not available.",
-    "explanation": null,
+    "explanation": "## What it does\nChecks for usage of `datetime.date.fromtimestamp()`.\n\n## Why is this bad?\nPython datetime objects can be naive or timezone-aware. While an aware\nobject represents a specific moment in time, a naive object does not\ncontain enough information to unambiguously locate itself relative to other\ndatetime objects. Since this can lead to errors, it is recommended to\nalways use timezone-aware objects.\n\n`datetime.date.fromtimestamp(ts)` returns a naive datetime object.\nInstead, use `datetime.datetime.fromtimestamp(ts, tz=)` to return a\ntimezone-aware object.\n\n## Example\n```python\nimport datetime\n\ndatetime.date.fromtimestamp(946684800)\n```\n\nUse instead:\n```python\nimport datetime\n\ndatetime.datetime.fromtimestamp(946684800, tz=datetime.timezone.utc)\n```\n\nOr, for Python 3.11 and later:\n```python\nimport datetime\n\ndatetime.datetime.fromtimestamp(946684800, tz=datetime.UTC)\n```\n\n## References\n- [Python documentation: Aware and Naive Objects](https://docs.python.org/3/library/datetime.html#aware-and-naive-objects)\n",
     "nursery": false
   },
   {
@@ -2025,7 +2025,7 @@
       "Missing `from __future__ import annotations`, but uses `{name}`"
     ],
     "autofix": "Autofix is not available.",
-    "explanation": "## What it does\nChecks for missing `from __future__ import annotations` imports upon\ndetecting type annotations that can be written more succinctly under\nPEP 563.\n\n## Why is this bad?\nPEP 563 enabled the use of a number of convenient type annotations, such as\n`list[str]` instead of `List[str]`, or `str | None` instead of\n`Optional[str]`. However, these annotations are only available on Python\n3.9 and higher, _unless_ the `from __future__ import annotations` import is present.\n\nBy adding the `__future__` import, the pyupgrade rules can automatically\nmigrate existing code to use the new syntax, even for older Python versions.\nThis rule thus pairs well with pyupgrade and with Ruff's pyupgrade rules.\n\n## Example\n```python\nfrom typing import List, Dict, Optional\n\n\ndef func(obj: Dict[str, Optional[int]]) -> None:\n    ...\n```\n\nUse instead:\n```python\nfrom __future__ import annotations\n\nfrom typing import List, Dict, Optional\n\n\ndef func(obj: Dict[str, Optional[int]]) -> None:\n    ...\n```\n\nAfter running the additional pyupgrade rules:\n```python\nfrom __future__ import annotations\n\n\ndef func(obj: dict[str, int | None]) -> None:\n    ...\n```\n\n## Options\n- `target-version`\n",
+    "explanation": "## What it does\nChecks for missing `from __future__ import annotations` imports upon\ndetecting type annotations that can be written more succinctly under\nPEP 563.\n\n## Why is this bad?\nPEP 563 enabled the use of a number of convenient type annotations, such as\n`list[str]` instead of `List[str]`. However, these annotations are only\navailable on Python 3.9 and higher, _unless_ the `from __future__ import annotations`\nimport is present.\n\nSimilarly, PEP 604 enabled the use of the `|` operator for unions, such as\n`str | None` instead of `Optional[str]`. However, these annotations are only\navailable on Python 3.10 and higher, _unless_ the `from __future__ import annotations`\nimport is present.\n\nBy adding the `__future__` import, the pyupgrade rules can automatically\nmigrate existing code to use the new syntax, even for older Python versions.\nThis rule thus pairs well with pyupgrade and with Ruff's pyupgrade rules.\n\nThis rule respects the [`target-version`] setting. For example, if your\nproject targets Python 3.10 and above, adding `from __future__ import annotations`\ndoes not impact your ability to leverage PEP 604-style unions (e.g., to\nconvert `Optional[str]` to `str | None`). As such, this rule will only\nflag such usages if your project targets Python 3.9 or below.\n\n## Example\n```python\nfrom typing import List, Dict, Optional\n\n\ndef func(obj: Dict[str, Optional[int]]) -> None:\n    ...\n```\n\nUse instead:\n```python\nfrom __future__ import annotations\n\nfrom typing import List, Dict, Optional\n\n\ndef func(obj: Dict[str, Optional[int]]) -> None:\n    ...\n```\n\nAfter running the additional pyupgrade rules:\n```python\nfrom __future__ import annotations\n\n\ndef func(obj: dict[str, int | None]) -> None:\n    ...\n```\n\n## Options\n- `target-version`\n",
     "nursery": false
   },
   {
@@ -2037,7 +2037,7 @@
       "Missing `from __future__ import annotations`, but uses {reason}"
     ],
     "autofix": "Autofix is not available.",
-    "explanation": "## What it does\nChecks for uses of PEP 585- and PEP 604-style type annotations in Python\nmodules that lack the required `from __future__ import annotations` import\nfor compatibility with older Python versions.\n\n## Why is this bad?\nUsing PEP 585 and PEP 604 style annotations without a `from __future__ import\nannotations` import will cause runtime errors on Python versions prior to\n3.9 and 3.10, respectively.\n\nBy adding the `__future__` import, the interpreter will no longer interpret\nannotations at evaluation time, making the code compatible with both past\nand future Python versions.\n\n## Example\n```python\ndef func(obj: dict[str, int | None]) -> None:\n    ...\n```\n\nUse instead:\n```python\nfrom __future__ import annotations\n\n\ndef func(obj: dict[str, int | None]) -> None:\n    ...\n```\n",
+    "explanation": "## What it does\nChecks for uses of PEP 585- and PEP 604-style type annotations in Python\nmodules that lack the required `from __future__ import annotations` import\nfor compatibility with older Python versions.\n\n## Why is this bad?\nUsing PEP 585 and PEP 604 style annotations without a `from __future__ import\nannotations` import will cause runtime errors on Python versions prior to\n3.9 and 3.10, respectively.\n\nBy adding the `__future__` import, the interpreter will no longer interpret\nannotations at evaluation time, making the code compatible with both past\nand future Python versions.\n\nThis rule respects the [`target-version`] setting. For example, if your\nproject targets Python 3.10 and above, adding `from __future__ import annotations`\ndoes not impact your ability to leverage PEP 604-style unions (e.g., to\nconvert `Optional[str]` to `str | None`). As such, this rule will only\nflag such usages if your project targets Python 3.9 or below.\n\n## Example\n```python\ndef func(obj: dict[str, int | None]) -> None:\n    ...\n```\n\nUse instead:\n```python\nfrom __future__ import annotations\n\n\ndef func(obj: dict[str, int | None]) -> None:\n    ...\n```\n\n## Options\n- `target-version`\n",
     "nursery": false
   },
   {
@@ -2157,7 +2157,7 @@
       "Logging statement uses `str.format`"
     ],
     "autofix": "Autofix is not available.",
-    "explanation": "## What it does\nChecks for uses of `str.format` to format logging messages.\n\n## Why is this bad?\nThe `logging` module provides a mechanism for passing additional values to\nbe logged using the `extra` keyword argument. This is more consistent, more\nefficient, and less error-prone than formatting the string directly.\n\nUsing `str.format` to format a logging message requires that Python eagerly\nformat the string, even if the logging statement is never executed (e.g.,\nif the log level is above the level of the logging statement), whereas\nusing the `extra` keyword argument defers formatting until required.\n\nAdditionally, the use of `extra` will ensure that the values are made\navailable to all handlers, which can then be configured to log the values\nin a consistent manner.\n\nAs an alternative to `extra`, passing values as arguments to the logging\nmethod can also be used to defer string formatting until required.\n\n## Example\n```python\nimport logging\n\nlogging.basicConfig(format=\"%(message)s\", level=logging.INFO)\n\nuser = \"Maria\"\n\nlogging.info(\"{} - Something happened\".format(user))\n```\n\nUse instead:\n```python\nimport logging\n\nlogging.basicConfig(format=\"%(user_id)s - %(message)s\", level=logging.INFO)\n\nuser = \"Maria\"\n\nlogging.info(\"Something happened\", extra={\"user_id\": user})\n```\n\nOr:\n```python\nimport logging\n\nlogging.basicConfig(format=\"%(message)s\", level=logging.INFO)\n\nuser = \"Maria\"\n\nlogging.info(\"%s - Something happened\", user)\n```\n\n## References\n- [Python documentation: `logging`](https://docs.python.org/3/library/logging.html)\n- [Python documentation: Optimization](https://docs.python.org/3/howto/logging.html#optimization)\n",
+    "explanation": "## What it does\nChecks for uses of `str.format` to format logging messages.\n\n## Why is this bad?\nThe `logging` module provides a mechanism for passing additional values to\nbe logged using the `extra` keyword argument. This is more consistent, more\nefficient, and less error-prone than formatting the string directly.\n\nUsing `str.format` to format a logging message requires that Python eagerly\nformat the string, even if the logging statement is never executed (e.g.,\nif the log level is above the level of the logging statement), whereas\nusing the `extra` keyword argument defers formatting until required.\n\nAdditionally, the use of `extra` will ensure that the values are made\navailable to all handlers, which can then be configured to log the values\nin a consistent manner.\n\nAs an alternative to `extra`, passing values as arguments to the logging\nmethod can also be used to defer string formatting until required.\n\n## Known problems\n\nThis rule detects uses of the `logging` module via a heuristic.\nSpecifically, it matches against:\n\n- Uses of the `logging` module itself (e.g., `import logging; logging.info(...)`).\n- Uses of `flask.current_app.logger` (e.g., `from flask import current_app; current_app.logger.info(...)`).\n- Objects whose name starts with `log` or ends with `logger` or `logging`,\n  when used in the same file in which they are defined (e.g., `logger = logging.getLogger(); logger.info(...)`).\n- Imported objects marked as loggers via the [`logger-objects`] setting, which can be\n  used to enforce these rules against shared logger objects (e.g., `from module import logger; logger.info(...)`,\n  when [`logger-objects`] is set to `[\"module.logger\"]`).\n\n## Example\n```python\nimport logging\n\nlogging.basicConfig(format=\"%(message)s\", level=logging.INFO)\n\nuser = \"Maria\"\n\nlogging.info(\"{} - Something happened\".format(user))\n```\n\nUse instead:\n```python\nimport logging\n\nlogging.basicConfig(format=\"%(user_id)s - %(message)s\", level=logging.INFO)\n\nuser = \"Maria\"\n\nlogging.info(\"Something happened\", extra={\"user_id\": user})\n```\n\nOr:\n```python\nimport logging\n\nlogging.basicConfig(format=\"%(message)s\", level=logging.INFO)\n\nuser = \"Maria\"\n\nlogging.info(\"%s - Something happened\", user)\n```\n\n## Options\n- `logger-objects`\n\n## References\n- [Python documentation: `logging`](https://docs.python.org/3/library/logging.html)\n- [Python documentation: Optimization](https://docs.python.org/3/howto/logging.html#optimization)\n",
     "nursery": false
   },
   {
@@ -2169,7 +2169,7 @@
       "Logging statement uses `%`"
     ],
     "autofix": "Autofix is not available.",
-    "explanation": "## What it does\nChecks for uses of `printf`-style format strings to format logging\nmessages.\n\n## Why is this bad?\nThe `logging` module provides a mechanism for passing additional values to\nbe logged using the `extra` keyword argument. This is more consistent, more\nefficient, and less error-prone than formatting the string directly.\n\nUsing `printf`-style format strings to format a logging message requires\nthat Python eagerly format the string, even if the logging statement is\nnever executed (e.g., if the log level is above the level of the logging\nstatement), whereas using the `extra` keyword argument defers formatting\nuntil required.\n\nAdditionally, the use of `extra` will ensure that the values are made\navailable to all handlers, which can then be configured to log the values\nin a consistent manner.\n\nAs an alternative to `extra`, passing values as arguments to the logging\nmethod can also be used to defer string formatting until required.\n\n## Example\n```python\nimport logging\n\nlogging.basicConfig(format=\"%(message)s\", level=logging.INFO)\n\nuser = \"Maria\"\n\nlogging.info(\"%s - Something happened\" % user)\n```\n\nUse instead:\n```python\nimport logging\n\nlogging.basicConfig(format=\"%(user_id)s - %(message)s\", level=logging.INFO)\n\nuser = \"Maria\"\n\nlogging.info(\"Something happened\", extra=dict(user_id=user))\n```\n\nOr:\n```python\nimport logging\n\nlogging.basicConfig(format=\"%(message)s\", level=logging.INFO)\n\nuser = \"Maria\"\n\nlogging.info(\"%s - Something happened\", user)\n```\n\n## References\n- [Python documentation: `logging`](https://docs.python.org/3/library/logging.html)\n- [Python documentation: Optimization](https://docs.python.org/3/howto/logging.html#optimization)\n",
+    "explanation": "## What it does\nChecks for uses of `printf`-style format strings to format logging\nmessages.\n\n## Why is this bad?\nThe `logging` module provides a mechanism for passing additional values to\nbe logged using the `extra` keyword argument. This is more consistent, more\nefficient, and less error-prone than formatting the string directly.\n\nUsing `printf`-style format strings to format a logging message requires\nthat Python eagerly format the string, even if the logging statement is\nnever executed (e.g., if the log level is above the level of the logging\nstatement), whereas using the `extra` keyword argument defers formatting\nuntil required.\n\nAdditionally, the use of `extra` will ensure that the values are made\navailable to all handlers, which can then be configured to log the values\nin a consistent manner.\n\nAs an alternative to `extra`, passing values as arguments to the logging\nmethod can also be used to defer string formatting until required.\n\n## Known problems\n\nThis rule detects uses of the `logging` module via a heuristic.\nSpecifically, it matches against:\n\n- Uses of the `logging` module itself (e.g., `import logging; logging.info(...)`).\n- Uses of `flask.current_app.logger` (e.g., `from flask import current_app; current_app.logger.info(...)`).\n- Objects whose name starts with `log` or ends with `logger` or `logging`,\n  when used in the same file in which they are defined (e.g., `logger = logging.getLogger(); logger.info(...)`).\n- Imported objects marked as loggers via the [`logger-objects`] setting, which can be\n  used to enforce these rules against shared logger objects (e.g., `from module import logger; logger.info(...)`,\n  when [`logger-objects`] is set to `[\"module.logger\"]`).\n\n## Example\n```python\nimport logging\n\nlogging.basicConfig(format=\"%(message)s\", level=logging.INFO)\n\nuser = \"Maria\"\n\nlogging.info(\"%s - Something happened\" % user)\n```\n\nUse instead:\n```python\nimport logging\n\nlogging.basicConfig(format=\"%(user_id)s - %(message)s\", level=logging.INFO)\n\nuser = \"Maria\"\n\nlogging.info(\"Something happened\", extra=dict(user_id=user))\n```\n\nOr:\n```python\nimport logging\n\nlogging.basicConfig(format=\"%(message)s\", level=logging.INFO)\n\nuser = \"Maria\"\n\nlogging.info(\"%s - Something happened\", user)\n```\n\n## Options\n- `logger-objects`\n\n## References\n- [Python documentation: `logging`](https://docs.python.org/3/library/logging.html)\n- [Python documentation: Optimization](https://docs.python.org/3/howto/logging.html#optimization)\n",
     "nursery": false
   },
   {
@@ -2181,7 +2181,7 @@
       "Logging statement uses `+`"
     ],
     "autofix": "Autofix is not available.",
-    "explanation": "## What it does\nChecks for uses string concatenation via the `+` operator to format logging\nmessages.\n\n## Why is this bad?\nThe `logging` module provides a mechanism for passing additional values to\nbe logged using the `extra` keyword argument. This is more consistent, more\nefficient, and less error-prone than formatting the string directly.\n\nUsing concatenation to format a logging message requires that Python\neagerly format the string, even if the logging statement is never executed\n(e.g., if the log level is above the level of the logging statement),\nwhereas using the `extra` keyword argument defers formatting until required.\n\nAdditionally, the use of `extra` will ensure that the values are made\navailable to all handlers, which can then be configured to log the values\nin a consistent manner.\n\nAs an alternative to `extra`, passing values as arguments to the logging\nmethod can also be used to defer string formatting until required.\n\n## Example\n```python\nimport logging\n\nlogging.basicConfig(format=\"%(message)s\", level=logging.INFO)\n\nuser = \"Maria\"\n\nlogging.info(user + \" - Something happened\")\n```\n\nUse instead:\n```python\nimport logging\n\nlogging.basicConfig(format=\"%(user_id)s - %(message)s\", level=logging.INFO)\n\nuser = \"Maria\"\n\nlogging.info(\"Something happened\", extra=dict(user_id=user))\n```\n\nOr:\n```python\nimport logging\n\nlogging.basicConfig(format=\"%(message)s\", level=logging.INFO)\n\nuser = \"Maria\"\n\nlogging.info(\"%s - Something happened\", user)\n```\n\n## References\n- [Python documentation: `logging`](https://docs.python.org/3/library/logging.html)\n- [Python documentation: Optimization](https://docs.python.org/3/howto/logging.html#optimization)\n",
+    "explanation": "## What it does\nChecks for uses string concatenation via the `+` operator to format logging\nmessages.\n\n## Why is this bad?\nThe `logging` module provides a mechanism for passing additional values to\nbe logged using the `extra` keyword argument. This is more consistent, more\nefficient, and less error-prone than formatting the string directly.\n\nUsing concatenation to format a logging message requires that Python\neagerly format the string, even if the logging statement is never executed\n(e.g., if the log level is above the level of the logging statement),\nwhereas using the `extra` keyword argument defers formatting until required.\n\nAdditionally, the use of `extra` will ensure that the values are made\navailable to all handlers, which can then be configured to log the values\nin a consistent manner.\n\nAs an alternative to `extra`, passing values as arguments to the logging\nmethod can also be used to defer string formatting until required.\n\n## Known problems\n\nThis rule detects uses of the `logging` module via a heuristic.\nSpecifically, it matches against:\n\n- Uses of the `logging` module itself (e.g., `import logging; logging.info(...)`).\n- Uses of `flask.current_app.logger` (e.g., `from flask import current_app; current_app.logger.info(...)`).\n- Objects whose name starts with `log` or ends with `logger` or `logging`,\n  when used in the same file in which they are defined (e.g., `logger = logging.getLogger(); logger.info(...)`).\n- Imported objects marked as loggers via the [`logger-objects`] setting, which can be\n  used to enforce these rules against shared logger objects (e.g., `from module import logger; logger.info(...)`,\n  when [`logger-objects`] is set to `[\"module.logger\"]`).\n\n## Example\n```python\nimport logging\n\nlogging.basicConfig(format=\"%(message)s\", level=logging.INFO)\n\nuser = \"Maria\"\n\nlogging.info(user + \" - Something happened\")\n```\n\nUse instead:\n```python\nimport logging\n\nlogging.basicConfig(format=\"%(user_id)s - %(message)s\", level=logging.INFO)\n\nuser = \"Maria\"\n\nlogging.info(\"Something happened\", extra=dict(user_id=user))\n```\n\nOr:\n```python\nimport logging\n\nlogging.basicConfig(format=\"%(message)s\", level=logging.INFO)\n\nuser = \"Maria\"\n\nlogging.info(\"%s - Something happened\", user)\n```\n\n## Options\n- `logger-objects`\n\n## References\n- [Python documentation: `logging`](https://docs.python.org/3/library/logging.html)\n- [Python documentation: Optimization](https://docs.python.org/3/howto/logging.html#optimization)\n",
     "nursery": false
   },
   {
@@ -2193,7 +2193,7 @@
       "Logging statement uses f-string"
     ],
     "autofix": "Autofix is not available.",
-    "explanation": "## What it does\nChecks for uses of f-strings to format logging messages.\n\n## Why is this bad?\nThe `logging` module provides a mechanism for passing additional values to\nbe logged using the `extra` keyword argument. This is more consistent, more\nefficient, and less error-prone than formatting the string directly.\n\nUsing f-strings to format a logging message requires that Python eagerly\nformat the string, even if the logging statement is never executed (e.g.,\nif the log level is above the level of the logging statement), whereas\nusing the `extra` keyword argument defers formatting until required.\n\nAdditionally, the use of `extra` will ensure that the values are made\navailable to all handlers, which can then be configured to log the values\nin a consistent manner.\n\nAs an alternative to `extra`, passing values as arguments to the logging\nmethod can also be used to defer string formatting until required.\n\n## Example\n```python\nimport logging\n\nlogging.basicConfig(format=\"%(message)s\", level=logging.INFO)\n\nuser = \"Maria\"\n\nlogging.info(f\"{user} - Something happened\")\n```\n\nUse instead:\n```python\nimport logging\n\nlogging.basicConfig(format=\"%(user_id)s - %(message)s\", level=logging.INFO)\n\nuser = \"Maria\"\n\nlogging.info(\"Something happened\", extra=dict(user_id=user))\n```\n\nOr:\n```python\nimport logging\n\nlogging.basicConfig(format=\"%(message)s\", level=logging.INFO)\n\nuser = \"Maria\"\n\nlogging.info(\"%s - Something happened\", user)\n```\n\n## References\n- [Python documentation: `logging`](https://docs.python.org/3/library/logging.html)\n- [Python documentation: Optimization](https://docs.python.org/3/howto/logging.html#optimization)\n",
+    "explanation": "## What it does\nChecks for uses of f-strings to format logging messages.\n\n## Why is this bad?\nThe `logging` module provides a mechanism for passing additional values to\nbe logged using the `extra` keyword argument. This is more consistent, more\nefficient, and less error-prone than formatting the string directly.\n\nUsing f-strings to format a logging message requires that Python eagerly\nformat the string, even if the logging statement is never executed (e.g.,\nif the log level is above the level of the logging statement), whereas\nusing the `extra` keyword argument defers formatting until required.\n\nAdditionally, the use of `extra` will ensure that the values are made\navailable to all handlers, which can then be configured to log the values\nin a consistent manner.\n\nAs an alternative to `extra`, passing values as arguments to the logging\nmethod can also be used to defer string formatting until required.\n\n## Known problems\n\nThis rule detects uses of the `logging` module via a heuristic.\nSpecifically, it matches against:\n\n- Uses of the `logging` module itself (e.g., `import logging; logging.info(...)`).\n- Uses of `flask.current_app.logger` (e.g., `from flask import current_app; current_app.logger.info(...)`).\n- Objects whose name starts with `log` or ends with `logger` or `logging`,\n  when used in the same file in which they are defined (e.g., `logger = logging.getLogger(); logger.info(...)`).\n- Imported objects marked as loggers via the [`logger-objects`] setting, which can be\n  used to enforce these rules against shared logger objects (e.g., `from module import logger; logger.info(...)`,\n  when [`logger-objects`] is set to `[\"module.logger\"]`).\n\n## Example\n```python\nimport logging\n\nlogging.basicConfig(format=\"%(message)s\", level=logging.INFO)\n\nuser = \"Maria\"\n\nlogging.info(f\"{user} - Something happened\")\n```\n\nUse instead:\n```python\nimport logging\n\nlogging.basicConfig(format=\"%(user_id)s - %(message)s\", level=logging.INFO)\n\nuser = \"Maria\"\n\nlogging.info(\"Something happened\", extra=dict(user_id=user))\n```\n\nOr:\n```python\nimport logging\n\nlogging.basicConfig(format=\"%(message)s\", level=logging.INFO)\n\nuser = \"Maria\"\n\nlogging.info(\"%s - Something happened\", user)\n```\n\n## Options\n- `logger-objects`\n\n## References\n- [Python documentation: `logging`](https://docs.python.org/3/library/logging.html)\n- [Python documentation: Optimization](https://docs.python.org/3/howto/logging.html#optimization)\n",
     "nursery": false
   },
   {
@@ -2205,7 +2205,7 @@
       "Logging statement uses `warn` instead of `warning`"
     ],
     "autofix": "Autofix is always available.",
-    "explanation": "## What it does\nChecks for uses of `logging.warn` and `logging.Logger.warn`.\n\n## Why is this bad?\n`logging.warn` and `logging.Logger.warn` are deprecated in favor of\n`logging.warning` and `logging.Logger.warning`, which are functionally\nequivalent.\n\n## Example\n```python\nimport logging\n\nlogging.warn(\"Something happened\")\n```\n\nUse instead:\n```python\nimport logging\n\nlogging.warning(\"Something happened\")\n```\n\n## References\n- [Python documentation: `logging.warning`](https://docs.python.org/3/library/logging.html#logging.warning)\n- [Python documentation: `logging.Logger.warning`](https://docs.python.org/3/library/logging.html#logging.Logger.warning)\n",
+    "explanation": "## What it does\nChecks for uses of `logging.warn` and `logging.Logger.warn`.\n\n## Why is this bad?\n`logging.warn` and `logging.Logger.warn` are deprecated in favor of\n`logging.warning` and `logging.Logger.warning`, which are functionally\nequivalent.\n\n## Known problems\n\nThis rule detects uses of the `logging` module via a heuristic.\nSpecifically, it matches against:\n\n- Uses of the `logging` module itself (e.g., `import logging; logging.info(...)`).\n- Uses of `flask.current_app.logger` (e.g., `from flask import current_app; current_app.logger.info(...)`).\n- Objects whose name starts with `log` or ends with `logger` or `logging`,\n  when used in the same file in which they are defined (e.g., `logger = logging.getLogger(); logger.info(...)`).\n- Imported objects marked as loggers via the [`logger-objects`] setting, which can be\n  used to enforce these rules against shared logger objects (e.g., `from module import logger; logger.info(...)`,\n  when [`logger-objects`] is set to `[\"module.logger\"]`).\n\n## Example\n```python\nimport logging\n\nlogging.warn(\"Something happened\")\n```\n\nUse instead:\n```python\nimport logging\n\nlogging.warning(\"Something happened\")\n```\n\n## Options\n- `logger-objects`\n\n## References\n- [Python documentation: `logging.warning`](https://docs.python.org/3/library/logging.html#logging.warning)\n- [Python documentation: `logging.Logger.warning`](https://docs.python.org/3/library/logging.html#logging.Logger.warning)\n",
     "nursery": false
   },
   {
@@ -2217,7 +2217,7 @@
       "Logging statement uses an `extra` field that clashes with a `LogRecord` field: `{key}`"
     ],
     "autofix": "Autofix is not available.",
-    "explanation": "## What it does\nChecks for `extra` keywords in logging statements that clash with\n`LogRecord` attributes.\n\n## Why is this bad?\nThe `logging` module provides a mechanism for passing additional values to\nbe logged using the `extra` keyword argument. These values are then passed\nto the `LogRecord` constructor.\n\nProviding a value via `extra` that clashes with one of the attributes of\nthe `LogRecord` constructor will raise a `KeyError` when the `LogRecord` is\nconstructed.\n\n## Example\n```python\nimport logging\n\nlogging.basicConfig(format=\"%(name) - %(message)s\", level=logging.INFO)\n\nusername = \"Maria\"\n\nlogging.info(\"Something happened\", extra=dict(name=username))\n```\n\nUse instead:\n```python\nimport logging\n\nlogging.basicConfig(format=\"%(user_id)s - %(message)s\", level=logging.INFO)\n\nusername = \"Maria\"\n\nlogging.info(\"Something happened\", extra=dict(user=username))\n```\n\n## References\n- [Python documentation: LogRecord attributes](https://docs.python.org/3/library/logging.html#logrecord-attributes)\n",
+    "explanation": "## What it does\nChecks for `extra` keywords in logging statements that clash with\n`LogRecord` attributes.\n\n## Why is this bad?\nThe `logging` module provides a mechanism for passing additional values to\nbe logged using the `extra` keyword argument. These values are then passed\nto the `LogRecord` constructor.\n\nProviding a value via `extra` that clashes with one of the attributes of\nthe `LogRecord` constructor will raise a `KeyError` when the `LogRecord` is\nconstructed.\n\n## Known problems\n\nThis rule detects uses of the `logging` module via a heuristic.\nSpecifically, it matches against:\n\n- Uses of the `logging` module itself (e.g., `import logging; logging.info(...)`).\n- Uses of `flask.current_app.logger` (e.g., `from flask import current_app; current_app.logger.info(...)`).\n- Objects whose name starts with `log` or ends with `logger` or `logging`,\n  when used in the same file in which they are defined (e.g., `logger = logging.getLogger(); logger.info(...)`).\n- Imported objects marked as loggers via the [`logger-objects`] setting, which can be\n  used to enforce these rules against shared logger objects (e.g., `from module import logger; logger.info(...)`,\n  when [`logger-objects`] is set to `[\"module.logger\"]`).\n\n## Example\n```python\nimport logging\n\nlogging.basicConfig(format=\"%(name) - %(message)s\", level=logging.INFO)\n\nusername = \"Maria\"\n\nlogging.info(\"Something happened\", extra=dict(name=username))\n```\n\nUse instead:\n```python\nimport logging\n\nlogging.basicConfig(format=\"%(user_id)s - %(message)s\", level=logging.INFO)\n\nusername = \"Maria\"\n\nlogging.info(\"Something happened\", extra=dict(user=username))\n```\n\n## Options\n- `logger-objects`\n\n## References\n- [Python documentation: LogRecord attributes](https://docs.python.org/3/library/logging.html#logrecord-attributes)\n",
     "nursery": false
   },
   {
@@ -2229,7 +2229,7 @@
       "Logging `.exception(...)` should be used instead of `.error(..., exc_info=True)`"
     ],
     "autofix": "Autofix is not available.",
-    "explanation": "## What it does\nChecks for uses of `logging.error` that pass `exc_info=True`.\n\n## Why is this bad?\nCalling `logging.error` with `exc_info=True` is equivalent to calling\n`logging.exception`. Using `logging.exception` is more concise, more\nreadable, and conveys the intent of the logging statement more clearly.\n\n## Example\n```python\nimport logging\n\ntry:\n    ...\nexcept ValueError:\n    logging.error(\"Exception occurred\", exc_info=True)\n```\n\nUse instead:\n```python\nimport logging\n\ntry:\n    ...\nexcept ValueError:\n    logging.exception(\"Exception occurred\")\n```\n\n## References\n- [Python documentation: `logging.exception`](https://docs.python.org/3/library/logging.html#logging.exception)\n- [Python documentation: `exception`](https://docs.python.org/3/library/logging.html#logging.Logger.exception)\n- [Python documentation: `logging.error`](https://docs.python.org/3/library/logging.html#logging.error)\n- [Python documentation: `error`](https://docs.python.org/3/library/logging.html#logging.Logger.error)\n",
+    "explanation": "## What it does\nChecks for uses of `logging.error` that pass `exc_info=True`.\n\n## Why is this bad?\nCalling `logging.error` with `exc_info=True` is equivalent to calling\n`logging.exception`. Using `logging.exception` is more concise, more\nreadable, and conveys the intent of the logging statement more clearly.\n\n## Known problems\n\nThis rule detects uses of the `logging` module via a heuristic.\nSpecifically, it matches against:\n\n- Uses of the `logging` module itself (e.g., `import logging; logging.info(...)`).\n- Uses of `flask.current_app.logger` (e.g., `from flask import current_app; current_app.logger.info(...)`).\n- Objects whose name starts with `log` or ends with `logger` or `logging`,\n  when used in the same file in which they are defined (e.g., `logger = logging.getLogger(); logger.info(...)`).\n- Imported objects marked as loggers via the [`logger-objects`] setting, which can be\n  used to enforce these rules against shared logger objects (e.g., `from module import logger; logger.info(...)`,\n  when [`logger-objects`] is set to `[\"module.logger\"]`).\n\n## Example\n```python\nimport logging\n\ntry:\n    ...\nexcept ValueError:\n    logging.error(\"Exception occurred\", exc_info=True)\n```\n\nUse instead:\n```python\nimport logging\n\ntry:\n    ...\nexcept ValueError:\n    logging.exception(\"Exception occurred\")\n```\n\n## Options\n- `logger-objects`\n\n## References\n- [Python documentation: `logging.exception`](https://docs.python.org/3/library/logging.html#logging.exception)\n- [Python documentation: `exception`](https://docs.python.org/3/library/logging.html#logging.Logger.exception)\n- [Python documentation: `logging.error`](https://docs.python.org/3/library/logging.html#logging.error)\n- [Python documentation: `error`](https://docs.python.org/3/library/logging.html#logging.Logger.error)\n",
     "nursery": false
   },
   {
@@ -2241,7 +2241,7 @@
       "Logging statement has redundant `exc_info`"
     ],
     "autofix": "Autofix is not available.",
-    "explanation": "## What it does\nChecks for redundant `exc_info` keyword arguments in logging statements.\n\n## Why is this bad?\n`exc_info` is `True` by default for `logging.exception`, and `False` by\ndefault for `logging.error`.\n\nPassing `exc_info=True` to `logging.exception` calls is redundant, as is\npassing `exc_info=False` to `logging.error` calls.\n\n## Example\n```python\nimport logging\n\ntry:\n    ...\nexcept ValueError:\n    logging.exception(\"Exception occurred\", exc_info=True)\n```\n\nUse instead:\n```python\nimport logging\n\ntry:\n    ...\nexcept ValueError:\n    logging.exception(\"Exception occurred\")\n```\n\n## References\n- [Python documentation: `logging.exception`](https://docs.python.org/3/library/logging.html#logging.exception)\n- [Python documentation: `exception`](https://docs.python.org/3/library/logging.html#logging.Logger.exception)\n- [Python documentation: `logging.error`](https://docs.python.org/3/library/logging.html#logging.error)\n- [Python documentation: `error`](https://docs.python.org/3/library/logging.html#logging.Logger.error)\n",
+    "explanation": "## What it does\nChecks for redundant `exc_info` keyword arguments in logging statements.\n\n## Why is this bad?\n`exc_info` is `True` by default for `logging.exception`, and `False` by\ndefault for `logging.error`.\n\nPassing `exc_info=True` to `logging.exception` calls is redundant, as is\npassing `exc_info=False` to `logging.error` calls.\n\n## Known problems\n\nThis rule detects uses of the `logging` module via a heuristic.\nSpecifically, it matches against:\n\n- Uses of the `logging` module itself (e.g., `import logging; logging.info(...)`).\n- Uses of `flask.current_app.logger` (e.g., `from flask import current_app; current_app.logger.info(...)`).\n- Objects whose name starts with `log` or ends with `logger` or `logging`,\n  when used in the same file in which they are defined (e.g., `logger = logging.getLogger(); logger.info(...)`).\n- Imported objects marked as loggers via the [`logger-objects`] setting, which can be\n  used to enforce these rules against shared logger objects (e.g., `from module import logger; logger.info(...)`,\n  when [`logger-objects`] is set to `[\"module.logger\"]`).\n\n## Example\n```python\nimport logging\n\ntry:\n    ...\nexcept ValueError:\n    logging.exception(\"Exception occurred\", exc_info=True)\n```\n\nUse instead:\n```python\nimport logging\n\ntry:\n    ...\nexcept ValueError:\n    logging.exception(\"Exception occurred\")\n```\n\n## Options\n- `logger-objects`\n\n## References\n- [Python documentation: `logging.exception`](https://docs.python.org/3/library/logging.html#logging.exception)\n- [Python documentation: `exception`](https://docs.python.org/3/library/logging.html#logging.Logger.exception)\n- [Python documentation: `logging.error`](https://docs.python.org/3/library/logging.html#logging.error)\n- [Python documentation: `error`](https://docs.python.org/3/library/logging.html#logging.Logger.error)\n",
     "nursery": false
   },
   {
@@ -2326,6 +2326,18 @@
     ],
     "autofix": "Autofix is sometimes available.",
     "explanation": "## What it does\nChecks for lambdas that can be replaced with the `list` builtin.\n\n## Why is this bad?\nUsing `list` builtin is more readable.\n\n## Example\n```python\nfrom dataclasses import dataclass, field\n\n\n@dataclass\nclass Foo:\n    bar: list[int] = field(default_factory=lambda: [])\n```\n\nUse instead:\n```python\nfrom dataclasses import dataclass, field\n\n\n@dataclass\nclass Foo:\n    bar: list[int] = field(default_factory=list)\n```\n\n## References\n- [Python documentation: `list`](https://docs.python.org/3/library/functions.html#func-list)\n",
+    "nursery": false
+  },
+  {
+    "name": "unnecessary-range-start",
+    "code": "PIE808",
+    "linter": "flake8-pie",
+    "summary": "Unnecessary `start` argument in `range`",
+    "message_formats": [
+      "Unnecessary `start` argument in `range`"
+    ],
+    "autofix": "Autofix is always available.",
+    "explanation": "## What it does\nChecks for `range` calls with an unnecessary `start` argument.\n\n## Why is this bad?\n`range(0, x)` is equivalent to `range(x)`, as `0` is the default value for\nthe `start` argument. Omitting the `start` argument makes the code more\nconcise and idiomatic.\n\n## Example\n```python\nrange(0, 3)\n```\n\nUse instead:\n```python\nrange(3)\n```\n\n## References\n- [Python documentation: `range`](https://docs.python.org/3/library/stdtypes.html#range)\n",
     "nursery": false
   },
   {
@@ -2581,6 +2593,18 @@
     "nursery": false
   },
   {
+    "name": "custom-type-var-return-type",
+    "code": "PYI019",
+    "linter": "flake8-pyi",
+    "summary": "Methods like `{method_name}` should return `typing.Self` instead of a custom `TypeVar`",
+    "message_formats": [
+      "Methods like `{method_name}` should return `typing.Self` instead of a custom `TypeVar`"
+    ],
+    "autofix": "Autofix is not available.",
+    "explanation": "## What it does\nChecks for methods that define a custom `TypeVar` for their return type\nannotation instead of using `typing_extensions.Self`.\n\n## Why is this bad?\nIf certain methods are annotated with a custom `TypeVar` type, and the\nclass is subclassed, type checkers will not be able to infer the correct\nreturn type.\n\nThis check currently applies to instance methods that return `self`, class\nmethods that return an instance of `cls`, and `__new__` methods.\n\n## Example\n```python\nclass Foo:\n    def __new__(cls: type[_S], *args: str, **kwargs: int) -> _S:\n        ...\n\n    def foo(self: _S, arg: bytes) -> _S:\n        ...\n\n    @classmethod\n    def bar(cls: type[_S], arg: int) -> _S:\n        ...\n```\n\nUse instead:\n```python\nfrom typing import Self\n\n\nclass Foo:\n    def __new__(cls: type[Self], *args: str, **kwargs: int) -> Self:\n        ...\n\n    def foo(self: Self, arg: bytes) -> Self:\n        ...\n\n    @classmethod\n    def bar(cls: type[Self], arg: int) -> Self:\n        ...\n```\n",
+    "nursery": false
+  },
+  {
     "name": "quoted-annotation-in-stub",
     "code": "PYI020",
     "linter": "flake8-pyi",
@@ -2632,9 +2656,9 @@
     "name": "type-alias-without-annotation",
     "code": "PYI026",
     "linter": "flake8-pyi",
-    "summary": "Use `typing.TypeAlias` for type alias, e.g., `{name}: typing.TypeAlias = {value}`",
+    "summary": "Use `{module}.TypeAlias` for type alias, e.g., `{name}: TypeAlias = {value}`",
     "message_formats": [
-      "Use `typing.TypeAlias` for type alias, e.g., `{name}: typing.TypeAlias = {value}`"
+      "Use `{module}.TypeAlias` for type alias, e.g., `{name}: TypeAlias = {value}`"
     ],
     "autofix": "Autofix is always available.",
     "explanation": "## What it does\nChecks for type alias definitions that are not annotated with\n`typing.TypeAlias`.\n\n## Why is this bad?\nIn Python, a type alias is defined by assigning a type to a variable (e.g.,\n`Vector = list[float]`).\n\nIt's best to annotate type aliases with the `typing.TypeAlias` type to\nmake it clear that the statement is a type alias declaration, as opposed\nto a normal variable assignment.\n\n## Example\n```python\nVector = list[float]\n```\n\nUse instead:\n```python\nfrom typing import TypeAlias\n\nVector: TypeAlias = list[float]\n```\n",
@@ -2853,6 +2877,19 @@
     "nursery": false
   },
   {
+    "name": "redundant-literal-union",
+    "code": "PYI051",
+    "linter": "flake8-pyi",
+    "summary": "`Literal[{literal}]` is redundant in a union with `{builtin_type}`",
+    "message_formats": [
+      "`Literal[{literal}]` is redundant in a union with `{builtin_type}`",
+      "`Literal` is redundant in a union with `{builtin_type}`"
+    ],
+    "autofix": "Autofix is not available.",
+    "explanation": "## What it does\nChecks for the presence of redundant `Literal` types and builtin super\ntypes in an union.\n\n## Why is this bad?\nThe use of `Literal` types in a union with the builtin super type of one of\nits literal members is redundant, as the super type is strictly more\ngeneral than the `Literal` type.\n\nFor example, `Literal[\"A\"] | str` is equivalent to `str`, and\n`Literal[1] | int` is equivalent to `int`, as `str` and `int` are the super\ntypes of `\"A\"` and `1` respectively.\n\n## Example\n```python\nfrom typing import Literal\n\nA: Literal[\"A\"] | str\n```\n\nUse instead:\n```python\nfrom typing import Literal\n\nA: Literal[\"A\"]\n```\n",
+    "nursery": false
+  },
+  {
     "name": "unannotated-assignment-in-stub",
     "code": "PYI052",
     "linter": "flake8-pyi",
@@ -2889,6 +2926,18 @@
     "nursery": false
   },
   {
+    "name": "unnecessary-type-union",
+    "code": "PYI055",
+    "linter": "flake8-pyi",
+    "summary": "Multiple `type` members in a union. Combine them into one, e.g., `type[{union_str}]`.",
+    "message_formats": [
+      "Multiple `type` members in a union. Combine them into one, e.g., `type[{union_str}]`."
+    ],
+    "autofix": "Autofix is not available.",
+    "explanation": "## What it does\nChecks for the presence of multiple `type`s in a union.\n\n## Why is this bad?\nThe `type` built-in function accepts unions, and it is\nclearer to explicitly specify them as a single `type`.\n\n## Example\n```python\nfield: type[int] | type[float]\n```\n\nUse instead:\n```python\nfield: type[int | float]\n```\n",
+    "nursery": false
+  },
+  {
     "name": "unsupported-method-call-on-all",
     "code": "PYI056",
     "linter": "flake8-pyi",
@@ -2909,7 +2958,7 @@
       "Use `@pytest.fixture{expected}` over `@pytest.fixture{actual}`"
     ],
     "autofix": "Autofix is always available.",
-    "explanation": "## What it does\nChecks for parameter-free `@pytest.fixture()` decorators with or without\nparentheses, depending on the `flake8-pytest-style.fixture-parentheses`\nsetting.\n\n## Why is this bad?\nIf a `@pytext.fixture()` doesn't take any arguments, the parentheses are\noptional.\n\nEither removing those unnecessary parentheses _or_ requiring them for all\nfixtures is fine, but it's best to be consistent.\n\n## Example\n```python\n@pytest.fixture\ndef my_fixture():\n    ...\n```\n\nUse instead:\n```python\n@pytest.fixture()\ndef my_fixture():\n    ...\n```\n\n## Options\n- `flake8-pytest-style.fixture-parentheses`\n\n## References\n- [`pytest` documentation: API Reference: Fixtures](https://docs.pytest.org/en/latest/reference/reference.html#fixtures-api)\n",
+    "explanation": "## What it does\nChecks for argument-free `@pytest.fixture()` decorators with or without\nparentheses, depending on the `flake8-pytest-style.fixture-parentheses`\nsetting.\n\n## Why is this bad?\nIf a `@pytext.fixture()` doesn't take any arguments, the parentheses are\noptional.\n\nEither removing those unnecessary parentheses _or_ requiring them for all\nfixtures is fine, but it's best to be consistent.\n\n## Example\n```python\nimport pytest\n\n\n@pytest.fixture\ndef my_fixture():\n    ...\n```\n\nUse instead:\n```python\nimport pytest\n\n\n@pytest.fixture()\ndef my_fixture():\n    ...\n```\n\n## Options\n- `flake8-pytest-style.fixture-parentheses`\n\n## References\n- [`pytest` documentation: API Reference: Fixtures](https://docs.pytest.org/en/latest/reference/reference.html#fixtures-api)\n",
     "nursery": false
   },
   {
@@ -2921,7 +2970,7 @@
       "Configuration for fixture `{function}` specified via positional args, use kwargs"
     ],
     "autofix": "Autofix is not available.",
-    "explanation": null,
+    "explanation": "## What it does\nChecks for `pytest.fixture` calls with positional arguments.\n\n## Why is this bad?\nFor clarity and consistency, prefer using keyword arguments to specify\nfixture configuration.\n\n## Example\n```python\nimport pytest\n\n\n@pytest.fixture(\"module\")\ndef my_fixture():\n    ...\n```\n\nUse instead:\n```python\nimport pytest\n\n\n@pytest.fixture(scope=\"module\")\ndef my_fixture():\n    ...\n```\n\n## References\n- [`pytest` documentation: `@pytest.fixture` functions](https://docs.pytest.org/en/latest/reference/reference.html#pytest-fixture)\n",
     "nursery": false
   },
   {
@@ -2933,7 +2982,7 @@
       "`scope='function'` is implied in `@pytest.fixture()`"
     ],
     "autofix": "Autofix is always available.",
-    "explanation": null,
+    "explanation": "## What it does\nChecks for `pytest.fixture` calls with `scope=\"function\"`.\n\n## Why is this bad?\n`scope=\"function\"` can be omitted, as it is the default.\n\n## Example\n```python\nimport pytest\n\n\n@pytest.fixture(scope=\"function\")\ndef my_fixture():\n    ...\n```\n\nUse instead:\n```python\nimport pytest\n\n\n@pytest.fixture()\ndef my_fixture():\n    ...\n```\n\n## References\n- [`pytest` documentation: `@pytest.fixture` functions](https://docs.pytest.org/en/latest/reference/reference.html#pytest-fixture)\n",
     "nursery": false
   },
   {
@@ -2945,7 +2994,7 @@
       "Fixture `{function}` does not return anything, add leading underscore"
     ],
     "autofix": "Autofix is not available.",
-    "explanation": null,
+    "explanation": "## What it does\nChecks for `pytest` fixtures that do not return a value, but are not named\nwith a leading underscore.\n\n## Why is this bad?\nBy convention, fixtures that don't return a value should be named with a\nleading underscore, while fixtures that do return a value should not.\n\nThis rule ignores abstract fixtures and generators.\n\n## Example\n```python\nimport pytest\n\n\n@pytest.fixture()\ndef patch_something(mocker):\n    mocker.patch(\"module.object\")\n\n\n@pytest.fixture()\ndef use_context():\n    with create_context():\n        yield\n```\n\nUse instead:\n```python\nimport pytest\n\n\n@pytest.fixture()\ndef _patch_something(mocker):\n    mocker.patch(\"module.object\")\n\n\n@pytest.fixture()\ndef _use_context():\n    with create_context():\n        yield\n```\n\n## References\n- [`pytest` documentation: `@pytest.fixture` functions](https://docs.pytest.org/en/latest/reference/reference.html#pytest-fixture)\n",
     "nursery": false
   },
   {
@@ -2957,7 +3006,7 @@
       "Fixture `{function}` returns a value, remove leading underscore"
     ],
     "autofix": "Autofix is not available.",
-    "explanation": null,
+    "explanation": "## What it does\nChecks for `pytest` fixtures that return a value, but are named with a\nleading underscore.\n\n## Why is this bad?\nBy convention, fixtures that don't return a value should be named with a\nleading underscore, while fixtures that do return a value should not.\n\nThis rule ignores abstract fixtures.\n\n## Example\n```python\nimport pytest\n\n\n@pytest.fixture()\ndef _some_object():\n    return SomeClass()\n\n\n@pytest.fixture()\ndef _some_object_with_cleanup():\n    obj = SomeClass()\n    yield obj\n    obj.cleanup()\n```\n\nUse instead:\n```python\nimport pytest\n\n\n@pytest.fixture()\ndef some_object():\n    return SomeClass()\n\n\n@pytest.fixture()\ndef some_object_with_cleanup():\n    obj = SomeClass()\n    yield obj\n    obj.cleanup()\n```\n\n## References\n- [`pytest` documentation: `@pytest.fixture` functions](https://docs.pytest.org/en/latest/reference/reference.html#pytest-fixture)\n",
     "nursery": false
   },
   {
@@ -2969,7 +3018,7 @@
       "Wrong name(s) type in `@pytest.mark.parametrize`, expected `{expected}`"
     ],
     "autofix": "Autofix is sometimes available.",
-    "explanation": null,
+    "explanation": "## What it does\nChecks for the type of parameter names passed to `pytest.mark.parametrize`.\n\n## Why is this bad?\nThe `argnames` argument of `pytest.mark.parametrize` takes a string or\na sequence of strings. For a single parameter, it's preferable to use a\nstring. For multiple parameters, it's preferable to use the style\nconfigured via the [`flake8-pytest-style.parametrize-names-type`] setting.\n\n## Example\n```python\nimport pytest\n\n\n# single parameter, always expecting string\n@pytest.mark.parametrize((\"param\",), [1, 2, 3])\ndef test_foo(param):\n    ...\n\n\n# multiple parameters, expecting tuple\n@pytest.mark.parametrize([\"param1\", \"param2\"], [(1, 2), (3, 4)])\ndef test_bar(param1, param2):\n    ...\n\n\n# multiple parameters, expecting tuple\n@pytest.mark.parametrize(\"param1,param2\", [(1, 2), (3, 4)])\ndef test_baz(param1, param2):\n    ...\n```\n\nUse instead:\n```python\nimport pytest\n\n\n@pytest.mark.parametrize(\"param\", [1, 2, 3])\ndef test_foo(param):\n    ...\n\n\n@pytest.mark.parametrize((\"param1\", \"param2\"), [(1, 2), (3, 4)])\ndef test_bar(param1, param2):\n    ...\n```\n\n## Options\n- `flake8-pytest-style.parametrize-names-type`\n\n## References\n- [`pytest` documentation: How to parametrize fixtures and test functions](https://docs.pytest.org/en/latest/how-to/parametrize.html#pytest-mark-parametrize)\n",
     "nursery": false
   },
   {
@@ -2981,7 +3030,7 @@
       "Wrong values type in `@pytest.mark.parametrize` expected `{values}` of `{row}`"
     ],
     "autofix": "Autofix is not available.",
-    "explanation": null,
+    "explanation": "## What it does\nChecks for the type of parameter values passed to `pytest.mark.parametrize`.\n\n## Why is this bad?\nThe `argvalues` argument of `pytest.mark.parametrize` takes an iterator of\nparameter values, which can be provided as lists or tuples.\n\nTo aid in readability, it's recommended to use a consistent style for the\nlist of values rows, and, in the case of multiple parameters, for each row\nof values.\n\nThe style for the list of values rows can be configured via the\nthe [`flake8-pytest-style.parametrize-values-type`] setting, while the\nstyle for each row of values can be configured via the\nthe [`flake8-pytest-style.parametrize-values-row-type`] setting.\n\nFor example, [`flake8-pytest-style.parametrize-values-type`] will lead to\nthe following expectations:\n\n- `tuple`: `@pytest.mark.parametrize(\"value\", (\"a\", \"b\", \"c\"))`\n- `list`: `@pytest.mark.parametrize(\"value\", [\"a\", \"b\", \"c\"])`\n\nSimilarly, [`flake8-pytest-style.parametrize-values-row-type`] will lead to\nthe following expectations:\n\n- `tuple`: `@pytest.mark.parametrize((\"key\", \"value\"), [(\"a\", \"b\"), (\"c\", \"d\")])`\n- `list`: `@pytest.mark.parametrize((\"key\", \"value\"), [[\"a\", \"b\"], [\"c\", \"d\"]])`\n\n## Example\n```python\nimport pytest\n\n\n# expected list, got tuple\n@pytest.mark.parametrize(\"param\", (1, 2))\ndef test_foo(param):\n    ...\n\n\n# expected top-level list, got tuple\n@pytest.mark.parametrize(\n    (\"param1\", \"param2\"),\n    (\n        (1, 2),\n        (3, 4),\n    ),\n)\ndef test_bar(param1, param2):\n    ...\n\n\n# expected individual rows to be tuples, got lists\n@pytest.mark.parametrize(\n    (\"param1\", \"param2\"),\n    [\n        [1, 2],\n        [3, 4],\n    ],\n)\ndef test_baz(param1, param2):\n    ...\n```\n\nUse instead:\n```python\nimport pytest\n\n\n@pytest.mark.parametrize(\"param\", [1, 2, 3])\ndef test_foo(param):\n    ...\n\n\n@pytest.mark.parametrize((\"param1\", \"param2\"), [(1, 2), (3, 4)])\ndef test_bar(param1, param2):\n    ...\n```\n\n## Options\n- `flake8-pytest-style.parametrize-values-type`\n- `flake8-pytest-style.parametrize-values-row-type`\n\n## References\n- [`pytest` documentation: How to parametrize fixtures and test functions](https://docs.pytest.org/en/latest/how-to/parametrize.html#pytest-mark-parametrize)\n",
     "nursery": false
   },
   {
@@ -2993,7 +3042,7 @@
       "Use `return_value=` instead of patching with `lambda`"
     ],
     "autofix": "Autofix is not available.",
-    "explanation": null,
+    "explanation": "## What it does\nChecks for mocked calls that use a dummy `lambda` function instead of\n`return_value`.\n\n## Why is this bad?\nWhen patching calls, an explicit `return_value` better conveys the intent\nthan a `lambda` function, assuming the `lambda` does not use the arguments\npassed to it.\n\n`return_value` is also robust to changes in the patched function's\nsignature, and enables additional assertions to verify behavior. For\nexample, `return_value` allows for verification of the number of calls or\nthe arguments passed to the patched function via `assert_called_once_with`\nand related methods.\n\n## Example\n```python\ndef test_foo(mocker):\n    mocker.patch(\"module.target\", lambda x, y: 7)\n```\n\nUse instead:\n```python\ndef test_foo(mocker):\n    mocker.patch(\"module.target\", return_value=7)\n\n    # If the lambda makes use of the arguments, no diagnostic is emitted.\n    mocker.patch(\"module.other_target\", lambda x, y: x)\n```\n\n## References\n- [Python documentation: `unittest.mock.patch`](https://docs.python.org/3/library/unittest.mock.html#unittest.mock.patch)\n- [`pytest-mock`](https://pypi.org/project/pytest-mock/)\n",
     "nursery": false
   },
   {
@@ -3005,7 +3054,7 @@
       "Use a regular `assert` instead of unittest-style `{assertion}`"
     ],
     "autofix": "Autofix is sometimes available.",
-    "explanation": null,
+    "explanation": "## What it does\nChecks for uses of assertion methods from the `unittest` module.\n\n## Why is this bad?\nTo make use of `pytest`'s assertion rewriting, a regular `assert` statement\nis preferred over `unittest`'s assertion methods.\n\n## Example\n```python\nimport unittest\n\n\nclass TestFoo(unittest.TestCase):\n    def test_foo(self):\n        self.assertEqual(a, b)\n```\n\nUse instead:\n```python\nimport unittest\n\n\nclass TestFoo(unittest.TestCase):\n    def test_foo(self):\n        assert a == b\n```\n\n## References\n- [`pytest` documentation: Assertion introspection details](https://docs.pytest.org/en/7.1.x/how-to/assert.html#assertion-introspection-details)\n",
     "nursery": false
   },
   {
@@ -3029,7 +3078,7 @@
       "`pytest.raises({exception})` is too broad, set the `match` parameter or use a more specific exception"
     ],
     "autofix": "Autofix is not available.",
-    "explanation": null,
+    "explanation": "## What it does\nChecks for `pytest.raises` calls without a `match` parameter.\n\n## Why is this bad?\n`pytest.raises(Error)` will catch any `Error` and may catch errors that are\nunrelated to the code under test. To avoid this, `pytest.raises` should be\ncalled with a `match` parameter. The exception names that require a `match`\nparameter can be configured via the\n`flake8-pytest-style.raises-require-match-for` and\n`flake8-pytest-style.raises-extend-require-match-for` settings.\n\n## Example\n```python\nimport pytest\n\n\ndef test_foo():\n    with pytest.raises(ValueError):\n        ...\n\n    # empty string is also an error\n    with pytest.raises(ValueError, match=\"\"):\n        ...\n```\n\nUse instead:\n```python\nimport pytest\n\n\ndef test_foo():\n    with pytest.raises(ValueError, match=\"expected message\"):\n        ...\n```\n\n## Options\n- `flake8-pytest-style.raises-require-match-for`\n- `flake8-pytest-style.raises-extend-require-match-for`\n\n## References\n- [`pytest` documentation: `pytest.raises`](https://docs.pytest.org/en/latest/reference/reference.html#pytest-raises)\n",
     "nursery": false
   },
   {
@@ -3041,7 +3090,7 @@
       "`pytest.raises()` block should contain a single simple statement"
     ],
     "autofix": "Autofix is not available.",
-    "explanation": null,
+    "explanation": "## What it does\nChecks for `pytest.raises` context managers with multiple statements.\n\n## Why is this bad?\nWhen a `pytest.raises` is used as a context manager and contains multiple\nstatements, it can lead to the test passing when it actually should fail.\nTo avoid this, a `pytest.raises` context manager should only contain\na single simple statement that raises the expected exception.\n\n## Example\n```python\nimport pytest\n\n\ndef test_foo():\n    with pytest.raises(MyError):\n        setup()  # may raise `MyError`\n        func_to_test()\n        assert foo()  # not executed\n```\n\nUse instead:\n```python\nimport pytest\n\n\ndef test_foo():\n    setup()\n    with pytest.raises(MyException):\n        func_to_test()\n    assert foo()\n```\n\n## References\n- [`pytest` documentation: `pytest.raises`](https://docs.pytest.org/en/latest/reference/reference.html#pytest-raises)\n",
     "nursery": false
   },
   {
@@ -3053,7 +3102,19 @@
       "Found incorrect import of pytest, use simple `import pytest` instead"
     ],
     "autofix": "Autofix is not available.",
-    "explanation": null,
+    "explanation": "## What it does\nChecks for incorrect import of pytest.\n\n## Why is this bad?\n`pytest` should be imported as `import pytest` and its members should be accessed in the form of\n`pytest.xxx.yyy` for consistency and to make it easier for linting tools to analyze the code.\n\n## Example\n```python\nimport pytest as pt\nfrom pytest import fixture\n```\n\nUse instead:\n```python\nimport pytest\n```\n",
+    "nursery": false
+  },
+  {
+    "name": "pytest-duplicate-parametrize-test-cases",
+    "code": "PT014",
+    "linter": "flake8-pytest-style",
+    "summary": "Duplicate of test case at index {index} in `@pytest_mark.parametrize`",
+    "message_formats": [
+      "Duplicate of test case at index {index} in `@pytest_mark.parametrize`"
+    ],
+    "autofix": "Autofix is sometimes available.",
+    "explanation": "## What it does\nChecks for duplicate test cases in `pytest.mark.parametrize`.\n\n## Why is this bad?\nDuplicate test cases are redundant and should be removed.\n\n## Example\n```python\nimport pytest\n\n\n@pytest.mark.parametrize(\n    (\"param1\", \"param2\"),\n    [\n        (1, 2),\n        (1, 2),\n    ],\n)\ndef test_foo(param1, param2):\n    ...\n```\n\nUse instead:\n```python\nimport pytest\n\n\n@pytest.mark.parametrize(\n    (\"param1\", \"param2\"),\n    [\n        (1, 2),\n    ],\n)\ndef test_foo(param1, param2):\n    ...\n```\n\n## References\n- [`pytest` documentation: How to parametrize fixtures and test functions](https://docs.pytest.org/en/latest/how-to/parametrize.html#pytest-mark-parametrize)\n",
     "nursery": false
   },
   {
@@ -3065,7 +3126,7 @@
       "Assertion always fails, replace with `pytest.fail()`"
     ],
     "autofix": "Autofix is not available.",
-    "explanation": null,
+    "explanation": "## What it does\nChecks for `assert` statements whose test expression is a falsy value.\n\n## Why is this bad?\n`pytest.fail` conveys the intent more clearly than `assert falsy_value`.\n\n## Example\n```python\ndef test_foo():\n    if some_condition:\n        assert False, \"some_condition was True\"\n```\n\nUse instead:\n```python\nimport pytest\n\n\ndef test_foo():\n    if some_condition:\n        pytest.fail(\"some_condition was True\")\n    ...\n```\n\nReferences\n- [`pytest` documentation: `pytest.fail`](https://docs.pytest.org/en/latest/reference/reference.html#pytest-fail)\n",
     "nursery": false
   },
   {
@@ -3089,7 +3150,7 @@
       "Found assertion on exception `{name}` in `except` block, use `pytest.raises()` instead"
     ],
     "autofix": "Autofix is not available.",
-    "explanation": "## What it does\nChecks for `assert` statements in `except` clauses.\n\n## Why is this bad?\nWhen testing for exceptions, `pytest.raises()` should be used instead of\n`assert` statements in `except` clauses, as it's more explicit and\nidiomatic. Further, `pytest.raises()` will fail if the exception is _not_\nraised, unlike the `assert` statement.\n\n## Example\n```python\ndef test_foo():\n    try:\n        1 / 0\n    except ZeroDivisionError as e:\n        assert e.args\n```\n\nUse instead:\n```python\ndef test_foo():\n    with pytest.raises(ZeroDivisionError) as exc_info:\n        1 / 0\n    assert exc_info.value.args\n```\n\n## References\n- [`pytest` documentation: `pytest.raises`](https://docs.pytest.org/en/latest/reference/reference.html#pytest-raises)\n",
+    "explanation": "## What it does\nChecks for `assert` statements in `except` clauses.\n\n## Why is this bad?\nWhen testing for exceptions, `pytest.raises()` should be used instead of\n`assert` statements in `except` clauses, as it's more explicit and\nidiomatic. Further, `pytest.raises()` will fail if the exception is _not_\nraised, unlike the `assert` statement.\n\n## Example\n```python\ndef test_foo():\n    try:\n        1 / 0\n    except ZeroDivisionError as e:\n        assert e.args\n```\n\nUse instead:\n```python\nimport pytest\n\n\ndef test_foo():\n    with pytest.raises(ZeroDivisionError) as exc_info:\n        1 / 0\n    assert exc_info.value.args\n```\n\n## References\n- [`pytest` documentation: `pytest.raises`](https://docs.pytest.org/en/latest/reference/reference.html#pytest-raises)\n",
     "nursery": false
   },
   {
@@ -3113,7 +3174,7 @@
       "Fixture `{name}` without value is injected as parameter, use `@pytest.mark.usefixtures` instead"
     ],
     "autofix": "Autofix is not available.",
-    "explanation": "## What it does\nChecks for `pytest` test functions that should be decorated with\n`@pytest.mark.usefixtures`.\n\n## Why is this bad?\nIn `pytest`, fixture injection is used to activate fixtures in a test\nfunction.\n\nFixtures can be injected either by passing them as parameters to the test\nfunction, or by using the `@pytest.mark.usefixtures` decorator.\n\nIf the test function depends on the fixture being activated, but does not\nuse it in the test body or otherwise rely on its return value, prefer\nthe `@pytest.mark.usefixtures` decorator, to make the dependency explicit\nand avoid the confusion caused by unused arguments.\n\n## Example\n```python\n@pytest.fixture\ndef _patch_something():\n    ...\n\n\ndef test_foo(_patch_something):\n    ...\n```\n\nUse instead:\n```python\n@pytest.fixture\ndef _patch_something():\n    ...\n\n\n@pytest.mark.usefixtures(\"_patch_something\")\ndef test_foo():\n    ...\n```\n\n## References\n- [`pytest` documentation: `pytest.mark.usefixtures`](https://docs.pytest.org/en/latest/reference/reference.html#pytest-mark-usefixtures)\n",
+    "explanation": "## What it does\nChecks for `pytest` test functions that should be decorated with\n`@pytest.mark.usefixtures`.\n\n## Why is this bad?\nIn `pytest`, fixture injection is used to activate fixtures in a test\nfunction.\n\nFixtures can be injected either by passing them as parameters to the test\nfunction, or by using the `@pytest.mark.usefixtures` decorator.\n\nIf the test function depends on the fixture being activated, but does not\nuse it in the test body or otherwise rely on its return value, prefer\nthe `@pytest.mark.usefixtures` decorator, to make the dependency explicit\nand avoid the confusion caused by unused arguments.\n\n## Example\n```python\nimport pytest\n\n\n@pytest.fixture\ndef _patch_something():\n    ...\n\n\ndef test_foo(_patch_something):\n    ...\n```\n\nUse instead:\n```python\nimport pytest\n\n\n@pytest.fixture\ndef _patch_something():\n    ...\n\n\n@pytest.mark.usefixtures(\"_patch_something\")\ndef test_foo():\n    ...\n```\n\n## References\n- [`pytest` documentation: `pytest.mark.usefixtures`](https://docs.pytest.org/en/latest/reference/reference.html#pytest-mark-usefixtures)\n",
     "nursery": false
   },
   {
@@ -3137,7 +3198,7 @@
       "Use `yield` instead of `request.addfinalizer`"
     ],
     "autofix": "Autofix is not available.",
-    "explanation": "## What it does\nChecks for unnecessary `request.addfinalizer` usages in `pytest` fixtures.\n\n## Why is this bad?\n`pytest` offers two ways to perform cleanup in fixture code. The first is\nsequential (via the `yield` statement), the second callback-based (via\n`request.addfinalizer`).\n\nThe sequential approach is more readable and should be preferred, unless\nthe fixture uses the \"factory as fixture\" pattern.\n\n## Example\n```python\n@pytest.fixture()\ndef my_fixture(request):\n    resource = acquire_resource()\n    request.addfinalizer(resource.release)\n    return resource\n```\n\nUse instead:\n```python\n@pytest.fixture()\ndef my_fixture():\n    resource = acquire_resource()\n    yield resource\n    resource.release()\n\n\n# \"factory-as-fixture\" pattern\n@pytest.fixture()\ndef my_factory(request):\n    def create_resource(arg):\n        resource = acquire_resource(arg)\n        request.addfinalizer(resource.release)\n        return resource\n\n    return create_resource\n```\n\n## References\n- [`pytest` documentation: Adding finalizers directly](https://docs.pytest.org/en/latest/how-to/fixtures.html#adding-finalizers-directly)\n- [`pytest` documentation: Factories as fixtures](https://docs.pytest.org/en/latest/how-to/fixtures.html#factories-as-fixtures)\n",
+    "explanation": "## What it does\nChecks for unnecessary `request.addfinalizer` usages in `pytest` fixtures.\n\n## Why is this bad?\n`pytest` offers two ways to perform cleanup in fixture code. The first is\nsequential (via the `yield` statement), the second callback-based (via\n`request.addfinalizer`).\n\nThe sequential approach is more readable and should be preferred, unless\nthe fixture uses the \"factory as fixture\" pattern.\n\n## Example\n```python\nimport pytest\n\n\n@pytest.fixture()\ndef my_fixture(request):\n    resource = acquire_resource()\n    request.addfinalizer(resource.release)\n    return resource\n```\n\nUse instead:\n```python\nimport pytest\n\n\n@pytest.fixture()\ndef my_fixture():\n    resource = acquire_resource()\n    yield resource\n    resource.release()\n\n\n# \"factory-as-fixture\" pattern\n@pytest.fixture()\ndef my_factory(request):\n    def create_resource(arg):\n        resource = acquire_resource(arg)\n        request.addfinalizer(resource.release)\n        return resource\n\n    return create_resource\n```\n\n## References\n- [`pytest` documentation: Adding finalizers directly](https://docs.pytest.org/en/latest/how-to/fixtures.html#adding-finalizers-directly)\n- [`pytest` documentation: Factories as fixtures](https://docs.pytest.org/en/latest/how-to/fixtures.html#factories-as-fixtures)\n",
     "nursery": false
   },
   {
@@ -3149,7 +3210,7 @@
       "No teardown in fixture `{name}`, use `return` instead of `yield`"
     ],
     "autofix": "Autofix is always available.",
-    "explanation": "## What it does\nChecks for unnecessary `yield` expressions in `pytest` fixtures.\n\n## Why is this bad?\nIn `pytest` fixtures, the `yield` expression should only be used for fixtures\nthat include teardown code, to clean up the fixture after the test function\nhas finished executing.\n\n## Example\n```python\n@pytest.fixture()\ndef my_fixture():\n    resource = acquire_resource()\n    yield resource\n```\n\nUse instead:\n```python\n@pytest.fixture()\ndef my_fixture_with_teardown():\n    resource = acquire_resource()\n    yield resource\n    resource.release()\n\n\n@pytest.fixture()\ndef my_fixture_without_teardown():\n    resource = acquire_resource()\n    return resource\n```\n\n## References\n- [`pytest` documentation: Teardown/Cleanup](https://docs.pytest.org/en/latest/how-to/fixtures.html#teardown-cleanup-aka-fixture-finalization)\n",
+    "explanation": "## What it does\nChecks for unnecessary `yield` expressions in `pytest` fixtures.\n\n## Why is this bad?\nIn `pytest` fixtures, the `yield` expression should only be used for fixtures\nthat include teardown code, to clean up the fixture after the test function\nhas finished executing.\n\n## Example\n```python\nimport pytest\n\n\n@pytest.fixture()\ndef my_fixture():\n    resource = acquire_resource()\n    yield resource\n```\n\nUse instead:\n```python\nimport pytest\n\n\n@pytest.fixture()\ndef my_fixture_with_teardown():\n    resource = acquire_resource()\n    yield resource\n    resource.release()\n\n\n@pytest.fixture()\ndef my_fixture_without_teardown():\n    resource = acquire_resource()\n    return resource\n```\n\n## References\n- [`pytest` documentation: Teardown/Cleanup](https://docs.pytest.org/en/latest/how-to/fixtures.html#teardown-cleanup-aka-fixture-finalization)\n",
     "nursery": false
   },
   {
@@ -3161,7 +3222,7 @@
       "Use `@pytest.mark.{mark_name}{expected_parens}` over `@pytest.mark.{mark_name}{actual_parens}`"
     ],
     "autofix": "Autofix is always available.",
-    "explanation": "## What it does\nChecks for parameter-free `@pytest.mark.<marker>()` decorators with or\nwithout parentheses, depending on the `flake8-pytest-style.mark-parentheses`\nsetting.\n\n## Why is this bad?\nIf a `@pytest.mark.<marker>()` doesn't take any arguments, the parentheses are\noptional.\n\nEither removing those unnecessary parentheses _or_ requiring them for all\nfixtures is fine, but it's best to be consistent.\n\n## Example\n```python\n@pytest.mark.foo\ndef test_something():\n    ...\n```\n\nUse instead:\n```python\n@pytest.mark.foo()\ndef test_something():\n    ...\n```\n\n## Options\n- `flake8-pytest-style.mark-parentheses`\n\n## References\n- [`pytest` documentation: Marks](https://docs.pytest.org/en/latest/reference/reference.html#marks)\n",
+    "explanation": "## What it does\nChecks for argument-free `@pytest.mark.<marker>()` decorators with or\nwithout parentheses, depending on the `flake8-pytest-style.mark-parentheses`\nsetting.\n\n## Why is this bad?\nIf a `@pytest.mark.<marker>()` doesn't take any arguments, the parentheses are\noptional.\n\nEither removing those unnecessary parentheses _or_ requiring them for all\nfixtures is fine, but it's best to be consistent.\n\n## Example\n```python\nimport pytest\n\n\n@pytest.mark.foo\ndef test_something():\n    ...\n```\n\nUse instead:\n```python\nimport pytest\n\n\n@pytest.mark.foo()\ndef test_something():\n    ...\n```\n\n## Options\n- `flake8-pytest-style.mark-parentheses`\n\n## References\n- [`pytest` documentation: Marks](https://docs.pytest.org/en/latest/reference/reference.html#marks)\n",
     "nursery": false
   },
   {
@@ -3173,7 +3234,7 @@
       "`pytest.mark.asyncio` is unnecessary for fixtures"
     ],
     "autofix": "Autofix is always available.",
-    "explanation": "## What it does\nChecks for unnecessary `@pytest.mark.asyncio` decorators applied to fixtures.\n\n## Why is this bad?\n`pytest.mark.asyncio` is unnecessary for fixtures.\n\n## Example\n```python\n@pytest.mark.asyncio()\n@pytest.fixture()\nasync def my_fixture():\n    return 0\n```\n\nUse instead:\n```python\n@pytest.fixture()\nasync def my_fixture():\n    return 0\n```\n\n## References\n- [`pytest-asyncio`](https://pypi.org/project/pytest-asyncio/)\n",
+    "explanation": "## What it does\nChecks for unnecessary `@pytest.mark.asyncio` decorators applied to fixtures.\n\n## Why is this bad?\n`pytest.mark.asyncio` is unnecessary for fixtures.\n\n## Example\n```python\nimport pytest\n\n\n@pytest.mark.asyncio()\n@pytest.fixture()\nasync def my_fixture():\n    return 0\n```\n\nUse instead:\n```python\nimport pytest\n\n\n@pytest.fixture()\nasync def my_fixture():\n    return 0\n```\n\n## References\n- [`pytest-asyncio`](https://pypi.org/project/pytest-asyncio/)\n",
     "nursery": false
   },
   {
@@ -3185,7 +3246,7 @@
       "`pytest.mark.usefixtures` has no effect on fixtures"
     ],
     "autofix": "Autofix is always available.",
-    "explanation": null,
+    "explanation": "## What it does\nChecks for `pytest.mark.usefixtures` decorators applied to `pytest`\nfixtures.\n\n## Why is this bad?\nThe `pytest.mark.usefixtures` decorator has no effect on `pytest` fixtures.\n\n## Example\n```python\nimport pytest\n\n\n@pytest.fixture()\ndef a():\n    pass\n\n\n@pytest.mark.usefixtures(\"a\")\n@pytest.fixture()\ndef b(a):\n    pass\n```\n\nUse instead:\n```python\nimport pytest\n\n\n@pytest.fixture()\ndef a():\n    pass\n\n\n@pytest.fixture()\ndef b(a):\n    pass\n```\n\n## References\n- [`pytest` documentation: `pytest.mark.usefixtures`](https://docs.pytest.org/en/latest/reference/reference.html#pytest-mark-usefixtures)\n",
     "nursery": false
   },
   {
@@ -3197,7 +3258,19 @@
       "Useless `pytest.mark.usefixtures` without parameters"
     ],
     "autofix": "Autofix is always available.",
-    "explanation": null,
+    "explanation": "## What it does\nChecks for `@pytest.mark.usefixtures()` decorators that aren't passed any\narguments.\n\n## Why is this bad?\nA `@pytest.mark.usefixtures()` decorator that isn't passed any arguments is\nuseless and should be removed.\n\n## Example\n```python\nimport pytest\n\n\n@pytest.mark.usefixtures()\ndef test_something():\n    ...\n```\n\nUse instead:\n```python\ndef test_something():\n    ...\n```\n\n## References\n- [`pytest` documentation: `pytest.mark.usefixtures`](https://docs.pytest.org/en/latest/reference/reference.html#pytest-mark-usefixtures)\n",
+    "nursery": false
+  },
+  {
+    "name": "pytest-unittest-raises-assertion",
+    "code": "PT027",
+    "linter": "flake8-pytest-style",
+    "summary": "Use `pytest.raises` instead of unittest-style `{assertion}`",
+    "message_formats": [
+      "Use `pytest.raises` instead of unittest-style `{assertion}`"
+    ],
+    "autofix": "Autofix is sometimes available.",
+    "explanation": "## What it does\nChecks for uses of exception-related assertion methods from the `unittest`\nmodule.\n\n## Why is this bad?\nTo enforce the assertion style recommended by `pytest`, `pytest.raises` is\npreferred over the exception-related assertion methods in `unittest`, like\n`assertRaises`.\n\n## Example\n```python\nimport unittest\n\n\nclass TestFoo(unittest.TestCase):\n    def test_foo(self):\n        with self.assertRaises(ValueError):\n            raise ValueError(\"foo\")\n```\n\nUse instead:\n```python\nimport unittest\nimport pytest\n\n\nclass TestFoo(unittest.TestCase):\n    def test_foo(self):\n        with pytest.raises(ValueError):\n            raise ValueError(\"foo\")\n```\n\n## References\n- [`pytest` documentation: Assertions about expected exceptions](https://docs.pytest.org/en/latest/how-to/assert.html#assertions-about-expected-exceptions)\n",
     "nursery": false
   },
   {
@@ -3472,9 +3545,10 @@
     "name": "uncapitalized-environment-variables",
     "code": "SIM112",
     "linter": "flake8-simplify",
-    "summary": "Use capitalized environment variable `{expected}` instead of `{original}`",
+    "summary": "Use capitalized environment variable `{expected}` instead of `{actual}`",
     "message_formats": [
-      "Use capitalized environment variable `{expected}` instead of `{original}`"
+      "Use capitalized environment variable `{expected}` instead of `{actual}`",
+      "Use capitalized environment variable"
     ],
     "autofix": "Autofix is sometimes available.",
     "explanation": "## What it does\nCheck for environment variables that are not capitalized.\n\n## Why is this bad?\nBy convention, environment variables should be capitalized.\n\nOn Windows, environment variables are case-insensitive and are converted to\nuppercase, so using lowercase environment variables can lead to subtle bugs.\n\n## Example\n```python\nimport os\n\nos.environ[\"foo\"]\n```\n\nUse instead:\n```python\nimport os\n\nos.environ[\"FOO\"]\n```\n\n## References\n- [Python documentation: `os.environ`](https://docs.python.org/3/library/os.html#os.environ)\n",
@@ -3633,7 +3707,7 @@
       "Use `True` instead of `{name} or not {name}`"
     ],
     "autofix": "Autofix is always available.",
-    "explanation": "## What it does\nChecks for `or` expressions that include both an expression and its\nnegation.\n\n## Why is this bad?\nAn `or` expression that includes both an expression and its negation will\nalways evaluate to `True`.\n\n## Example\n```python\nx and not x\n```\n\n## References\n- [Python documentation: Boolean operations](https://docs.python.org/3/reference/expressions.html#boolean-operations)\n",
+    "explanation": "## What it does\nChecks for `or` expressions that include both an expression and its\nnegation.\n\n## Why is this bad?\nAn `or` expression that includes both an expression and its negation will\nalways evaluate to `True`.\n\n## Example\n```python\nx or not x\n```\n\n## References\n- [Python documentation: Boolean operations](https://docs.python.org/3/reference/expressions.html#boolean-operations)\n",
     "nursery": false
   },
   {
@@ -3689,9 +3763,10 @@
     "name": "dict-get-with-none-default",
     "code": "SIM910",
     "linter": "flake8-simplify",
-    "summary": "Use `{expected}` instead of `{original}`",
+    "summary": "Use `{expected}` instead of `{actual}`",
     "message_formats": [
-      "Use `{expected}` instead of `{original}`"
+      "Use `{expected}` instead of `{actual}`",
+      "Use `dict.get()` without default value"
     ],
     "autofix": "Autofix is always available.",
     "explanation": "## What it does\nCheck for `dict.get()` calls that pass `None` as the default value.\n\n## Why is this bad?\n`None` is the default value for `dict.get()`, so it is redundant to pass it\nexplicitly.\n\n## Example\n```python\nages = {\"Tom\": 23, \"Maria\": 23, \"Dog\": 11}\nage = ages.get(\"Cat\", None)  # None\n```\n\nUse instead:\n```python\nages = {\"Tom\": 23, \"Maria\": 23, \"Dog\": 11}\nage = ages.get(\"Cat\")  # None\n```\n\n## References\n- [Python documentation: `dict.get`](https://docs.python.org/3/library/stdtypes.html#dict.get)\n",
@@ -3756,6 +3831,18 @@
     ],
     "autofix": "Autofix is sometimes available.",
     "explanation": "## What it does\nChecks for relative imports.\n\n## Why is this bad?\nAbsolute imports, or relative imports from siblings, are recommended by [PEP 8]:\n\n> Absolute imports are recommended, as they are usually more readable and tend to be better behaved...\n> ```python\n> import mypkg.sibling\n> from mypkg import sibling\n> from mypkg.sibling import example\n> ```\n> However, explicit relative imports are an acceptable alternative to absolute imports,\n> especially when dealing with complex package layouts where using absolute imports would be\n> unnecessarily verbose:\n> ```python\n> from . import sibling\n> from .sibling import example\n> ```\n\n## Example\n```python\nfrom .. import foo\n```\n\nUse instead:\n```python\nfrom mypkg import foo\n```\n\n## Options\n- `flake8-tidy-imports.ban-relative-imports`\n\n[PEP 8]: https://peps.python.org/pep-0008/#imports\n",
+    "nursery": false
+  },
+  {
+    "name": "banned-module-level-imports",
+    "code": "TID253",
+    "linter": "flake8-tidy-imports",
+    "summary": "`{name}` is banned at the module level",
+    "message_formats": [
+      "`{name}` is banned at the module level"
+    ],
+    "autofix": "Autofix is not available.",
+    "explanation": "## What it does\nChecks for module-level imports that should instead be imported lazily\n(e.g., within a function definition, or an `if TYPE_CHECKING:` block, or\nsome other nested context).\n\n## Why is this bad?\nSome modules are expensive to import. For example, importing `torch` or\n`tensorflow` can introduce a noticeable delay in the startup time of a\nPython program.\n\nIn such cases, you may want to enforce that the module is imported lazily\nas needed, rather than at the top of the file. This could involve inlining\nthe import into the function that uses it, rather than importing it\nunconditionally, to ensure that the module is only imported when necessary.\n\n## Example\n```python\nimport tensorflow as tf\n\n\ndef show_version():\n    print(tf.__version__)\n```\n\nUse instead:\n```python\ndef show_version():\n    import tensorflow as tf\n\n    print(tf.__version__)\n```\n\n## Options\n- `flake8-tidy-imports.banned-module-level-imports`\n",
     "nursery": false
   },
   {
@@ -3851,7 +3938,7 @@
       "Move application import `{}` into a type-checking block"
     ],
     "autofix": "Autofix is sometimes available.",
-    "explanation": "## What it does\nChecks for first-party imports that are only used for type annotations, but\naren't defined in a type-checking block.\n\n## Why is this bad?\nUnused imports add a performance overhead at runtime, and risk creating\nimport cycles.\n\n## Example\n```python\nfrom __future__ import annotations\n\nimport A\n\n\ndef foo(a: A) -> int:\n    return len(a)\n```\n\nUse instead:\n```python\nfrom __future__ import annotations\n\nfrom typing import TYPE_CHECKING\n\nif TYPE_CHECKING:\n    import A\n\n\ndef foo(a: A) -> int:\n    return len(a)\n```\n\n## References\n- [PEP 536](https://peps.python.org/pep-0563/#runtime-annotation-resolution-and-type-checking)\n",
+    "explanation": "## What it does\nChecks for first-party imports that are only used for type annotations, but\naren't defined in a type-checking block.\n\n## Why is this bad?\nUnused imports add a performance overhead at runtime, and risk creating\nimport cycles. If an import is _only_ used in typing-only contexts, it can\ninstead be imported conditionally under an `if TYPE_CHECKING:` block to\nminimize runtime overhead.\n\nIf a class _requires_ that type annotations be available at runtime (as is\nthe case for Pydantic, SQLAlchemy, and other libraries), consider using\nthe [`flake8-type-checking.runtime-evaluated-base-classes`] and\n[`flake8-type-checking.runtime-evaluated-decorators`] settings to mark them\nas such.\n\n## Example\n```python\nfrom __future__ import annotations\n\nimport local_module\n\n\ndef func(sized: local_module.Container) -> int:\n    return len(sized)\n```\n\nUse instead:\n```python\nfrom __future__ import annotations\n\nfrom typing import TYPE_CHECKING\n\nif TYPE_CHECKING:\n    import local_module\n\n\ndef func(sized: local_module.Container) -> int:\n    return len(sized)\n```\n\n## Options\n- `flake8-type-checking.runtime-evaluated-base-classes`\n- `flake8-type-checking.runtime-evaluated-decorators`\n\n## References\n- [PEP 536](https://peps.python.org/pep-0563/#runtime-annotation-resolution-and-type-checking)\n",
     "nursery": false
   },
   {
@@ -3863,7 +3950,7 @@
       "Move third-party import `{}` into a type-checking block"
     ],
     "autofix": "Autofix is sometimes available.",
-    "explanation": "## What it does\nChecks for third-party imports that are only used for type annotations, but\naren't defined in a type-checking block.\n\n## Why is this bad?\nUnused imports add a performance overhead at runtime, and risk creating\nimport cycles.\n\n## Example\n```python\nfrom __future__ import annotations\n\nimport pandas as pd\n\n\ndef foo(df: pd.DataFrame) -> int:\n    return len(df)\n```\n\nUse instead:\n```python\nfrom __future__ import annotations\n\nfrom typing import TYPE_CHECKING\n\nif TYPE_CHECKING:\n    import pandas as pd\n\n\ndef foo(df: pd.DataFrame) -> int:\n    return len(df)\n```\n\n## References\n- [PEP 536](https://peps.python.org/pep-0563/#runtime-annotation-resolution-and-type-checking)\n",
+    "explanation": "## What it does\nChecks for third-party imports that are only used for type annotations, but\naren't defined in a type-checking block.\n\n## Why is this bad?\nUnused imports add a performance overhead at runtime, and risk creating\nimport cycles. If an import is _only_ used in typing-only contexts, it can\ninstead be imported conditionally under an `if TYPE_CHECKING:` block to\nminimize runtime overhead.\n\nIf a class _requires_ that type annotations be available at runtime (as is\nthe case for Pydantic, SQLAlchemy, and other libraries), consider using\nthe [`flake8-type-checking.runtime-evaluated-base-classes`] and\n[`flake8-type-checking.runtime-evaluated-decorators`] settings to mark them\nas such.\n\n## Example\n```python\nfrom __future__ import annotations\n\nimport pandas as pd\n\n\ndef func(df: pd.DataFrame) -> int:\n    return len(df)\n```\n\nUse instead:\n```python\nfrom __future__ import annotations\n\nfrom typing import TYPE_CHECKING\n\nif TYPE_CHECKING:\n    import pandas as pd\n\n\ndef func(df: pd.DataFrame) -> int:\n    return len(df)\n```\n\n## Options\n- `flake8-type-checking.runtime-evaluated-base-classes`\n- `flake8-type-checking.runtime-evaluated-decorators`\n\n## References\n- [PEP 536](https://peps.python.org/pep-0563/#runtime-annotation-resolution-and-type-checking)\n",
     "nursery": false
   },
   {
@@ -3875,7 +3962,7 @@
       "Move standard library import `{}` into a type-checking block"
     ],
     "autofix": "Autofix is sometimes available.",
-    "explanation": "## What it does\nChecks for standard library imports that are only used for type\nannotations, but aren't defined in a type-checking block.\n\n## Why is this bad?\nUnused imports add a performance overhead at runtime, and risk creating\nimport cycles.\n\n## Example\n```python\nfrom __future__ import annotations\n\nfrom pathlib import Path\n\n\ndef foo(path: Path) -> str:\n    return str(path)\n```\n\nUse instead:\n```python\nfrom __future__ import annotations\n\nfrom typing import TYPE_CHECKING\n\nif TYPE_CHECKING:\n    from pathlib import Path\n\n\ndef foo(path: Path) -> str:\n    return str(path)\n```\n\n## References\n- [PEP 536](https://peps.python.org/pep-0563/#runtime-annotation-resolution-and-type-checking)\n",
+    "explanation": "## What it does\nChecks for standard library imports that are only used for type\nannotations, but aren't defined in a type-checking block.\n\n## Why is this bad?\nUnused imports add a performance overhead at runtime, and risk creating\nimport cycles. If an import is _only_ used in typing-only contexts, it can\ninstead be imported conditionally under an `if TYPE_CHECKING:` block to\nminimize runtime overhead.\n\nIf a class _requires_ that type annotations be available at runtime (as is\nthe case for Pydantic, SQLAlchemy, and other libraries), consider using\nthe [`flake8-type-checking.runtime-evaluated-base-classes`] and\n[`flake8-type-checking.runtime-evaluated-decorators`] settings to mark them\nas such.\n\n## Example\n```python\nfrom __future__ import annotations\n\nfrom pathlib import Path\n\n\ndef func(path: Path) -> str:\n    return str(path)\n```\n\nUse instead:\n```python\nfrom __future__ import annotations\n\nfrom typing import TYPE_CHECKING\n\nif TYPE_CHECKING:\n    from pathlib import Path\n\n\ndef func(path: Path) -> str:\n    return str(path)\n```\n\n## Options\n- `flake8-type-checking.runtime-evaluated-base-classes`\n- `flake8-type-checking.runtime-evaluated-decorators`\n\n## References\n- [PEP 536](https://peps.python.org/pep-0563/#runtime-annotation-resolution-and-type-checking)\n",
     "nursery": false
   },
   {
@@ -4230,12 +4317,12 @@
     "name": "os-path-splitext",
     "code": "PTH122",
     "linter": "flake8-use-pathlib",
-    "summary": "`os.path.splitext()` should be replaced by `Path.suffix`",
+    "summary": "`os.path.splitext()` should be replaced by `Path.suffix`, `Path.stem`, and `Path.parent`",
     "message_formats": [
-      "`os.path.splitext()` should be replaced by `Path.suffix`"
+      "`os.path.splitext()` should be replaced by `Path.suffix`, `Path.stem`, and `Path.parent`"
     ],
     "autofix": "Autofix is not available.",
-    "explanation": "## What it does\nChecks for uses of `os.path.splitext`.\n\n## Why is this bad?\n`pathlib` offers a high-level API for path manipulation, as compared to\nthe lower-level API offered by `os`. When possible, using `Path` object\nmethods such as `Path.suffix` can improve readability over the `os`\nmodule's counterparts (e.g., `os.path.splitext()`).\n\nNote that `os` functions may be preferable if performance is a concern,\ne.g., in hot loops.\n\n## Examples\n```python\nimport os\n\nos.path.splitext(\"f1.py\")\n```\n\nUse instead:\n```python\nfrom pathlib import Path\n\nPath(\"f1.py\").suffix\n```\n\n## References\n- [Python documentation: `Path.suffix`](https://docs.python.org/3/library/pathlib.html#pathlib.PurePath.suffix)\n- [Python documentation: `Path.suffixes`](https://docs.python.org/3/library/pathlib.html#pathlib.PurePath.suffixes)\n- [Python documentation: `os.path.splitext`](https://docs.python.org/3/library/os.path.html#os.path.splitext)\n- [PEP 428](https://peps.python.org/pep-0428/)\n- [Correspondence between `os` and `pathlib`](https://docs.python.org/3/library/pathlib.html#correspondence-to-tools-in-the-os-module)\n- [Why you should be using pathlib](https://treyhunner.com/2018/12/why-you-should-be-using-pathlib/)\n- [No really, pathlib is great](https://treyhunner.com/2019/01/no-really-pathlib-is-great/)\n",
+    "explanation": "## What it does\nChecks for uses of `os.path.splitext`.\n\n## Why is this bad?\n`pathlib` offers a high-level API for path manipulation, as compared to\nthe lower-level API offered by `os`. When possible, using `Path` object\nmethods such as `Path.suffix` and `Path.stem` can improve readability over\nthe `os` module's counterparts (e.g., `os.path.splitext()`).\n\n`os.path.splitext()` specifically returns a tuple of the file root and\nextension (e.g., given `splitext('/foo/bar.py')`, `os.path.splitext()`\nreturns `(\"foo/bar\", \".py\")`. These outputs can be reconstructed through a\ncombination of `Path.suffix` (`\".py\"`), `Path.stem` (`\"bar\"`), and\n`Path.parent` (`\"foo\"`).\n\nNote that `os` functions may be preferable if performance is a concern,\ne.g., in hot loops.\n\n## Examples\n```python\nimport os\n\n(root, ext) = os.path.splitext(\"foo/bar.py\")\n```\n\nUse instead:\n```python\nfrom pathlib import Path\n\npath = Path(\"foo/bar.py\")\nroot = path.parent / path.stem\next = path.suffix\n```\n\n## References\n- [Python documentation: `Path.suffix`](https://docs.python.org/3/library/pathlib.html#pathlib.PurePath.suffix)\n- [Python documentation: `Path.suffixes`](https://docs.python.org/3/library/pathlib.html#pathlib.PurePath.suffixes)\n- [Python documentation: `os.path.splitext`](https://docs.python.org/3/library/os.path.html#os.path.splitext)\n- [PEP 428](https://peps.python.org/pep-0428/)\n- [Correspondence between `os` and `pathlib`](https://docs.python.org/3/library/pathlib.html#correspondence-to-tools-in-the-os-module)\n- [Why you should be using pathlib](https://treyhunner.com/2018/12/why-you-should-be-using-pathlib/)\n- [No really, pathlib is great](https://treyhunner.com/2019/01/no-really-pathlib-is-great/)\n",
     "nursery": false
   },
   {
@@ -4350,9 +4437,10 @@
     "name": "static-join-to-f-string",
     "code": "FLY002",
     "linter": "flynt",
-    "summary": "Consider `{expr}` instead of string join",
+    "summary": "Consider `{expression}` instead of string join",
     "message_formats": [
-      "Consider `{expr}` instead of string join"
+      "Consider `{expression}` instead of string join",
+      "Consider f-string instead of string join"
     ],
     "autofix": "Autofix is always available.",
     "explanation": "## What it does\nChecks for `str#join` calls that can be replaced with f-strings.\n\n## Why is this bad?\nf-strings are more readable and generally preferred over `str#join` calls.\n\n## Example\n```python\n\" \".join((foo, bar))\n```\n\nUse instead:\n```python\nf\"{foo} {bar}\"\n```\n\n## References\n- [Python documentation: f-strings](https://docs.python.org/3/reference/lexical_analysis.html#f-strings)\n",
@@ -4811,7 +4899,7 @@
       "`try`-`except` within a loop incurs performance overhead"
     ],
     "autofix": "Autofix is not available.",
-    "explanation": "## What it does\nChecks for uses of except handling via `try`-`except` within `for` and\n`while` loops.\n\n## Why is this bad?\nException handling via `try`-`except` blocks incurs some performance\noverhead, regardless of whether an exception is raised.\n\nWhen possible, refactor your code to put the entire loop into the\n`try`-`except` block, rather than wrapping each iteration in a separate\n`try`-`except` block.\n\nThis rule is only enforced for Python versions prior to 3.11, which\nintroduced \"zero cost\" exception handling.\n\nNote that, as with all `perflint` rules, this is only intended as a\nmicro-optimization, and will have a negligible impact on performance in\nmost cases.\n\n## Example\n```python\nstring_numbers: list[str] = [\"1\", \"2\", \"three\", \"4\", \"5\"]\n\nint_numbers: list[int] = []\nfor num in string_numbers:\n    try:\n        int_numbers.append(int(num))\n    except ValueError as e:\n        print(f\"Couldn't convert to integer: {e}\")\n```\n\nUse instead:\n```python\nstring_numbers: list[str] = [\"1\", \"2\", \"three\", \"4\", \"5\"]\n\nint_numbers: list[int] = []\ntry:\n    for num in string_numbers:\n        int_numbers.append(int(num))\nexcept ValueError as e:\n    print(f\"Couldn't convert to integer: {e}\")\n```\n\n## Options\n- `target-version`\n",
+    "explanation": "## What it does\nChecks for uses of except handling via `try`-`except` within `for` and\n`while` loops.\n\n## Why is this bad?\nException handling via `try`-`except` blocks incurs some performance\noverhead, regardless of whether an exception is raised.\n\nWhen possible, refactor your code to put the entire loop into the\n`try`-`except` block, rather than wrapping each iteration in a separate\n`try`-`except` block.\n\nThis rule is only enforced for Python versions prior to 3.11, which\nintroduced \"zero cost\" exception handling.\n\nNote that, as with all `perflint` rules, this is only intended as a\nmicro-optimization, and will have a negligible impact on performance in\nmost cases.\n\n## Example\n```python\nstring_numbers: list[str] = [\"1\", \"2\", \"three\", \"4\", \"5\"]\n\nint_numbers: list[int] = []\nfor num in string_numbers:\n    try:\n        int_numbers.append(int(num))\n    except ValueError as e:\n        print(f\"Couldn't convert to integer: {e}\")\n        break\n```\n\nUse instead:\n```python\nstring_numbers: list[str] = [\"1\", \"2\", \"three\", \"4\", \"5\"]\n\nint_numbers: list[int] = []\ntry:\n    for num in string_numbers:\n        int_numbers.append(int(num))\nexcept ValueError as e:\n    print(f\"Couldn't convert to integer: {e}\")\n```\n\n## Options\n- `target-version`\n",
     "nursery": false
   },
   {
@@ -5088,7 +5176,7 @@
       "Missing whitespace after '{token}'"
     ],
     "autofix": "Autofix is always available.",
-    "explanation": null,
+    "explanation": "## What it does\nChecks for missing whitespace after `,`, `;`, and `:`.\n\n## Why is this bad?\nMissing whitespace after `,`, `;`, and `:` makes the code harder to read.\n\n## Example\n```python\na = (1,2)\n```\n\nUse instead:\n```python\na = (1, 2)\n```\n",
     "nursery": true
   },
   {
@@ -5124,7 +5212,7 @@
       "Unexpected spaces around keyword / parameter equals"
     ],
     "autofix": "Autofix is not available.",
-    "explanation": null,
+    "explanation": "## What it does\nChecks for missing whitespace around the equals sign in an unannotated\nfunction keyword parameter.\n\n## Why is this bad?\nAccording to [PEP 8], there should be no spaces around the equals sign in a\nkeyword parameter, if it is unannotated:\n\n> Don’t use spaces around the = sign when used to indicate a keyword\n> argument, or when used to indicate a default value for an unannotated\n> function parameter.\n\n## Example\n```python\ndef add(a = 0) -> int:\n    return a + 1\n```\n\nUse instead:\n```python\ndef add(a = 0) -> int:\n    return a + 1\n```\n\n[PEP 8]: https://peps.python.org/pep-0008/#whitespace-in-expressions-and-statements\n",
     "nursery": true
   },
   {
@@ -5136,7 +5224,7 @@
       "Missing whitespace around parameter equals"
     ],
     "autofix": "Autofix is not available.",
-    "explanation": null,
+    "explanation": "## What it does\nChecks for missing whitespace around the equals sign in an annotated\nfunction keyword parameter.\n\n## Why is this bad?\nAccording to [PEP 8], the spaces around the equals sign in a keyword\nparameter should only be omitted when the parameter is unannotated:\n\n> Don’t use spaces around the = sign when used to indicate a keyword\n> argument, or when used to indicate a default value for an unannotated\n> function parameter.\n\n## Example\n```python\ndef add(a: int=0) -> int:\n    return a + 1\n```\n\nUse instead:\n```python\ndef add(a: int = 0) -> int:\n    return a + 1\n```\n\n[PEP 8]: https://peps.python.org/pep-0008/#whitespace-in-expressions-and-statements\n",
     "nursery": true
   },
   {
@@ -5244,7 +5332,7 @@
       "Missing whitespace after keyword"
     ],
     "autofix": "Autofix is not available.",
-    "explanation": null,
+    "explanation": "## What it does\nChecks for missing whitespace after keywords.\n\n## Why is this bad?\nMissing whitespace after keywords makes the code harder to read.\n\n## Example\n```python\nif(True):\n    pass\n```\n\nUse instead:\n```python\nif (True):\n    pass\n```\n\n## References\n- [Python documentation: Keywords](https://docs.python.org/3/reference/lexical_analysis.html#keywords)\n",
     "nursery": true
   },
   {
@@ -5280,7 +5368,7 @@
       "Line too long ({width} > {limit} characters)"
     ],
     "autofix": "Autofix is not available.",
-    "explanation": "## What it does\nChecks for lines that exceed the specified maximum character length.\n\n## Why is this bad?\nOverlong lines can hurt readability. [PEP 8], for example, recommends\nlimiting lines to 79 characters.\n\nIn the interest of pragmatism, this rule makes a few exceptions when\ndetermining whether a line is overlong. Namely, it ignores lines that\nconsist of a single \"word\" (i.e., without any whitespace between its\ncharacters), and lines that end with a URL (as long as the URL starts\nbefore the line-length threshold).\n\nIf [`pycodestyle.ignore-overlong-task-comments`] is `true`, this rule will\nalso ignore comments that start with any of the specified [`task-tags`]\n(e.g., `# TODO:`).\n\n## Example\n```python\nmy_function(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10)\n```\n\nUse instead:\n```python\nmy_function(\n    param1, param2, param3, param4, param5,\n    param6, param7, param8, param9, param10\n)\n```\n\n## Options\n- `task-tags`\n- `pycodestyle.ignore-overlong-task-comments`\n\n[PEP 8]: https://peps.python.org/pep-0008/#maximum-line-length\n",
+    "explanation": "## What it does\nChecks for lines that exceed the specified maximum character length.\n\n## Why is this bad?\nOverlong lines can hurt readability. [PEP 8], for example, recommends\nlimiting lines to 79 characters. By default, this rule enforces a limit\nof 88 characters for compatibility with Black, though that limit is\nconfigurable via the [`line-length`] setting.\n\nIn the interest of pragmatism, this rule makes a few exceptions when\ndetermining whether a line is overlong. Namely, it ignores lines that\nconsist of a single \"word\" (i.e., without any whitespace between its\ncharacters), and lines that end with a URL (as long as the URL starts\nbefore the line-length threshold).\n\nIf [`pycodestyle.ignore-overlong-task-comments`] is `true`, this rule will\nalso ignore comments that start with any of the specified [`task-tags`]\n(e.g., `# TODO:`).\n\n## Example\n```python\nmy_function(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10)\n```\n\nUse instead:\n```python\nmy_function(\n    param1, param2, param3, param4, param5,\n    param6, param7, param8, param9, param10\n)\n```\n\n## Options\n- `line-length`\n- `task-tags`\n- `pycodestyle.ignore-overlong-task-comments`\n\n[PEP 8]: https://peps.python.org/pep-0008/#maximum-line-length\n",
     "nursery": false
   },
   {
@@ -5380,7 +5468,7 @@
       "Do not compare types, use `isinstance()`"
     ],
     "autofix": "Autofix is not available.",
-    "explanation": "## What it does\nChecks for object type comparisons without using isinstance().\n\n## Why is this bad?\nDo not compare types directly.\nWhen checking if an object is a instance of a certain type, keep in mind that it might\nbe subclassed. E.g. `bool` inherits from `int` or `Exception` inherits from `BaseException`.\n\n## Example\n```python\nif type(obj) is type(1):\n    pass\n```\n\nUse instead:\n```python\nif isinstance(obj, int):\n    pass\nif type(a1) is type(b1):\n    pass\n```\n",
+    "explanation": "## What it does\nChecks for object type comparisons without using `isinstance()`.\n\n## Why is this bad?\nDo not compare types directly.\n\nWhen checking if an object is a instance of a certain type, keep in mind\nthat it might be subclassed. For example, `bool` inherits from `int`, and\n`Exception` inherits from `BaseException`.\n\n## Example\n```python\nif type(obj) is type(1):\n    pass\n\nif type(obj) is int:\n    pass\n```\n\nUse instead:\n```python\nif isinstance(obj, int):\n    pass\n```\n",
     "nursery": false
   },
   {
@@ -5452,7 +5540,7 @@
       "{message}"
     ],
     "autofix": "Autofix is not available.",
-    "explanation": null,
+    "explanation": "## What it does\nThis is not a regular diagnostic; instead, it's raised when a file cannot be read\nfrom disk.\n\n## Why is this bad?\nAn `IOError` indicates an error in the development setup. For example, the user may\nnot have permissions to read a given file, or the filesystem may contain a broken\nsymlink.\n\n## Example\nOn Linux or macOS:\n```shell\n$ echo 'print(\"hello world!\")' > a.py\n$ chmod 000 a.py\n$ ruff a.py\na.py:1:1: E902 Permission denied (os error 13)\nFound 1 error.\n```\n\n## References\n- [UNIX Permissions introduction](https://mason.gmu.edu/~montecin/UNIXpermiss.htm)\n- [Command Line Basics: Symbolic Links](https://www.digitalocean.com/community/tutorials/workflow-symbolic-links)\n",
     "nursery": false
   },
   {
@@ -5464,7 +5552,7 @@
       "SyntaxError: {message}"
     ],
     "autofix": "Autofix is not available.",
-    "explanation": null,
+    "explanation": "## What it does\nChecks for code that contains syntax errors.\n\n## Why is this bad?\nCode with syntax errors cannot be executed. Such errors are likely a\nmistake.\n\n## Example\n```python\nx =\n```\n\nUse instead:\n```python\nx = 1\n```\n\n## References\n- [Python documentation: Syntax Errors](https://docs.python.org/3/tutorial/errors.html#syntax-errors)\n",
     "nursery": false
   },
   {
@@ -5524,7 +5612,7 @@
       "Doc line too long ({width} > {limit} characters)"
     ],
     "autofix": "Autofix is not available.",
-    "explanation": "## What it does\nChecks for doc lines that exceed the specified maximum character length.\n\n## Why is this bad?\nFor flowing long blocks of text (docstrings or comments), overlong lines\ncan hurt readability. [PEP 8], for example, recommends that such lines be\nlimited to 72 characters.\n\nIn the context of this rule, a \"doc line\" is defined as a line consisting\nof either a standalone comment or a standalone string, like a docstring.\n\nIn the interest of pragmatism, this rule makes a few exceptions when\ndetermining whether a line is overlong. Namely, it ignores lines that\nconsist of a single \"word\" (i.e., without any whitespace between its\ncharacters), and lines that end with a URL (as long as the URL starts\nbefore the line-length threshold).\n\nNote that this rule will only be enforced after providing a value for\n[`pycodestyle.max-doc-length`] in your Ruff configuration file. If no\nvalue is provided, this rule will be ignored, even if it's added to your\n`--select` list.\n\nIf [`pycodestyle.ignore-overlong-task-comments`] is `true`, this rule will\nalso ignore comments that start with any of the specified [`task-tags`]\n(e.g., `# TODO:`).\n\n## Example\n```python\ndef function(x):\n    \"\"\"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis auctor purus ut ex fermentum, at maximus est hendrerit.\"\"\"\n```\n\nUse instead:\n```python\ndef function(x):\n    \"\"\"\n    Lorem ipsum dolor sit amet, consectetur adipiscing elit.\n    Duis auctor purus ut ex fermentum, at maximus est hendrerit.\n    \"\"\"\n```\n\n## Options\n- `task-tags`\n- `pycodestyle.max-doc-length`\n- `pycodestyle.ignore-overlong-task-comments`\n\n[PEP 8]: https://peps.python.org/pep-0008/#maximum-line-length\n",
+    "explanation": "## What it does\nChecks for doc lines that exceed the specified maximum character length.\n\n## Why is this bad?\nFor flowing long blocks of text (docstrings or comments), overlong lines\ncan hurt readability. [PEP 8], for example, recommends that such lines be\nlimited to 72 characters, while this rule enforces the limit specified by\nthe [`pycodestyle.max-doc-length`] setting. (If no value is provided, this\nrule will be ignored, even if it's added to your `--select` list.)\n\nIn the context of this rule, a \"doc line\" is defined as a line consisting\nof either a standalone comment or a standalone string, like a docstring.\n\nIn the interest of pragmatism, this rule makes a few exceptions when\ndetermining whether a line is overlong. Namely, it ignores lines that\nconsist of a single \"word\" (i.e., without any whitespace between its\ncharacters), and lines that end with a URL (as long as the URL starts\nbefore the line-length threshold).\n\nIf [`pycodestyle.ignore-overlong-task-comments`] is `true`, this rule will\nalso ignore comments that start with any of the specified [`task-tags`]\n(e.g., `# TODO:`).\n\n## Example\n```python\ndef function(x):\n    \"\"\"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis auctor purus ut ex fermentum, at maximus est hendrerit.\"\"\"\n```\n\nUse instead:\n```python\ndef function(x):\n    \"\"\"\n    Lorem ipsum dolor sit amet, consectetur adipiscing elit.\n    Duis auctor purus ut ex fermentum, at maximus est hendrerit.\n    \"\"\"\n```\n\n## Options\n- `task-tags`\n- `pycodestyle.max-doc-length`\n- `pycodestyle.ignore-overlong-task-comments`\n\n[PEP 8]: https://peps.python.org/pep-0008/#maximum-line-length\n",
     "nursery": false
   },
   {
@@ -6366,7 +6454,8 @@
     "linter": "Pyflakes",
     "summary": "Dictionary key literal `{name}` repeated",
     "message_formats": [
-      "Dictionary key literal `{name}` repeated"
+      "Dictionary key literal `{name}` repeated",
+      "Dictionary key literal repeated"
     ],
     "autofix": "Autofix is sometimes available.",
     "explanation": "## What it does\nChecks for dictionary literals that associate multiple values with the\nsame key.\n\n## Why is this bad?\nDictionary keys should be unique. If a key is associated with multiple values,\nthe earlier values will be overwritten. Including multiple values for the\nsame key in a dictionary literal is likely a mistake.\n\n## Example\n```python\nfoo = {\n    \"bar\": 1,\n    \"baz\": 2,\n    \"baz\": 3,\n}\nfoo[\"baz\"]  # 3\n```\n\nUse instead:\n```python\nfoo = {\n    \"bar\": 1,\n    \"baz\": 2,\n}\nfoo[\"baz\"]  # 2\n```\n\n## References\n- [Python documentation: Dictionaries](https://docs.python.org/3/tutorial/datastructures.html#dictionaries)\n",
@@ -6378,7 +6467,8 @@
     "linter": "Pyflakes",
     "summary": "Dictionary key `{name}` repeated",
     "message_formats": [
-      "Dictionary key `{name}` repeated"
+      "Dictionary key `{name}` repeated",
+      "Dictionary key repeated"
     ],
     "autofix": "Autofix is sometimes available.",
     "explanation": "## What it does\nChecks for dictionary keys that are repeated with different values.\n\n## Why is this bad?\nDictionary keys should be unique. If a key is repeated with a different\nvalue, the first values will be overwritten and the key will correspond to\nthe last value. This is likely a mistake.\n\n## Example\n```python\nfoo = {\n    bar: 1,\n    baz: 2,\n    baz: 3,\n}\nfoo[baz]  # 3\n```\n\nUse instead:\n```python\nfoo = {\n    bar: 1,\n    baz: 2,\n}\nfoo[baz]  # 2\n```\n\n## References\n- [Python documentation: Dictionaries](https://docs.python.org/3/tutorial/datastructures.html#dictionaries)\n",
@@ -6490,7 +6580,7 @@
       "`{keyword}` statement outside of a function"
     ],
     "autofix": "Autofix is not available.",
-    "explanation": "## What it does\nChecks for `yield` and `yield from` statements outside of functions.\n\n## Why is this bad?\nThe use of a `yield` or `yield from` statement outside of a function will\nraise a `SyntaxError`.\n\n## Example\n```python\nclass Foo:\n    yield 1\n```\n\n## References\n- [Python documentation: `yield`](https://docs.python.org/3/reference/simple_stmts.html#the-yield-statement)\n",
+    "explanation": "## What it does\nChecks for `yield`, `yield from`, and `await` usages outside of functions.\n\n## Why is this bad?\nThe use of `yield`, `yield from`, or `await` outside of a function will\nraise a `SyntaxError`.\n\nAs an exception, `await` is allowed at the top level of a Jupyter notebook\n(see: [autoawait]).\n\n## Example\n```python\nclass Foo:\n    yield 1\n```\n\n## References\n- [Python documentation: `yield`](https://docs.python.org/3/reference/simple_stmts.html#the-yield-statement)\n\n[autoawait]: https://ipython.readthedocs.io/en/stable/interactive/autoawait.html\n",
     "nursery": false
   },
   {
@@ -6928,6 +7018,18 @@
     "nursery": false
   },
   {
+    "name": "bad-string-format-character",
+    "code": "PLE1300",
+    "linter": "Pylint",
+    "summary": "Unsupported format character '{format_char}'",
+    "message_formats": [
+      "Unsupported format character '{format_char}'"
+    ],
+    "autofix": "Autofix is not available.",
+    "explanation": "## What it does\nChecks for unsupported format types in format strings.\n\n## Why is this bad?\nAn invalid format string character will result in an error at runtime.\n\n## Example\n```python\n# `z` is not a valid format type.\nprint(\"%z\" % \"1\")\n\nprint(\"{:z}\".format(\"1\"))\n```\n",
+    "nursery": false
+  },
+  {
     "name": "bad-string-format-type",
     "code": "PLE1307",
     "linter": "Pylint",
@@ -7052,9 +7154,10 @@
     "name": "comparison-with-itself",
     "code": "PLR0124",
     "linter": "Pylint",
-    "summary": "Name compared with itself, consider replacing `{left} {} {right}`",
+    "summary": "Name compared with itself, consider replacing `{actual}`",
     "message_formats": [
-      "Name compared with itself, consider replacing `{left} {} {right}`"
+      "Name compared with itself, consider replacing `{actual}`",
+      "Name compared with itself"
     ],
     "autofix": "Autofix is not available.",
     "explanation": "## What it does\nChecks for operations that compare a name to itself.\n\n## Why is this bad?\nComparing a name to itself always results in the same value, and is likely\na mistake.\n\n## Example\n```python\nfoo == foo\n```\n\n## References\n- [Python documentation: Comparisons](https://docs.python.org/3/reference/expressions.html#comparisons)\n",
@@ -7105,7 +7208,7 @@
       "Too many return statements ({returns} > {max_returns})"
     ],
     "autofix": "Autofix is not available.",
-    "explanation": "## What it does\nChecks for functions or methods with too many return statements.\n\nBy default, this rule allows up to six return statements, as configured by\nthe `pylint.max-returns` option.\n\n## Why is this bad?\nFunctions or methods with many return statements are harder to understand\nand maintain, and often indicative of complex logic.\n\n## Example\n```python\ndef capital(country: str) -> str | None:\n    if country == \"England\":\n        return \"London\"\n    elif country == \"France\":\n        return \"Paris\"\n    elif country == \"Poland\":\n        return \"Warsaw\"\n    elif country == \"Romania\":\n        return \"Bucharest\"\n    elif country == \"Spain\":\n        return \"Madrid\"\n    elif country == \"Thailand\":\n        return \"Bangkok\"\n    else:\n        return None\n```\n\nUse instead:\n```python\ndef capital(country: str) -> str | None:\n    capitals = {\n        \"England\": \"London\",\n        \"France\": \"Paris\",\n        \"Poland\": \"Warsaw\",\n        \"Romania\": \"Bucharest\",\n        \"Spain\": \"Madrid\",\n        \"Thailand\": \"Bangkok\",\n    }\n    return capitals.get(country)\n```\n\n## Options\n- `pylint.max-returns`\n",
+    "explanation": "## What it does\nChecks for functions or methods with too many return statements.\n\nBy default, this rule allows up to six return statements, as configured by\nthe [`pylint.max-returns`] option.\n\n## Why is this bad?\nFunctions or methods with many return statements are harder to understand\nand maintain, and often indicative of complex logic.\n\n## Example\n```python\ndef capital(country: str) -> str | None:\n    if country == \"England\":\n        return \"London\"\n    elif country == \"France\":\n        return \"Paris\"\n    elif country == \"Poland\":\n        return \"Warsaw\"\n    elif country == \"Romania\":\n        return \"Bucharest\"\n    elif country == \"Spain\":\n        return \"Madrid\"\n    elif country == \"Thailand\":\n        return \"Bangkok\"\n    else:\n        return None\n```\n\nUse instead:\n```python\ndef capital(country: str) -> str | None:\n    capitals = {\n        \"England\": \"London\",\n        \"France\": \"Paris\",\n        \"Poland\": \"Warsaw\",\n        \"Romania\": \"Bucharest\",\n        \"Spain\": \"Madrid\",\n        \"Thailand\": \"Bangkok\",\n    }\n    return capitals.get(country)\n```\n\n## Options\n- `pylint.max-returns`\n",
     "nursery": false
   },
   {
@@ -7117,7 +7220,7 @@
       "Too many branches ({branches} > {max_branches})"
     ],
     "autofix": "Autofix is not available.",
-    "explanation": "## What it does\nChecks for functions or methods with too many branches.\n\nBy default, this rule allows up to 12 branches. This can be configured\nusing the `max-branches` option.\n\n## Why is this bad?\nFunctions or methods with many branches are harder to understand\nand maintain than functions or methods with fewer branches.\n\n## Example\n```python\ndef capital(country):\n    if country == \"Australia\":\n        return \"Canberra\"\n    elif country == \"Brazil\":\n        return \"Brasilia\"\n    elif country == \"Canada\":\n        return \"Ottawa\"\n    elif country == \"England\":\n        return \"London\"\n    elif country == \"France\":\n        return \"Paris\"\n    elif country == \"Germany\":\n        return \"Berlin\"\n    elif country == \"Poland\":\n        return \"Warsaw\"\n    elif country == \"Romania\":\n        return \"Bucharest\"\n    elif country == \"Spain\":\n        return \"Madrid\"\n    elif country == \"Thailand\":\n        return \"Bangkok\"\n    elif country == \"Turkey\":\n        return \"Ankara\"\n    elif country == \"United States\":\n        return \"Washington\"\n    else:\n        return \"Unknown\"  # 13th branch\n```\n\nUse instead:\n```python\ndef capital(country):\n    capitals = {\n        \"Australia\": \"Canberra\",\n        \"Brazil\": \"Brasilia\",\n        \"Canada\": \"Ottawa\",\n        \"England\": \"London\",\n        \"France\": \"Paris\",\n        \"Germany\": \"Berlin\",\n        \"Poland\": \"Warsaw\",\n        \"Romania\": \"Bucharest\",\n        \"Spain\": \"Madrid\",\n        \"Thailand\": \"Bangkok\",\n        \"Turkey\": \"Ankara\",\n        \"United States\": \"Washington\",\n    }\n    city = capitals.get(country, \"Unknown\")\n    return city\n```\n\n## References\n- [Ruff configuration documentation](https://beta.ruff.rs/docs/settings/#max-branches)\n",
+    "explanation": "## What it does\nChecks for functions or methods with too many branches.\n\nBy default, this rule allows up to 12 branches. This can be configured\nusing the [`pylint.max-branches`] option.\n\n## Why is this bad?\nFunctions or methods with many branches are harder to understand\nand maintain than functions or methods with fewer branches.\n\n## Example\n```python\ndef capital(country):\n    if country == \"Australia\":\n        return \"Canberra\"\n    elif country == \"Brazil\":\n        return \"Brasilia\"\n    elif country == \"Canada\":\n        return \"Ottawa\"\n    elif country == \"England\":\n        return \"London\"\n    elif country == \"France\":\n        return \"Paris\"\n    elif country == \"Germany\":\n        return \"Berlin\"\n    elif country == \"Poland\":\n        return \"Warsaw\"\n    elif country == \"Romania\":\n        return \"Bucharest\"\n    elif country == \"Spain\":\n        return \"Madrid\"\n    elif country == \"Thailand\":\n        return \"Bangkok\"\n    elif country == \"Turkey\":\n        return \"Ankara\"\n    elif country == \"United States\":\n        return \"Washington\"\n    else:\n        return \"Unknown\"  # 13th branch\n```\n\nUse instead:\n```python\ndef capital(country):\n    capitals = {\n        \"Australia\": \"Canberra\",\n        \"Brazil\": \"Brasilia\",\n        \"Canada\": \"Ottawa\",\n        \"England\": \"London\",\n        \"France\": \"Paris\",\n        \"Germany\": \"Berlin\",\n        \"Poland\": \"Warsaw\",\n        \"Romania\": \"Bucharest\",\n        \"Spain\": \"Madrid\",\n        \"Thailand\": \"Bangkok\",\n        \"Turkey\": \"Ankara\",\n        \"United States\": \"Washington\",\n    }\n    city = capitals.get(country, \"Unknown\")\n    return city\n```\n\n## Options\n- `pylint.max-branches`\n",
     "nursery": false
   },
   {
@@ -7129,7 +7232,7 @@
       "Too many arguments to function call ({c_args} > {max_args})"
     ],
     "autofix": "Autofix is not available.",
-    "explanation": "## What it does\nChecks for function definitions that include too many arguments.\n\nBy default, this rule allows up to five arguments, as configured by the\n`pylint.max-args` option.\n\n## Why is this bad?\nFunctions with many arguments are harder to understand, maintain, and call.\nConsider refactoring functions with many arguments into smaller functions\nwith fewer arguments, or using objects to group related arguments.\n\n## Example\n```python\ndef calculate_position(x_pos, y_pos, z_pos, x_vel, y_vel, z_vel, time):\n    new_x = x_pos + x_vel * time\n    new_y = y_pos + y_vel * time\n    new_z = z_pos + z_vel * time\n    return new_x, new_y, new_z\n```\n\nUse instead:\n```python\nfrom typing import NamedTuple\n\n\nclass Vector(NamedTuple):\n    x: float\n    y: float\n    z: float\n\n\ndef calculate_position(pos: Vector, vel: Vector, time: float) -> Vector:\n    return Vector(*(p + v * time for p, v in zip(pos, vel)))\n```\n\n## Options\n- `pylint.max-args`\n",
+    "explanation": "## What it does\nChecks for function definitions that include too many arguments.\n\nBy default, this rule allows up to five arguments, as configured by the\n[`pylint.max-args`] option.\n\n## Why is this bad?\nFunctions with many arguments are harder to understand, maintain, and call.\nConsider refactoring functions with many arguments into smaller functions\nwith fewer arguments, or using objects to group related arguments.\n\n## Example\n```python\ndef calculate_position(x_pos, y_pos, z_pos, x_vel, y_vel, z_vel, time):\n    new_x = x_pos + x_vel * time\n    new_y = y_pos + y_vel * time\n    new_z = z_pos + z_vel * time\n    return new_x, new_y, new_z\n```\n\nUse instead:\n```python\nfrom typing import NamedTuple\n\n\nclass Vector(NamedTuple):\n    x: float\n    y: float\n    z: float\n\n\ndef calculate_position(pos: Vector, vel: Vector, time: float) -> Vector:\n    return Vector(*(p + v * time for p, v in zip(pos, vel)))\n```\n\n## Options\n- `pylint.max-args`\n",
     "nursery": false
   },
   {
@@ -7141,16 +7244,17 @@
       "Too many statements ({statements} > {max_statements})"
     ],
     "autofix": "Autofix is not available.",
-    "explanation": "## What it does\nChecks for functions or methods with too many statements.\n\nBy default, this rule allows up to 50 statements, as configured by the\n`pylint.max-statements` option.\n\n## Why is this bad?\nFunctions or methods with many statements are harder to understand\nand maintain.\n\nInstead, consider refactoring the function or method into smaller\nfunctions or methods, or identifying generalizable patterns and\nreplacing them with generic logic or abstractions.\n\n## Example\n```python\ndef is_even(number: int) -> bool:\n    if number == 0:\n        return True\n    elif number == 1:\n        return False\n    elif number == 2:\n        return True\n    elif number == 3:\n        return False\n    elif number == 4:\n        return True\n    elif number == 5:\n        return False\n    else:\n        ...\n```\n\nUse instead:\n```python\ndef is_even(number: int) -> bool:\n    return number % 2 == 0\n```\n\n## Options\n- `pylint.max-statements`\n",
+    "explanation": "## What it does\nChecks for functions or methods with too many statements.\n\nBy default, this rule allows up to 50 statements, as configured by the\n[`pylint.max-statements`] option.\n\n## Why is this bad?\nFunctions or methods with many statements are harder to understand\nand maintain.\n\nInstead, consider refactoring the function or method into smaller\nfunctions or methods, or identifying generalizable patterns and\nreplacing them with generic logic or abstractions.\n\n## Example\n```python\ndef is_even(number: int) -> bool:\n    if number == 0:\n        return True\n    elif number == 1:\n        return False\n    elif number == 2:\n        return True\n    elif number == 3:\n        return False\n    elif number == 4:\n        return True\n    elif number == 5:\n        return False\n    else:\n        ...\n```\n\nUse instead:\n```python\ndef is_even(number: int) -> bool:\n    return number % 2 == 0\n```\n\n## Options\n- `pylint.max-statements`\n",
     "nursery": false
   },
   {
     "name": "repeated-isinstance-calls",
     "code": "PLR1701",
     "linter": "Pylint",
-    "summary": "Merge `isinstance` calls: `{expr}`",
+    "summary": "Merge `isinstance` calls: `{expression}`",
     "message_formats": [
-      "Merge `isinstance` calls: `{expr}`"
+      "Merge `isinstance` calls: `{expression}`",
+      "Merge `isinstance` calls"
     ],
     "autofix": "Autofix is always available.",
     "explanation": "## What it does\nChecks for repeated `isinstance` calls on the same object.\n\n## Why is this bad?\nRepeated `isinstance` calls on the same object can be merged into a\nsingle call.\n\n## Example\n```python\ndef is_number(x):\n    return isinstance(x, int) or isinstance(x, float) or isinstance(x, complex)\n```\n\nUse instead:\n```python\ndef is_number(x):\n    return isinstance(x, (int, float, complex))\n```\n\nOr, for Python 3.10 and later:\n\n```python\ndef is_number(x):\n    return isinstance(x, int | float | complex)\n```\n\n## Options\n- `target-version`\n\n## References\n- [Python documentation: `isinstance`](https://docs.python.org/3/library/functions.html#isinstance)\n",
@@ -7172,9 +7276,10 @@
     "name": "repeated-equality-comparison-target",
     "code": "PLR1714",
     "linter": "Pylint",
-    "summary": "Consider merging multiple comparisons: `{expr}`. Use a `set` if the elements are hashable.",
+    "summary": "Consider merging multiple comparisons: `{expression}`. Use a `set` if the elements are hashable.",
     "message_formats": [
-      "Consider merging multiple comparisons: `{expr}`. Use a `set` if the elements are hashable."
+      "Consider merging multiple comparisons: `{expression}`. Use a `set` if the elements are hashable.",
+      "Consider merging multiple comparisons. Use a `set` if the elements are hashable."
     ],
     "autofix": "Autofix is not available.",
     "explanation": "## What it does\nChecks for repeated equality comparisons that can rewritten as a membership\ntest.\n\n## Why is this bad?\nTo check if a variable is equal to one of many values, it is common to\nwrite a series of equality comparisons (e.g.,\n`foo == \"bar\" or foo == \"baz\"`).\n\nInstead, prefer to combine the values into a collection and use the `in`\noperator to check for membership, which is more performant and succinct.\nIf the items are hashable, use a `set` for efficiency; otherwise, use a\n`tuple`.\n\n## Example\n```python\nfoo == \"bar\" or foo == \"baz\" or foo == \"qux\"\n```\n\nUse instead:\n```python\nfoo in {\"bar\", \"baz\", \"qux\"}\n```\n\n## References\n- [Python documentation: Comparisons](https://docs.python.org/3/reference/expressions.html#comparisons)\n- [Python documentation: Membership test operations](https://docs.python.org/3/reference/expressions.html#membership-test-operations)\n- [Python documentation: `set`](https://docs.python.org/3/library/stdtypes.html#set)\n",
@@ -7215,6 +7320,18 @@
     "autofix": "Autofix is not available.",
     "explanation": "## What it does\nChecks for `else` blocks that consist of a single `if` statement.\n\n## Why is this bad?\nIf an `else` block contains a single `if` statement, it can be collapsed\ninto an `elif`, thus reducing the indentation level.\n\n## Example\n```python\ndef check_sign(value: int) -> None:\n    if value > 0:\n        print(\"Number is positive.\")\n    else:\n        if value < 0:\n            print(\"Number is negative.\")\n        else:\n            print(\"Number is zero.\")\n```\n\nUse instead:\n```python\ndef check_sign(value: int) -> None:\n    if value > 0:\n        print(\"Number is positive.\")\n    elif value < 0:\n        print(\"Number is negative.\")\n    else:\n        print(\"Number is zero.\")\n```\n\n## References\n- [Python documentation: `if` Statements](https://docs.python.org/3/tutorial/controlflow.html#if-statements)\n",
     "nursery": false
+  },
+  {
+    "name": "no-self-use",
+    "code": "PLR6301",
+    "linter": "Pylint",
+    "summary": "Method `{method_name}` could be a function or static method",
+    "message_formats": [
+      "Method `{method_name}` could be a function or static method"
+    ],
+    "autofix": "Autofix is not available.",
+    "explanation": "## What it does\nChecks for the presence of unused `self` parameter in methods definitions.\n\n## Why is this bad?\nUnused `self` parameters are usually a sign of a method that could be\nreplaced by a function or a static method.\n\n## Example\n```python\nclass Person:\n    def greeting(self):\n        print(\"Greetings friend!\")\n```\n\nUse instead:\n```python\nclass Person:\n    @staticmethod\n    def greeting():\n        print(f\"Greetings friend!\")\n```\n",
+    "nursery": true
   },
   {
     "name": "useless-else-on-loop",
@@ -7324,7 +7441,7 @@
       "Invalid type for environment variable default; expected `str` or `None`"
     ],
     "autofix": "Autofix is not available.",
-    "explanation": "## What it does\nChecks for `env.getenv` calls with invalid default values.\n\n## Why is this bad?\nIf an environment variable is set, `env.getenv` will return its value as\na string. If the environment variable is _not_ set, `env.getenv` will\nreturn `None`, or the default value if one is provided.\n\nIf the default value is not a string or `None`, then it will be\ninconsistent with the return type of `env.getenv`, which can lead to\nconfusing behavior.\n\n## Example\n```python\nint(env.getenv(\"FOO\", 1))\n```\n\nUse instead:\n```python\nint(env.getenv(\"FOO\", \"1\"))\n```\n",
+    "explanation": "## What it does\nChecks for `os.getenv` calls with invalid default values.\n\n## Why is this bad?\nIf an environment variable is set, `os.getenv` will return its value as\na string. If the environment variable is _not_ set, `os.getenv` will\nreturn `None`, or the default value if one is provided.\n\nIf the default value is not a string or `None`, then it will be\ninconsistent with the return type of `os.getenv`, which can lead to\nconfusing behavior.\n\n## Example\n```python\nimport os\n\nint(os.getenv(\"FOO\", 1))\n```\n\nUse instead:\n```python\nimport os\n\nint(os.getenv(\"FOO\", \"1\"))\n```\n",
     "nursery": false
   },
   {
@@ -7337,6 +7454,18 @@
     ],
     "autofix": "Autofix is not available.",
     "explanation": "## What it does\nChecks for uses of `subprocess.Popen` with a `preexec_fn` argument.\n\n## Why is this bad?\nThe `preexec_fn` argument is unsafe within threads as it can lead to\ndeadlocks. Furthermore, `preexec_fn` is [targeted for deprecation].\n\nInstead, consider using task-specific arguments such as `env`,\n`start_new_session`, and `process_group`. These are not prone to deadlocks\nand are more explicit.\n\n## Example\n```python\nimport os, subprocess\n\nsubprocess.Popen(foo, preexec_fn=os.setsid)\nsubprocess.Popen(bar, preexec_fn=os.setpgid(0, 0))\n```\n\nUse instead:\n```python\nimport subprocess\n\nsubprocess.Popen(foo, start_new_session=True)\nsubprocess.Popen(bar, process_group=0)  # Introduced in Python 3.11\n```\n\n## References\n- [Python documentation: `subprocess.Popen`](https://docs.python.org/3/library/subprocess.html#popen-constructor)\n- [Why `preexec_fn` in `subprocess.Popen` may lead to deadlock?](https://discuss.python.org/t/why-preexec-fn-in-subprocess-popen-may-lead-to-deadlock/16908/2)\n\n[targeted for deprecation]: https://github.com/python/cpython/issues/82616\n",
+    "nursery": false
+  },
+  {
+    "name": "subprocess-run-without-check",
+    "code": "PLW1510",
+    "linter": "Pylint",
+    "summary": "`subprocess.run` without explicit `check` argument",
+    "message_formats": [
+      "`subprocess.run` without explicit `check` argument"
+    ],
+    "autofix": "Autofix is not available.",
+    "explanation": "## What it does\nChecks for uses of `subprocess.run` without an explicit `check` argument.\n\n## Why is this bad?\nBy default, `subprocess.run` does not check the return code of the process\nit runs. This can lead to silent failures.\n\nInstead, consider using `check=True` to raise an exception if the process\nfails, or set `check=False` explicitly to mark the behavior as intentional.\n\n## Example\n```python\nimport subprocess\n\nsubprocess.run([\"ls\", \"nonexistent\"])  # No exception raised.\n```\n\nUse instead:\n```python\nimport subprocess\n\nsubprocess.run([\"ls\", \"nonexistent\"], check=True)  # Raises exception.\n```\n\nOr:\n```python\nimport subprocess\n\nsubprocess.run([\"ls\", \"nonexistent\"], check=False)  # Explicitly no check.\n```\n\n## References\n- [Python documentation: `subprocess.run`](https://docs.python.org/3/library/subprocess.html#subprocess.run)\n",
     "nursery": false
   },
   {
@@ -7365,12 +7494,24 @@
     "nursery": false
   },
   {
+    "name": "bad-dunder-method-name",
+    "code": "PLW3201",
+    "linter": "Pylint",
+    "summary": "Bad or misspelled dunder method name `{name}`. (bad-dunder-name)",
+    "message_formats": [
+      "Bad or misspelled dunder method name `{name}`. (bad-dunder-name)"
+    ],
+    "autofix": "Autofix is not available.",
+    "explanation": "## What it does\nChecks for any misspelled dunder name method and for any method\ndefined with `_..._` that's not one of the pre-defined methods\n\nThe pre-defined methods encompass all of Python's standard dunder\nmethods.\n\nNote this includes all methods starting and ending with at least\none underscore to detect mistakes.\n\n## Why is this bad?\nMisspelled dunder name methods may cause your code to not function\nas expected.\n\nSince dunder methods are associated with customizing the behavior\nof a class in Python, introducing a dunder method such as `__foo__`\nthat diverges from standard Python dunder methods could potentially\nconfuse someone reading the code.\n\n## Example\n```python\nclass Foo:\n    def __init_(self):\n        ...\n```\n\nUse instead:\n```python\nclass Foo:\n    def __init__(self):\n        ...\n```\n",
+    "nursery": true
+  },
+  {
     "name": "nested-min-max",
     "code": "PLW3301",
     "linter": "Pylint",
-    "summary": "Nested `{}` calls can be flattened",
+    "summary": "Nested `{func}` calls can be flattened",
     "message_formats": [
-      "Nested `{}` calls can be flattened"
+      "Nested `{func}` calls can be flattened"
     ],
     "autofix": "Autofix is sometimes available.",
     "explanation": "## What it does\nChecks for nested `min` and `max` calls.\n\n## Why is this bad?\nNested `min` and `max` calls can be flattened into a single call to improve\nreadability.\n\n## Example\n```python\nminimum = min(1, 2, min(3, 4, 5))\nmaximum = max(1, 2, max(3, 4, 5))\ndiff = maximum - minimum\n```\n\nUse instead:\n```python\nminimum = min(1, 2, 3, 4, 5)\nmaximum = max(1, 2, 3, 4, 5)\ndiff = maximum - minimum\n```\n\n## References\n- [Python documentation: `min`](https://docs.python.org/3/library/functions.html#min)\n- [Python documentation: `max`](https://docs.python.org/3/library/functions.html#max)\n",
@@ -7433,7 +7574,7 @@
       "Use `{to}` instead of `{from}` for type annotation"
     ],
     "autofix": "Autofix is sometimes available.",
-    "explanation": "## What it does\nChecks for the use of generics that can be replaced with standard library\nvariants based on [PEP 585].\n\n## Why is this bad?\n[PEP 585] enabled collections in the Python standard library (like `list`)\nto be used as generics directly, instead of importing analogous members\nfrom the `typing` module (like `typing.List`).\n\nWhen available, the [PEP 585] syntax should be used instead of importing\nmembers from the `typing` module, as it's more concise and readable.\nImporting those members from `typing` is considered deprecated as of PEP\n585.\n\n## Example\n```python\nfrom typing import List\n\nfoo: List[int] = [1, 2, 3]\n```\n\nUse instead:\n```python\nfoo: list[int] = [1, 2, 3]\n```\n\n## Options\n- `target-version`\n- `pyupgrade.keep-runtime-typing`\n\n[PEP 585]: https://peps.python.org/pep-0585/\n",
+    "explanation": "## What it does\nChecks for the use of generics that can be replaced with standard library\nvariants based on [PEP 585].\n\n## Why is this bad?\n[PEP 585] enabled collections in the Python standard library (like `list`)\nto be used as generics directly, instead of importing analogous members\nfrom the `typing` module (like `typing.List`).\n\nWhen available, the [PEP 585] syntax should be used instead of importing\nmembers from the `typing` module, as it's more concise and readable.\nImporting those members from `typing` is considered deprecated as of [PEP\n585].\n\nThis rule is enabled when targeting Python 3.9 or later (see:\n[`target-version`]). By default, it's _also_ enabled for earlier Python\nversions if `from __future__ import annotations` is present, as\n`__future__` annotations are not evaluated at runtime. If your code relies\non runtime type annotations (either directly or via a library like\nPydantic), you can disable this behavior for Python versions prior to 3.9\nby setting [`pyupgrade.keep-runtime-typing`] to `true`.\n\n## Example\n```python\nfrom typing import List\n\nfoo: List[int] = [1, 2, 3]\n```\n\nUse instead:\n```python\nfoo: list[int] = [1, 2, 3]\n```\n\n## Options\n- `target-version`\n- `pyupgrade.keep-runtime-typing`\n\n[PEP 585]: https://peps.python.org/pep-0585/\n",
     "nursery": false
   },
   {
@@ -7445,7 +7586,7 @@
       "Use `X | Y` for type annotations"
     ],
     "autofix": "Autofix is sometimes available.",
-    "explanation": "## What it does\nCheck for type annotations that can be rewritten based on [PEP 604] syntax.\n\n## Why is this bad?\n[PEP 604] introduced a new syntax for union type annotations based on the\n`|` operator. This syntax is more concise and readable than the previous\n`typing.Union` and `typing.Optional` syntaxes.\n\n## Example\n```python\nfrom typing import Union\n\nfoo: Union[int, str] = 1\n```\n\nUse instead:\n```python\nfoo: int | str = 1\n```\n\n## Options\n- `target-version`\n- `pyupgrade.keep-runtime-typing`\n\n[PEP 604]: https://peps.python.org/pep-0604/\n",
+    "explanation": "## What it does\nCheck for type annotations that can be rewritten based on [PEP 604] syntax.\n\n## Why is this bad?\n[PEP 604] introduced a new syntax for union type annotations based on the\n`|` operator. This syntax is more concise and readable than the previous\n`typing.Union` and `typing.Optional` syntaxes.\n\nThis rule is enabled when targeting Python 3.10 or later (see:\n[`target-version`]). By default, it's _also_ enabled for earlier Python\nversions if `from __future__ import annotations` is present, as\n`__future__` annotations are not evaluated at runtime. If your code relies\non runtime type annotations (either directly or via a library like\nPydantic), you can disable this behavior for Python versions prior to 3.10\nby setting [`pyupgrade.keep-runtime-typing`] to `true`.\n\n## Example\n```python\nfrom typing import Union\n\nfoo: Union[int, str] = 1\n```\n\nUse instead:\n```python\nfoo: int | str = 1\n```\n\n## Options\n- `target-version`\n- `pyupgrade.keep-runtime-typing`\n\n[PEP 604]: https://peps.python.org/pep-0604/\n",
     "nursery": false
   },
   {
@@ -7723,7 +7864,7 @@
     "message_formats": [
       "Use format specifiers instead of percent format"
     ],
-    "autofix": "Autofix is always available.",
+    "autofix": "Autofix is sometimes available.",
     "explanation": "## What it does\nChecks for `printf`-style string formatting.\n\n## Why is this bad?\n`printf`-style string formatting has a number of quirks, and leads to less\nreadable code than using `str.format` calls or f-strings. In general, prefer\nthe newer `str.format` and f-strings constructs over `printf`-style string\nformatting.\n\n## Example\n```python\n\"%s, %s\" % (\"Hello\", \"World\")  # \"Hello, World\"\n```\n\nUse instead:\n```python\n\"{}, {}\".format(\"Hello\", \"World\")  # \"Hello, World\"\n```\n\n## References\n- [Python documentation: `printf`-style String Formatting](https://docs.python.org/3/library/stdtypes.html#old-string-formatting)\n- [Python documentation: `str.format`](https://docs.python.org/3/library/stdtypes.html#str.format)\n",
     "nursery": false
   },
@@ -7735,7 +7876,7 @@
     "message_formats": [
       "Use f-string instead of `format` call"
     ],
-    "autofix": "Autofix is always available.",
+    "autofix": "Autofix is sometimes available.",
     "explanation": "## What it does\nChecks for `str#format` calls that can be replaced with f-strings.\n\n## Why is this bad?\nf-strings are more readable and generally preferred over `str#format`\ncalls.\n\n## Example\n```python\n\"{}\".format(foo)\n```\n\nUse instead:\n```python\nf\"{foo}\"\n```\n\n## References\n- [Python documentation: f-strings](https://docs.python.org/3/reference/lexical_analysis.html#f-strings)\n",
     "nursery": false
   },
@@ -7825,6 +7966,54 @@
     "nursery": false
   },
   {
+    "name": "non-pep695-type-alias",
+    "code": "UP040",
+    "linter": "pyupgrade",
+    "summary": "Type alias `{name}` uses `TypeAlias` annotation instead of the `type` keyword",
+    "message_formats": [
+      "Type alias `{name}` uses `TypeAlias` annotation instead of the `type` keyword"
+    ],
+    "autofix": "Autofix is always available.",
+    "explanation": "## What it does\nChecks for use of `TypeAlias` annotation for declaring type aliases.\n\n## Why is this bad?\nThe `type` keyword was introduced in Python 3.12 by PEP-695 for defining type aliases.\nThe type keyword is easier to read and provides cleaner support for generics.\n\n## Example\n```python\nListOfInt: TypeAlias = list[int]\n```\n\nUse instead:\n```python\ntype ListOfInt = list[int]\n```\n",
+    "nursery": false
+  },
+  {
+    "name": "repeated-append",
+    "code": "FURB113",
+    "linter": "refurb",
+    "summary": "Use `{suggestion}` instead of repeatedly calling `{name}.append()`",
+    "message_formats": [
+      "Use `{suggestion}` instead of repeatedly calling `{name}.append()`"
+    ],
+    "autofix": "Autofix is sometimes available.",
+    "explanation": "## What it does\nChecks for consecutive calls to `append`.\n\n## Why is this bad?\nConsecutive calls to `append` can be less efficient than batching them into\na single `extend`. Each `append` resizes the list individually, whereas an\n`extend` can resize the list once for all elements.\n\n## Example\n```python\nnums = [1, 2, 3]\n\nnums.append(4)\nnums.append(5)\nnums.append(6)\n```\n\nUse instead:\n```python\nnums = [1, 2, 3]\n\nnums.extend((4, 5, 6))\n```\n\n## References\n- [Python documentation: More on Lists](https://docs.python.org/3/tutorial/datastructures.html#more-on-lists)\n",
+    "nursery": true
+  },
+  {
+    "name": "delete-full-slice",
+    "code": "FURB131",
+    "linter": "refurb",
+    "summary": "Prefer `clear` over deleting a full slice",
+    "message_formats": [
+      "Prefer `clear` over deleting a full slice"
+    ],
+    "autofix": "Autofix is sometimes available.",
+    "explanation": "## What it does\nChecks for `del` statements that delete the entire slice of a list or\ndictionary.\n\n## Why is this bad?\nIt's is faster and more succinct to remove all items via the `clear()`\nmethod.\n\n## Example\n```python\nnames = {\"key\": \"value\"}\nnums = [1, 2, 3]\n\ndel names[:]\ndel nums[:]\n```\n\nUse instead:\n```python\nnames = {\"key\": \"value\"}\nnums = [1, 2, 3]\n\nnames.clear()\nnums.clear()\n```\n\n## References\n- [Python documentation: Mutable Sequence Types](https://docs.python.org/3/library/stdtypes.html?highlight=list#mutable-sequence-types)\n- [Python documentation: `dict.clear()`](https://docs.python.org/3/library/stdtypes.html?highlight=list#dict.clear)\n",
+    "nursery": true
+  },
+  {
+    "name": "check-and-remove-from-set",
+    "code": "FURB132",
+    "linter": "refurb",
+    "summary": "Use `{suggestion}` instead of check and `remove`",
+    "message_formats": [
+      "Use `{suggestion}` instead of check and `remove`"
+    ],
+    "autofix": "Autofix is always available.",
+    "explanation": "## What it does\nChecks for uses of `set#remove` that can be replaced with `set#discard`.\n\n## Why is this bad?\nIf an element should be removed from a set if it is present, it is more\nsuccinct and idiomatic to use `discard`.\n\n## Example\n```python\nnums = {123, 456}\n\nif 123 in nums:\n    nums.remove(123)\n```\n\nUse instead:\n```python\nnums = {123, 456}\n\nnums.discard(123)\n```\n\n## References\n- [Python documentation: `set.discard()`](https://docs.python.org/3/library/stdtypes.html?highlight=list#frozenset.discard)\n",
+    "nursery": true
+  },
+  {
     "name": "ambiguous-unicode-character-string",
     "code": "RUF001",
     "linter": "Ruff-specific rules",
@@ -7864,9 +8053,10 @@
     "name": "collection-literal-concatenation",
     "code": "RUF005",
     "linter": "Ruff-specific rules",
-    "summary": "Consider `{expr}` instead of concatenation",
+    "summary": "Consider `{expression}` instead of concatenation",
     "message_formats": [
-      "Consider `{expr}` instead of concatenation"
+      "Consider `{expression}` instead of concatenation",
+      "Consider iterable unpacking instead of concatenation"
     ],
     "autofix": "Autofix is sometimes available.",
     "explanation": "## What it does\nChecks for uses of the `+` operator to concatenate collections.\n\n## Why is this bad?\nIn Python, the `+` operator can be used to concatenate collections (e.g.,\n`x + y` to concatenate the lists `x` and `y`).\n\nHowever, collections can be concatenated more efficiently using the\nunpacking operator (e.g., `[*x, *y]` to concatenate `x` and `y`).\n\nPrefer the unpacking operator to concatenate collections, as it is more\nreadable and flexible. The `*` operator can unpack any iterable, whereas\n `+` operates only on particular sequences which, in many cases, must be of\nthe same type.\n\n## Example\n```python\nfoo = [2, 3, 4]\nbar = [1] + foo + [5, 6]\n```\n\nUse instead:\n```python\nfoo = [2, 3, 4]\nbar = [1, *foo, 5, 6]\n```\n\n## References\n- [PEP 448 – Additional Unpacking Generalizations](https://peps.python.org/pep-0448/)\n- [Python documentation: Sequence Types — `list`, `tuple`, `range`](https://docs.python.org/3/library/stdtypes.html#sequence-types-list-tuple-range)\n",
@@ -7939,7 +8129,8 @@
     "linter": "Ruff-specific rules",
     "summary": "Dictionary comprehension uses static key: `{key}`",
     "message_formats": [
-      "Dictionary comprehension uses static key: `{key}`"
+      "Dictionary comprehension uses static key: `{key}`",
+      "Dictionary comprehension uses static key"
     ],
     "autofix": "Autofix is not available.",
     "explanation": "## What it does\nChecks for dictionary comprehensions that use a static key, like a string\nliteral.\n\n## Why is this bad?\nUsing a static key (like a string literal) in a dictionary comprehension\nis usually a mistake, as it will result in a dictionary with only one key,\ndespite the comprehension iterating over multiple values.\n\n## Example\n```python\ndata = [\"some\", \"Data\"]\n{\"key\": value.upper() for value in data}\n```\n\nUse instead:\n```python\ndata = [\"some\", \"Data\"]\n{value: value.upper() for value in data}\n```\n",
@@ -7995,6 +8186,18 @@
     "nursery": false
   },
   {
+    "name": "quadratic-list-summation",
+    "code": "RUF017",
+    "linter": "Ruff-specific rules",
+    "summary": "Avoid quadratic list summation",
+    "message_formats": [
+      "Avoid quadratic list summation"
+    ],
+    "autofix": "Autofix is always available.",
+    "explanation": "## What it does\nChecks for the use of `sum()` to flatten lists of lists, which has\nquadratic complexity.\n\n## Why is this bad?\nThe use of `sum()` to flatten lists of lists is quadratic in the number of\nlists, as `sum()` creates a new list for each element in the summation.\n\nInstead, consider using another method of flattening lists to avoid\nquadratic complexity. The following methods are all linear in the number of\nlists:\n\n- `functools.reduce(operator.iconcat, lists, [])`\n- `list(itertools.chain.from_iterable(lists)`\n- `[item for sublist in lists for item in sublist]`\n\n## Example\n```python\nlists = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]\njoined = sum(lists, [])\n```\n\nUse instead:\n```python\nimport functools\nimport operator\n\n\nlists = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]\nfunctools.reduce(operator.iconcat, lists, [])\n```\n\n## References\n- [_How Not to Flatten a List of Lists in Python_](https://mathieularose.com/how-not-to-flatten-a-list-of-lists-in-python)\n- [_How do I make a flat list out of a list of lists?_](https://stackoverflow.com/questions/952914/how-do-i-make-a-flat-list-out-of-a-list-of-lists/953097#953097)\n",
+    "nursery": true
+  },
+  {
     "name": "unused-noqa",
     "code": "RUF100",
     "linter": "Ruff-specific rules",
@@ -8012,9 +8215,9 @@
     "name": "invalid-pyproject-toml",
     "code": "RUF200",
     "linter": "Ruff-specific rules",
-    "summary": "Failed to parse pyproject.toml: {}",
+    "summary": "Failed to parse pyproject.toml: {message}",
     "message_formats": [
-      "Failed to parse pyproject.toml: {}"
+      "Failed to parse pyproject.toml: {message}"
     ],
     "autofix": "Autofix is not available.",
     "explanation": "## What it does\nChecks for any pyproject.toml that does not conform to the schema from the relevant PEPs.\n\n## Why is this bad?\nYour project may contain invalid metadata or configuration without you noticing\n\n## Example\n```toml\n[project]\nname = \"crab\"\nversion = \"1.0.0\"\nauthors = [\"Ferris the Crab <ferris@example.org>\"]\n```\n\nUse instead:\n```toml\n[project]\nname = \"crab\"\nversion = \"1.0.0\"\nauthors = [\n  { email = \"ferris@example.org\" },\n  { name = \"Ferris the Crab\"}\n]\n```\n\n## References\n- [Specification of `[project]` in pyproject.toml](https://packaging.python.org/en/latest/specifications/declaring-project-metadata/)\n- [Specification of `[build-system]` in pyproject.toml](https://peps.python.org/pep-0518/)\n- [Draft but implemented license declaration extensions](https://peps.python.org/pep-0639)\n",
@@ -8041,7 +8244,7 @@
       "Avoid specifying long messages outside the exception class"
     ],
     "autofix": "Autofix is not available.",
-    "explanation": "## What it does\nChecks for long exception messages that are not defined in the exception\nclass itself.\n\n## Why is this bad?\nBy formatting an exception message at the `raise` site, the exception class\nbecomes less reusable, and may now raise inconsistent messages depending on\nwhere it is raised.\n\nIf the exception message is instead defined within the exception class, it\nwill be consistent across all `raise` invocations.\n\n## Example\n```python\nclass CantBeNegative(Exception):\n    pass\n\n\ndef foo(x):\n    if x < 0:\n        raise CantBeNegative(f\"{x} is negative\")\n```\n\nUse instead:\n```python\nclass CantBeNegative(Exception):\n    def __init__(self, number):\n        super().__init__(f\"{number} is negative\")\n\n\ndef foo(x):\n    if x < 0:\n        raise CantBeNegative(x)\n```\n",
+    "explanation": "## What it does\nChecks for long exception messages that are not defined in the exception\nclass itself.\n\n## Why is this bad?\nBy formatting an exception message at the `raise` site, the exception class\nbecomes less reusable, and may now raise inconsistent messages depending on\nwhere it is raised.\n\nIf the exception message is instead defined within the exception class, it\nwill be consistent across all `raise` invocations.\n\nThis rule is not enforced for some built-in exceptions that are commonly\nraised with a message and would be unusual to subclass, such as\n`NotImplementedError`.\n\n## Example\n```python\nclass CantBeNegative(Exception):\n    pass\n\n\ndef foo(x):\n    if x < 0:\n        raise CantBeNegative(f\"{x} is negative\")\n```\n\nUse instead:\n```python\nclass CantBeNegative(Exception):\n    def __init__(self, number):\n        super().__init__(f\"{number} is negative\")\n\n\ndef foo(x):\n    if x < 0:\n        raise CantBeNegative(x)\n```\n",
     "nursery": false
   },
   {

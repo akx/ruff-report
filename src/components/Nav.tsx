@@ -3,7 +3,6 @@ import {
   Group,
   Navbar,
   NavLink,
-  Paper,
   rem,
   useMantineTheme,
 } from "@mantine/core";
@@ -11,6 +10,7 @@ import { FilterAccordion } from "./FilterAccordion";
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { useReportData } from "../contexts/reportData";
+import { NavBarInfoBox } from "./NavBarInfoBox";
 
 export function Nav() {
   const theme = useMantineTheme();
@@ -49,20 +49,7 @@ export function Nav() {
         <FilterAccordion processed={processed} {...filters} />
       </Navbar.Section>
       <Navbar.Section>
-        <Paper shadow="xs" p="xs" sx={{ textAlign: "center" }}>
-          <b>ruff-report</b> built by{" "}
-          <a href="https://akx.github.io" target="_blank" rel="noreferrer">
-            @akx
-          </a>
-          <br />
-          <a
-            href="https://github.com/akx/ruff-report"
-            target="_blank"
-            rel="noreferrer"
-          >
-            GitHub
-          </a>
-        </Paper>
+        <NavBarInfoBox />
       </Navbar.Section>
     </Navbar>
   );
