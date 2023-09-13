@@ -3,5 +3,8 @@
 .DS_Store
 dist
 dist-ssr
+dist-standalone
 node_modules
 src/example.json
+/ruff-report-standalone.html
+/ruff-report.js
