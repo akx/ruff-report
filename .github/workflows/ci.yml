@@ -21,7 +21,7 @@ jobs:
           version: latest
       - uses: actions/setup-node@v3
         with:
-          node-version: "16.x"
+          node-version: "20.x"
           cache: pnpm
       - run: pnpm i
       - run: pnpm lint
@@ -30,11 +30,30 @@ jobs:
         uses: actions/upload-pages-artifact@v1
         with:
           path: dist
+  build-standalone:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: pnpm/action-setup@v2
+        with:
+          version: latest
+      - uses: actions/setup-node@v3
+        with:
+          node-version: "20.x"
+          cache: pnpm
+      - run: pnpm i
+      - run: make standalone
+      - name: Upload artifact
+        uses: actions/upload-artifact@v2
+        with:
+          path: ./ruff-report-standalone.html
+          name: ruff-report-standalone
   deploy:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     needs: build
+    if: github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
     name: Deploy
     steps:

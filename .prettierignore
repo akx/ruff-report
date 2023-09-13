@@ -1,3 +1,5 @@
 /dist*
 /pnpm-lock.yaml
 /src/gen
+/ruff-report-standalone.html
+/ruff-report.js

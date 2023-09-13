@@ -1,11 +1,13 @@
 import { Paper } from "@mantine/core";
 import { appVersion, ruffVersion } from "../data";
 import React from "react";
+import { standalone } from "../config";
 
 export function NavBarInfoBox() {
   return (
     <Paper shadow="xs" p="xs" sx={{ textAlign: "center" }}>
       <b>ruff-report</b> {appVersion}
+      {standalone ? <div>(standalone mode)</div> : null}
       <br />
       <small>
         Rules from {ruffVersion}

@@ -24,6 +24,7 @@
   },
   "devDependencies": {
     "@types/lodash": "^4.14.195",
+    "@types/node": "^20.6.0",
     "@types/react": "^18.2.14",
     "@types/react-dom": "^18.2.6",
     "@typescript-eslint/eslint-plugin": "^5.60.1",
@@ -35,7 +36,8 @@
     "eslint-plugin-react-hooks": "^4.6.0",
     "prettier": "^2.8.8",
     "typescript": "^5.1.5",
-    "vite": "^4.3.9"
+    "vite": "^4.3.9",
+    "vite-plugin-singlefile": "^0.13.5"
   },
   "prettier": {
     "trailingComma": "all"
