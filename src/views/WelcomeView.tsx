@@ -3,6 +3,7 @@ import React from "react";
 import { standalone } from "../config";
 import UploadOrEnterJSON from "./UploadOrEnterJSON";
 import StandaloneDataFinder from "./StandaloneDataFinder";
+import { RUFF_INCANTATION } from "../consts";
 
 function Prose() {
   return (
@@ -15,8 +16,7 @@ function Prose() {
         </a>{" "}
         JSON report, to help you figure out where to focus your code-cleaning
         efforts. I personally might recommend just doing{" "}
-        <Code>ruff --select=ALL --format=json . &gt; report.json</Code> to start
-        with.
+        <Code>{RUFF_INCANTATION} &gt; report.json</Code> to start with.
       </p>
       <p>
         Please choose a Ruff-generated JSON file to view. Rest assured that your

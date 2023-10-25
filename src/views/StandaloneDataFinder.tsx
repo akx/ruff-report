@@ -3,6 +3,7 @@ import React from "react";
 import { useReportData } from "../contexts/reportData";
 import { useNavigate } from "react-router-dom";
 import { useInterval } from "@mantine/hooks";
+import { RUFF_INCANTATION } from "../consts";
 
 export default function StandaloneDataFinder() {
   const { setRawData } = useReportData();
@@ -40,8 +41,8 @@ export default function StandaloneDataFinder() {
         On an UNIX-like system, you can generate a compatible file with
         something like: <br />
         <Code>
-          echo "var __RUFF_REPORT_DATA__ =" &gt; ruff-report.js && ruff
-          --select=ALL . --format=json &gt;&gt; ruff-report.js
+          echo "var __RUFF_REPORT_DATA__ =" &gt; ruff-report.js &&{" "}
+          {RUFF_INCANTATION} &gt;&gt; ruff-report.js
         </Code>
       </Paper>
     </Paper>
