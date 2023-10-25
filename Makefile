@@ -8,7 +8,7 @@ src/gen/rules.json:
 .PHONY: src/gen/ruff-version.json
 
 src/gen/ruff-version.json:
-	ruff --version | jq -R '{"version":.}' > $@
+	ruff version --output-format=json > $@
 
 .PHONY: standalone
 
