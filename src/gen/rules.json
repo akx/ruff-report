@@ -236,7 +236,7 @@
       "Missing return type annotation for special method `{name}`"
     ],
     "fix": "Fix is always available.",
-    "explanation": "## What it does\nChecks that \"special\" methods, like `__init__`, `__new__`, and `__call__`, have\nreturn type annotations.\n\n## Why is this bad?\nType annotations are a good way to document the return types of functions. They also\nhelp catch bugs, when used alongside a type checker, by ensuring that the types of\nany returned values, and the types expected by callers, match expectation.\n\nNote that type checkers often allow you to omit the return type annotation for\n`__init__` methods, as long as at least one argument has a type annotation. To\nopt-in to this behavior, use the `mypy-init-return` setting in your `pyproject.toml`\nor `ruff.toml` file:\n\n```toml\n[tool.ruff.flake8-annotations]\nmypy-init-return = true\n```\n\n## Example\n```python\nclass Foo:\n    def __init__(self, x: int):\n        self.x = x\n```\n\nUse instead:\n```python\nclass Foo:\n    def __init__(self, x: int) -> None:\n        self.x = x\n```\n",
+    "explanation": "## What it does\nChecks that \"special\" methods, like `__init__`, `__new__`, and `__call__`, have\nreturn type annotations.\n\n## Why is this bad?\nType annotations are a good way to document the return types of functions. They also\nhelp catch bugs, when used alongside a type checker, by ensuring that the types of\nany returned values, and the types expected by callers, match expectation.\n\nNote that type checkers often allow you to omit the return type annotation for\n`__init__` methods, as long as at least one argument has a type annotation. To\nopt-in to this behavior, use the `mypy-init-return` setting in your `pyproject.toml`\nor `ruff.toml` file:\n\n```toml\n[tool.ruff.lint.flake8-annotations]\nmypy-init-return = true\n```\n\n## Example\n```python\nclass Foo:\n    def __init__(self, x: int):\n        self.x = x\n```\n\nUse instead:\n```python\nclass Foo:\n    def __init__(self, x: int) -> None:\n        self.x = x\n```\n",
     "preview": false
   },
   {
@@ -813,7 +813,9 @@
     "summary": "`subprocess` call with `shell=True` seems safe, but may be changed in the future; consider rewriting without `shell`",
     "message_formats": [
       "`subprocess` call with `shell=True` seems safe, but may be changed in the future; consider rewriting without `shell`",
-      "`subprocess` call with `shell=True` identified, security issue"
+      "`subprocess` call with `shell=True` identified, security issue",
+      "`subprocess` call with truthy `shell` seems safe, but may be changed in the future; consider rewriting without `shell`",
+      "`subprocess` call with truthy `shell` identified, security issue"
     ],
     "fix": "Fix is not available.",
     "explanation": "## What it does\nCheck for method calls that initiate a subprocess with a shell.\n\n## Why is this bad?\nStarting a subprocess with a shell can allow attackers to execute arbitrary\nshell commands. Consider starting the process without a shell call and\nsanitize the input to mitigate the risk of shell injection.\n\n## Example\n```python\nimport subprocess\n\nsubprocess.run(\"ls -l\", shell=True)\n```\n\nUse instead:\n```python\nimport subprocess\n\nsubprocess.run([\"ls\", \"-l\"])\n```\n\n## References\n- [Python documentation: `subprocess` — Subprocess management](https://docs.python.org/3/library/subprocess.html)\n- [Common Weakness Enumeration: CWE-78](https://cwe.mitre.org/data/definitions/78.html)\n",
@@ -837,10 +839,11 @@
     "linter": "flake8-bandit",
     "summary": "Function call with `shell=True` parameter identified, security issue",
     "message_formats": [
-      "Function call with `shell=True` parameter identified, security issue"
+      "Function call with `shell=True` parameter identified, security issue",
+      "Function call with truthy `shell` parameter identified, security issue"
     ],
     "fix": "Fix is not available.",
-    "explanation": "## What it does\nChecks for method calls that set the `shell` parameter to `true` when\ninvoking a subprocess.\n\n## Why is this bad?\nSetting the `shell` parameter to `true` when invoking a subprocess can\nintroduce security vulnerabilities, as it allows shell metacharacters and\nwhitespace to be passed to child processes, potentially leading to shell\ninjection attacks. It is recommended to avoid using `shell=True` unless\nabsolutely necessary, and when used, to ensure that all inputs are properly\nsanitized and quoted to prevent such vulnerabilities.\n\n## Known problems\nProne to false positives as it is triggered on any function call with a\n`shell=True` parameter.\n\n## Example\n```python\nimport subprocess\n\nuser_input = input(\"Enter a command: \")\nsubprocess.run(user_input, shell=True)\n```\n\n## References\n- [Python documentation: Security Considerations](https://docs.python.org/3/library/subprocess.html#security-considerations)\n",
+    "explanation": "## What it does\nChecks for method calls that set the `shell` parameter to `true` or another\ntruthy value when invoking a subprocess.\n\n## Why is this bad?\nSetting the `shell` parameter to `true` or another truthy value when\ninvoking a subprocess can introduce security vulnerabilities, as it allows\nshell metacharacters and whitespace to be passed to child processes,\npotentially leading to shell injection attacks.\n\nIt is recommended to avoid using `shell=True` unless absolutely necessary\nand, when used, to ensure that all inputs are properly sanitized and quoted\nto prevent such vulnerabilities.\n\n## Known problems\nProne to false positives as it is triggered on any function call with a\n`shell=True` parameter.\n\n## Example\n```python\nimport subprocess\n\nuser_input = input(\"Enter a command: \")\nsubprocess.run(user_input, shell=True)\n```\n\n## References\n- [Python documentation: Security Considerations](https://docs.python.org/3/library/subprocess.html#security-considerations)\n",
     "preview": false
   },
   {
@@ -1141,9 +1144,9 @@
     "name": "useless-comparison",
     "code": "B015",
     "linter": "flake8-bugbear",
-    "summary": "Pointless comparison. This comparison does nothing but waste CPU instructions. Either prepend `assert` or remove it.",
+    "summary": "Pointless comparison. Did you mean to assign a value? Otherwise, prepend `assert` or remove it.",
     "message_formats": [
-      "Pointless comparison. This comparison does nothing but waste CPU instructions. Either prepend `assert` or remove it."
+      "Pointless comparison. Did you mean to assign a value? Otherwise, prepend `assert` or remove it."
     ],
     "fix": "Fix is not available.",
     "explanation": "## What it does\nChecks for useless comparisons.\n\n## Why is this bad?\nUseless comparisons have no effect on the program, and are often included\nby mistake. If the comparison is intended to enforce an invariant, prepend\nthe comparison with an `assert`. Otherwise, remove it entirely.\n\n## Example\n```python\nfoo == bar\n```\n\nUse instead:\n```python\nassert foo == bar, \"`foo` and `bar` should be equal.\"\n```\n\n## References\n- [Python documentation: `assert` statement](https://docs.python.org/3/reference/simple_stmts.html#the-assert-statement)\n",
@@ -3368,7 +3371,7 @@
       "Double quotes found but single quotes preferred"
     ],
     "fix": "Fix is always available.",
-    "explanation": "## What it does\nChecks for inline strings that use single quotes or double quotes,\ndepending on the value of the [`flake8-quotes.inline-quotes`] option.\n\n## Why is this bad?\nConsistency is good. Use either single or double quotes for inline\nstrings, but be consistent.\n\n## Example\n```python\nfoo = 'bar'\n```\n\nAssuming `inline-quotes` is set to `double`, use instead:\n```python\nfoo = \"bar\"\n```\n\n## Options\n- `flake8-quotes.inline-quotes`\n",
+    "explanation": "## What it does\nChecks for inline strings that use single quotes or double quotes,\ndepending on the value of the [`flake8-quotes.inline-quotes`] option.\n\n## Why is this bad?\nConsistency is good. Use either single or double quotes for inline\nstrings, but be consistent.\n\n## Example\n```python\nfoo = 'bar'\n```\n\nAssuming `inline-quotes` is set to `double`, use instead:\n```python\nfoo = \"bar\"\n```\n\n## Options\n- `flake8-quotes.inline-quotes`\n\n## Formatter compatibility\nWe recommend against using this rule alongside the [formatter]. The\nformatter enforces consistent quotes for inline strings, making the rule\nredundant.\n\n[formatter]: https://docs.astral.sh/ruff/formatter\n",
     "preview": false
   },
   {
@@ -3381,7 +3384,7 @@
       "Double quote multiline found but single quotes preferred"
     ],
     "fix": "Fix is always available.",
-    "explanation": "## What it does\nChecks for multiline strings that use single quotes or double quotes,\ndepending on the value of the [`flake8-quotes.multiline-quotes`]\nsetting.\n\n## Why is this bad?\nConsistency is good. Use either single or double quotes for multiline\nstrings, but be consistent.\n\n## Example\n```python\nfoo = '''\nbar\n'''\n```\n\nAssuming `multiline-quotes` is set to `double`, use instead:\n```python\nfoo = \"\"\"\nbar\n\"\"\"\n```\n\n## Options\n- `flake8-quotes.multiline-quotes`\n",
+    "explanation": "## What it does\nChecks for multiline strings that use single quotes or double quotes,\ndepending on the value of the [`flake8-quotes.multiline-quotes`]\nsetting.\n\n## Why is this bad?\nConsistency is good. Use either single or double quotes for multiline\nstrings, but be consistent.\n\n## Example\n```python\nfoo = '''\nbar\n'''\n```\n\nAssuming `multiline-quotes` is set to `double`, use instead:\n```python\nfoo = \"\"\"\nbar\n\"\"\"\n```\n\n## Options\n- `flake8-quotes.multiline-quotes`\n\n## Formatter compatibility\nWe recommend against using this rule alongside the [formatter]. The\nformatter enforces double quotes for multiline strings, making the rule\nredundant.\n\n[formatter]: https://docs.astral.sh/ruff/formatter\n",
     "preview": false
   },
   {
@@ -3394,7 +3397,7 @@
       "Double quote docstring found but single quotes preferred"
     ],
     "fix": "Fix is always available.",
-    "explanation": "## What it does\nChecks for docstrings that use single quotes or double quotes, depending\non the value of the [`flake8-quotes.docstring-quotes`] setting.\n\n## Why is this bad?\nConsistency is good. Use either single or double quotes for docstring\nstrings, but be consistent.\n\n## Example\n```python\n'''\nbar\n'''\n```\n\nAssuming `docstring-quotes` is set to `double`, use instead:\n```python\n\"\"\"\nbar\n\"\"\"\n```\n\n## Options\n- `flake8-quotes.docstring-quotes`\n",
+    "explanation": "## What it does\nChecks for docstrings that use single quotes or double quotes, depending\non the value of the [`flake8-quotes.docstring-quotes`] setting.\n\n## Why is this bad?\nConsistency is good. Use either single or double quotes for docstring\nstrings, but be consistent.\n\n## Example\n```python\n'''\nbar\n'''\n```\n\nAssuming `docstring-quotes` is set to `double`, use instead:\n```python\n\"\"\"\nbar\n\"\"\"\n```\n\n## Options\n- `flake8-quotes.docstring-quotes`\n\n## Formatter compatibility\nWe recommend against using this rule alongside the [formatter]. The\nformatter enforces double quotes for docstrings, making the rule\nredundant.\n\n[formatter]: https://docs.astral.sh/ruff/formatter\n",
     "preview": false
   },
   {
@@ -3406,7 +3409,7 @@
       "Change outer quotes to avoid escaping inner quotes"
     ],
     "fix": "Fix is always available.",
-    "explanation": "## What it does\nChecks for strings that include escaped quotes, and suggests changing\nthe quote style to avoid the need to escape them.\n\n## Why is this bad?\nIt's preferable to avoid escaped quotes in strings. By changing the\nouter quote style, you can avoid escaping inner quotes.\n\n## Example\n```python\nfoo = 'bar\\'s'\n```\n\nUse instead:\n```python\nfoo = \"bar's\"\n```\n",
+    "explanation": "## What it does\nChecks for strings that include escaped quotes, and suggests changing\nthe quote style to avoid the need to escape them.\n\n## Why is this bad?\nIt's preferable to avoid escaped quotes in strings. By changing the\nouter quote style, you can avoid escaping inner quotes.\n\n## Example\n```python\nfoo = 'bar\\'s'\n```\n\nUse instead:\n```python\nfoo = \"bar's\"\n```\n\n## Formatter compatibility\nWe recommend against using this rule alongside the [formatter]. The\nformatter automatically removes unnecessary escapes, making the rule\nredundant.\n\n[formatter]: https://docs.astral.sh/ruff/formatter\n",
     "preview": false
   },
   {
@@ -3418,7 +3421,7 @@
       "Unnecessary parentheses on raised exception"
     ],
     "fix": "Fix is always available.",
-    "explanation": "## What it does\nChecks for unnecessary parentheses on raised exceptions.\n\n## Why is this bad?\nIf an exception is raised without any arguments, parentheses are not\nrequired, as the `raise` statement accepts either an exception instance\nor an exception class (which is then implicitly instantiated).\n\nRemoving the parentheses makes the code more concise.\n\n## Example\n```python\nraise TypeError()\n```\n\nUse instead:\n```python\nraise TypeError\n```\n\n## References\n- [Python documentation: The `raise` statement](https://docs.python.org/3/reference/simple_stmts.html#the-raise-statement)\n",
+    "explanation": "## What it does\nChecks for unnecessary parentheses on raised exceptions.\n\n## Why is this bad?\nIf an exception is raised without any arguments, parentheses are not\nrequired, as the `raise` statement accepts either an exception instance\nor an exception class (which is then implicitly instantiated).\n\nRemoving the parentheses makes the code more concise.\n\n## Known problems\nParentheses can only be omitted if the exception is a class, as opposed to\na function call. This rule isn't always capable of distinguishing between\nthe two.\n\nFor example, if you import a function `module.get_exception` from another\nmodule, and `module.get_exception` returns an exception object, this rule will\nincorrectly mark the parentheses in `raise module.get_exception()` as\nunnecessary.\n\n## Example\n```python\nraise TypeError()\n```\n\nUse instead:\n```python\nraise TypeError\n```\n\n## References\n- [Python documentation: The `raise` statement](https://docs.python.org/3/reference/simple_stmts.html#the-raise-statement)\n",
     "preview": false
   },
   {
@@ -4016,6 +4019,18 @@
     "preview": false
   },
   {
+    "name": "trio-timeout-without-await",
+    "code": "TRIO100",
+    "linter": "flake8-trio",
+    "summary": "A `with {method_name}(...):` context does not contain any `await` statements. This makes it pointless, as the timeout can only be triggered by a checkpoint.",
+    "message_formats": [
+      "A `with {method_name}(...):` context does not contain any `await` statements. This makes it pointless, as the timeout can only be triggered by a checkpoint."
+    ],
+    "fix": "Fix is not available.",
+    "explanation": "## What it does\nChecks for trio functions that should contain await but don't.\n\n## Why is this bad?\nSome trio context managers, such as `trio.fail_after` and\n`trio.move_on_after`, have no effect unless they contain an `await`\nstatement. The use of such functions without an `await` statement is\nlikely a mistake.\n\n## Example\n```python\nasync def func():\n    with trio.move_on_after(2):\n        do_something()\n```\n\nUse instead:\n```python\nasync def func():\n    with trio.move_on_after(2):\n        do_something()\n        await awaitable()\n```\n",
+    "preview": true
+  },
+  {
     "name": "typing-only-first-party-import",
     "code": "TCH001",
     "linter": "flake8-type-checking",
@@ -4606,6 +4621,19 @@
     "preview": false
   },
   {
+    "name": "numpy2-deprecation",
+    "code": "NPY201",
+    "linter": "NumPy-specific rules",
+    "summary": "`np.{existing}` will be removed in NumPy 2.0. {migration_guide}",
+    "message_formats": [
+      "`np.{existing}` will be removed in NumPy 2.0. {migration_guide}",
+      "`np.{existing}` will be removed without replacement in NumPy 2.0"
+    ],
+    "fix": "Fix is sometimes available.",
+    "explanation": "## What it does\nChecks for uses of NumPy functions and constants that were removed from\nthe main namespace in NumPy 2.0.\n\n## Why is this bad?\nNumPy 2.0 includes an overhaul of NumPy's Python API, intended to remove\nredundant aliases and routines, and establish unambiguous mechanisms for\naccessing constants, dtypes, and functions.\n\nAs part of this overhaul, a variety of deprecated NumPy functions and\nconstants were removed from the main namespace.\n\nThe majority of these functions and constants can be automatically replaced\nby other members of the NumPy API or by equivalents from the Python\nstandard library. With the exception of renaming `numpy.byte_bounds` to\n`numpy.lib.array_utils.byte_bounds`, all such replacements are backwards\ncompatible with earlier versions of NumPy.\n\nThis rule flags all uses of removed members, along with automatic fixes for\nany backwards-compatible replacements.\n\n## Examples\n```python\nimport numpy as np\n\narr1 = [np.Infinity, np.NaN, np.nan, np.PINF, np.inf]\narr2 = [np.float_(1.5), np.float64(5.1)]\nnp.round_(arr2)\n```\n\nUse instead:\n```python\nimport numpy as np\n\narr1 = [np.inf, np.nan, np.nan, np.inf, np.inf]\narr2 = [np.float64(1.5), np.float64(5.1)]\nnp.round(arr2)\n```\n",
+    "preview": true
+  },
+  {
     "name": "invalid-class-name",
     "code": "N801",
     "linter": "pep8-naming",
@@ -5046,7 +5074,7 @@
       "Indentation is not a multiple of {indent_size}"
     ],
     "fix": "Fix is not available.",
-    "explanation": "## What it does\nChecks for indentation with a non-multiple of 4 spaces.\n\n## Why is this bad?\nAccording to [PEP 8], 4 spaces per indentation level should be preferred.\n\n## Example\n```python\nif True:\n   a = 1\n```\n\nUse instead:\n```python\nif True:\n    a = 1\n```\n\n[PEP 8]: https://peps.python.org/pep-0008/#indentation\n",
+    "explanation": "## What it does\nChecks for indentation with a non-multiple of 4 spaces.\n\n## Why is this bad?\nAccording to [PEP 8], 4 spaces per indentation level should be preferred.\n\n## Example\n```python\nif True:\n   a = 1\n```\n\nUse instead:\n```python\nif True:\n    a = 1\n```\n\n\n## Formatter compatibility\nWe recommend against using this rule alongside the [formatter]. The\nformatter enforces consistent indentation, making the rule redundant.\n\nThe rule is also incompatible with the [formatter] when using\n`indent-width` with a value other than `4`.\n\n[PEP 8]: https://peps.python.org/pep-0008/#indentation\n[formatter]:https://docs.astral.sh/ruff/formatter/\n",
     "preview": true
   },
   {
@@ -5082,7 +5110,7 @@
       "Indentation is not a multiple of {indent_size} (comment)"
     ],
     "fix": "Fix is not available.",
-    "explanation": "## What it does\nChecks for indentation of comments with a non-multiple of 4 spaces.\n\n## Why is this bad?\nAccording to [PEP 8], 4 spaces per indentation level should be preferred.\n\n## Example\n```python\nif True:\n   # a = 1\n```\n\nUse instead:\n```python\nif True:\n    # a = 1\n```\n\n[PEP 8]: https://peps.python.org/pep-0008/#indentation\n",
+    "explanation": "## What it does\nChecks for indentation of comments with a non-multiple of 4 spaces.\n\n## Why is this bad?\nAccording to [PEP 8], 4 spaces per indentation level should be preferred.\n\n## Example\n```python\nif True:\n   # a = 1\n```\n\nUse instead:\n```python\nif True:\n    # a = 1\n```\n\n## Formatter compatibility\nWe recommend against using this rule alongside the [formatter]. The\nformatter enforces consistent indentation, making the rule redundant.\n\nThe rule is also incompatible with the [formatter] when using\n`indent-width` with a value other than `4`.\n\n[PEP 8]: https://peps.python.org/pep-0008/#indentation\n[formatter]:https://docs.astral.sh/ruff/formatter/\n",
     "preview": true
   },
   {
@@ -5664,7 +5692,7 @@
       "Indentation contains tabs"
     ],
     "fix": "Fix is not available.",
-    "explanation": "## What it does\nChecks for indentation that uses tabs.\n\n## Why is this bad?\nAccording to [PEP 8], spaces are preferred over tabs (unless used to remain\nconsistent with code that is already indented with tabs).\n\n## Example\n```python\nif True:\n\ta = 1\n```\n\nUse instead:\n```python\nif True:\n    a = 1\n```\n\n[PEP 8]: https://peps.python.org/pep-0008/#tabs-or-spaces\n",
+    "explanation": "## What it does\nChecks for indentation that uses tabs.\n\n## Why is this bad?\nAccording to [PEP 8], spaces are preferred over tabs (unless used to remain\nconsistent with code that is already indented with tabs).\n\n## Example\n```python\nif True:\n\ta = 1\n```\n\nUse instead:\n```python\nif True:\n    a = 1\n```\n\n## Formatter compatibility\nWe recommend against using this rule alongside the [formatter]. The\nformatter enforces consistent indentation, making the rule redundant.\n\nThe rule is also incompatible with the [formatter] when using\n`format.indent-style=\"tab\"`.\n\n[PEP 8]: https://peps.python.org/pep-0008/#tabs-or-spaces\n[formatter]: https://docs.astral.sh/ruff/formatter\n",
     "preview": false
   },
   {
@@ -5719,12 +5747,12 @@
     "name": "invalid-escape-sequence",
     "code": "W605",
     "linter": "pycodestyle",
-    "summary": "Invalid escape sequence: `\\{char}`",
+    "summary": "Invalid escape sequence: `\\{ch}`",
     "message_formats": [
-      "Invalid escape sequence: `\\{char}`"
+      "Invalid escape sequence: `\\{ch}`"
     ],
     "fix": "Fix is always available.",
-    "explanation": "## What it does\nChecks for invalid escape sequences.\n\n## Why is this bad?\nInvalid escape sequences are deprecated in Python 3.6.\n\n## Example\n```python\nregex = \"\\.png$\"\n```\n\nUse instead:\n```python\nregex = r\"\\.png$\"\n```\n\n## References\n- [Python documentation: String and Bytes literals](https://docs.python.org/3/reference/lexical_analysis.html#string-and-bytes-literals)\n",
+    "explanation": "## What it does\nChecks for invalid escape sequences.\n\n## Why is this bad?\nInvalid escape sequences are deprecated in Python 3.6.\n\n## Example\n```python\nregex = \"\\.png$\"\n```\n\nUse instead:\n```python\nregex = r\"\\.png$\"\n```\n\nOr, if the string already contains a valid escape sequence:\n```python\nvalue = \"new line\\nand invalid escape \\_ here\"\n```\n\nUse instead:\n```python\nvalue = \"new line\\nand invalid escape \\\\_ here\"\n```\n\n## References\n- [Python documentation: String and Bytes literals](https://docs.python.org/3/reference/lexical_analysis.html#string-and-bytes-literals)\n",
     "preview": false
   },
   {
@@ -5905,7 +5933,7 @@
       "Docstring should be indented with spaces, not tabs"
     ],
     "fix": "Fix is not available.",
-    "explanation": "## What it does\nChecks for docstrings that are indented with tabs.\n\n## Why is this bad?\n[PEP 8](https://peps.python.org/pep-0008/#tabs-or-spaces) recommends using\nspaces over tabs for indentation.\n\n\n## Example\n```python\ndef sort_list(l: list[int]) -> list[int]:\n    \"\"\"Return a sorted copy of the list.\n\n\tSort the list in ascending order and return a copy of the result using the bubble\n\tsort algorithm.\n    \"\"\"\n```\n\nUse instead:\n```python\ndef sort_list(l: list[int]) -> list[int]:\n    \"\"\"Return a sorted copy of the list.\n\n    Sort the list in ascending order and return a copy of the result using the bubble\n    sort algorithm.\n    \"\"\"\n```\n\n## References\n- [PEP 257 – Docstring Conventions](https://peps.python.org/pep-0257/)\n- [NumPy Style Guide](https://numpydoc.readthedocs.io/en/latest/format.html)\n- [Google Python Style Guide - Docstrings](https://google.github.io/styleguide/pyguide.html#38-comments-and-docstrings)\n",
+    "explanation": "## What it does\nChecks for docstrings that are indented with tabs.\n\n## Why is this bad?\n[PEP 8] recommends using spaces over tabs for indentation.\n\n## Example\n```python\ndef sort_list(l: list[int]) -> list[int]:\n    \"\"\"Return a sorted copy of the list.\n\n\tSort the list in ascending order and return a copy of the result using the bubble\n\tsort algorithm.\n    \"\"\"\n```\n\nUse instead:\n```python\ndef sort_list(l: list[int]) -> list[int]:\n    \"\"\"Return a sorted copy of the list.\n\n    Sort the list in ascending order and return a copy of the result using the bubble\n    sort algorithm.\n    \"\"\"\n```\n\n## Formatter compatibility\nWe recommend against using this rule alongside the [formatter]. The\nformatter enforces consistent indentation, making the rule redundant.\n\nThe rule is also incompatible with the [formatter] when using\n`format.indent-style=\"tab\"`.\n\n## References\n- [PEP 257 – Docstring Conventions](https://peps.python.org/pep-0257/)\n- [NumPy Style Guide](https://numpydoc.readthedocs.io/en/latest/format.html)\n- [Google Python Style Guide - Docstrings](https://google.github.io/styleguide/pyguide.html#38-comments-and-docstrings)\n\n[PEP 8]: https://peps.python.org/pep-0008/#tabs-or-spaces\n[formatter]: https://docs.astral.sh/ruff/formatter\n",
     "preview": false
   },
   {
@@ -5929,7 +5957,7 @@
       "Docstring is over-indented"
     ],
     "fix": "Fix is always available.",
-    "explanation": "## What it does\nChecks for over-indented docstrings.\n\n## Why is this bad?\n[PEP 257] recommends that docstrings be indented to the same level as their\nopening quotes. Avoid over-indenting docstrings, for consistency.\n\n## Example\n```python\ndef sort_list(l: list[int]) -> list[int]:\n    \"\"\"Return a sorted copy of the list.\n\n        Sort the list in ascending order and return a copy of the result using the\n        bubble sort algorithm.\n    \"\"\"\n```\n\nUse instead:\n```python\ndef sort_list(l: list[int]) -> list[int]:\n    \"\"\"Return a sorted copy of the list.\n\n    Sort the list in ascending order and return a copy of the result using the bubble\n    sort algorithm.\n    \"\"\"\n```\n\n## References\n- [PEP 257 – Docstring Conventions](https://peps.python.org/pep-0257/)\n- [NumPy Style Guide](https://numpydoc.readthedocs.io/en/latest/format.html)\n- [Google Python Style Guide - Docstrings](https://google.github.io/styleguide/pyguide.html#38-comments-and-docstrings)\n\n[PEP 257]: https://peps.python.org/pep-0257/\n",
+    "explanation": "## What it does\nChecks for over-indented docstrings.\n\n## Why is this bad?\n[PEP 257] recommends that docstrings be indented to the same level as their\nopening quotes. Avoid over-indenting docstrings, for consistency.\n\n## Example\n```python\ndef sort_list(l: list[int]) -> list[int]:\n    \"\"\"Return a sorted copy of the list.\n\n        Sort the list in ascending order and return a copy of the result using the\n        bubble sort algorithm.\n    \"\"\"\n```\n\nUse instead:\n```python\ndef sort_list(l: list[int]) -> list[int]:\n    \"\"\"Return a sorted copy of the list.\n\n    Sort the list in ascending order and return a copy of the result using the bubble\n    sort algorithm.\n    \"\"\"\n```\n\n## Formatter compatibility\nWe recommend against using this rule alongside the [formatter]. The\nformatter enforces consistent indentation, making the rule redundant.\n\n## References\n- [PEP 257 – Docstring Conventions](https://peps.python.org/pep-0257/)\n- [NumPy Style Guide](https://numpydoc.readthedocs.io/en/latest/format.html)\n- [Google Python Style Guide - Docstrings](https://google.github.io/styleguide/pyguide.html#38-comments-and-docstrings)\n\n[PEP 257]: https://peps.python.org/pep-0257/\n[formatter]:https://docs.astral.sh/ruff/formatter/\n",
     "preview": false
   },
   {
@@ -5977,7 +6005,7 @@
       "Multi-line docstring summary should start at the first line"
     ],
     "fix": "Fix is always available.",
-    "explanation": "## What it does\nChecks for docstring summary lines that are not positioned on the first\nphysical line of the docstring.\n\n## Why is this bad?\n[PEP 257] recommends that multi-line docstrings consist of \"a summary line\njust like a one-line docstring, followed by a blank line, followed by a\nmore elaborate description.\"\n\nThe summary line should be located on the first physical line of the\ndocstring, immediately after the opening quotes.\n\nThis rule may not apply to all projects; its applicability is a matter of\nconvention. By default, this rule is enabled when using the `google`\nconvention, and disabled when using the `numpy` and `pep257` conventions.\n\nFor an alternative, see [D213].\n\n## Example\n```python\ndef sort_list(l: list[int]) -> list[int]:\n    \"\"\"\n    Return a sorted copy of the list.\n\n    Sort the list in ascending order and return a copy of the result using the\n    bubble sort algorithm.\n    \"\"\"\n```\n\nUse instead:\n```python\ndef sort_list(l: list[int]) -> list[int]:\n    \"\"\"Return a sorted copy of the list.\n\n    Sort the list in ascending order and return a copy of the result using the bubble\n    sort algorithm.\n    \"\"\"\n```\n\n[D213]: https://docs.astral.sh/ruff/rules/multi-line-summary-second-line\n",
+    "explanation": "## What it does\nChecks for docstring summary lines that are not positioned on the first\nphysical line of the docstring.\n\n## Why is this bad?\n[PEP 257] recommends that multi-line docstrings consist of \"a summary line\njust like a one-line docstring, followed by a blank line, followed by a\nmore elaborate description.\"\n\nThe summary line should be located on the first physical line of the\ndocstring, immediately after the opening quotes.\n\nThis rule may not apply to all projects; its applicability is a matter of\nconvention. By default, this rule is enabled when using the `google`\nconvention, and disabled when using the `numpy` and `pep257` conventions.\n\nFor an alternative, see [D213].\n\n## Example\n```python\ndef sort_list(l: list[int]) -> list[int]:\n    \"\"\"\n    Return a sorted copy of the list.\n\n    Sort the list in ascending order and return a copy of the result using the\n    bubble sort algorithm.\n    \"\"\"\n```\n\nUse instead:\n```python\ndef sort_list(l: list[int]) -> list[int]:\n    \"\"\"Return a sorted copy of the list.\n\n    Sort the list in ascending order and return a copy of the result using the bubble\n    sort algorithm.\n    \"\"\"\n```\n\n[D213]: https://docs.astral.sh/ruff/rules/multi-line-summary-second-line\n[PEP 257]: https://peps.python.org/pep-0257\n",
     "preview": false
   },
   {
@@ -5989,7 +6017,7 @@
       "Multi-line docstring summary should start at the second line"
     ],
     "fix": "Fix is always available.",
-    "explanation": "## What it does\nChecks for docstring summary lines that are not positioned on the second\nphysical line of the docstring.\n\n## Why is this bad?\n[PEP 257] recommends that multi-line docstrings consist of \"a summary line\njust like a one-line docstring, followed by a blank line, followed by a\nmore elaborate description.\"\n\nThe summary line should be located on the second physical line of the\ndocstring, immediately after the opening quotes and the blank line.\n\nThis rule may not apply to all projects; its applicability is a matter of\nconvention. By default, this rule is disabled when using the `google`,\n`numpy`, and `pep257` conventions.\n\nFor an alternative, see [D212].\n\n## Example\n```python\ndef sort_list(l: list[int]) -> list[int]:\n    \"\"\"Return a sorted copy of the list.\n\n    Sort the list in ascending order and return a copy of the result using the\n    bubble sort algorithm.\n    \"\"\"\n```\n\nUse instead:\n```python\ndef sort_list(l: list[int]) -> list[int]:\n    \"\"\"\n    Return a sorted copy of the list.\n\n    Sort the list in ascending order and return a copy of the result using the bubble\n    sort algorithm.\n    \"\"\"\n```\n\n[D212]: https://docs.astral.sh/ruff/rules/multi-line-summary-first-line\n",
+    "explanation": "## What it does\nChecks for docstring summary lines that are not positioned on the second\nphysical line of the docstring.\n\n## Why is this bad?\n[PEP 257] recommends that multi-line docstrings consist of \"a summary line\njust like a one-line docstring, followed by a blank line, followed by a\nmore elaborate description.\"\n\nThe summary line should be located on the second physical line of the\ndocstring, immediately after the opening quotes and the blank line.\n\nThis rule may not apply to all projects; its applicability is a matter of\nconvention. By default, this rule is disabled when using the `google`,\n`numpy`, and `pep257` conventions.\n\nFor an alternative, see [D212].\n\n## Example\n```python\ndef sort_list(l: list[int]) -> list[int]:\n    \"\"\"Return a sorted copy of the list.\n\n    Sort the list in ascending order and return a copy of the result using the\n    bubble sort algorithm.\n    \"\"\"\n```\n\nUse instead:\n```python\ndef sort_list(l: list[int]) -> list[int]:\n    \"\"\"\n    Return a sorted copy of the list.\n\n    Sort the list in ascending order and return a copy of the result using the bubble\n    sort algorithm.\n    \"\"\"\n```\n\n[D212]: https://docs.astral.sh/ruff/rules/multi-line-summary-first-line\n[PEP 257]: https://peps.python.org/pep-0257\n",
     "preview": false
   },
   {
@@ -6938,6 +6966,18 @@
     "preview": false
   },
   {
+    "name": "import-outside-top-level",
+    "code": "PLC0415",
+    "linter": "Pylint",
+    "summary": "`import` should be at the top-level of a file",
+    "message_formats": [
+      "`import` should be at the top-level of a file"
+    ],
+    "fix": "Fix is not available.",
+    "explanation": "## What it does\nChecks for `import` statements outside of a module's top-level scope, such\nas within a function or class definition.\n\n## Why is this bad?\n[PEP 8] recommends placing imports not only at the top-level of a module,\nbut at the very top of the file, \"just after any module comments and\ndocstrings, and before module globals and constants.\"\n\n`import` statements have effects that are global in scope; defining them at\nthe top level has a number of benefits. For example, it makes it easier to\nidentify the dependencies of a module, and ensures that any invalid imports\nare caught regardless of whether a specific function is called or class is\ninstantiated.\n\nAn import statement would typically be placed within a function only to\navoid a circular dependency, to defer a costly module load, or to avoid\nloading a dependency altogether in a certain runtime environment.\n\n## Example\n```python\ndef print_python_version():\n    import platform\n\n    print(python.python_version())\n```\n\nUse instead:\n```python\nimport platform\n\n\ndef print_python_version():\n    print(python.python_version())\n```\n\n[PEP 8]: https://peps.python.org/pep-0008/#imports\n",
+    "preview": true
+  },
+  {
     "name": "compare-to-empty-string",
     "code": "PLC1901",
     "linter": "Pylint",
@@ -7511,12 +7551,12 @@
     "name": "no-self-use",
     "code": "PLR6301",
     "linter": "Pylint",
-    "summary": "Method `{method_name}` could be a function or static method",
+    "summary": "Method `{method_name}` could be a function, class method, or static method",
     "message_formats": [
-      "Method `{method_name}` could be a function or static method"
+      "Method `{method_name}` could be a function, class method, or static method"
     ],
     "fix": "Fix is not available.",
-    "explanation": "## What it does\nChecks for the presence of unused `self` parameter in methods definitions.\n\n## Why is this bad?\nUnused `self` parameters are usually a sign of a method that could be\nreplaced by a function or a static method.\n\n## Example\n```python\nclass Person:\n    def greeting(self):\n        print(\"Greetings friend!\")\n```\n\nUse instead:\n```python\nclass Person:\n    @staticmethod\n    def greeting():\n        print(\"Greetings friend!\")\n```\n",
+    "explanation": "## What it does\nChecks for the presence of unused `self` parameter in methods definitions.\n\n## Why is this bad?\nUnused `self` parameters are usually a sign of a method that could be\nreplaced by a function, class method, or static method.\n\n## Example\n```python\nclass Person:\n    def greeting(self):\n        print(\"Greetings friend!\")\n```\n\nUse instead:\n```python\ndef greeting():\n    print(\"Greetings friend!\")\n```\n",
     "preview": true
   },
   {
@@ -7643,6 +7683,18 @@
     "preview": false
   },
   {
+    "name": "bad-open-mode",
+    "code": "PLW1501",
+    "linter": "Pylint",
+    "summary": "`{mode}` is not a valid mode for `open`",
+    "message_formats": [
+      "`{mode}` is not a valid mode for `open`"
+    ],
+    "fix": "Fix is not available.",
+    "explanation": "## What it does\nCheck for an invalid `mode` argument in `open` calls.\n\n## Why is this bad?\nThe `open` function accepts a `mode` argument that specifies how the file\nshould be opened (e.g., read-only, write-only, append-only, etc.).\n\nPython supports a variety of open modes: `r`, `w`, `a`, and `x`, to control\nreading, writing, appending, and creating, respectively, along with\n`b` (binary mode), `+` (read and write), and `U` (universal newlines),\nthe latter of which is only valid alongside `r`. This rule detects both\ninvalid combinations of modes and invalid characters in the mode string\nitself.\n\n## Example\n```python\nwith open(\"file\", \"rwx\") as f:\n    return f.read()\n```\n\nUse instead:\n```python\nwith open(\"file\", \"r\") as f:\n    return f.read()\n```\n\n## References\n- [Python documentation: `open`](https://docs.python.org/3/library/functions.html#open)\n",
+    "preview": true
+  },
+  {
     "name": "invalid-envvar-default",
     "code": "PLW1508",
     "linter": "Pylint",
@@ -7701,6 +7753,18 @@
     ],
     "fix": "Fix is not available.",
     "explanation": "## What it does\nChecks for classes that implement `__eq__` but not `__hash__`.\n\n## Why is this bad?\nA class that implements `__eq__` but not `__hash__` will have its hash\nmethod implicitly set to `None`. This will cause the class to be\nunhashable, will in turn cause issues when using the class as a key in a\ndictionary or a member of a set.\n\n## Known problems\nDoes not check for `__hash__` implementations in superclasses.\n\n## Example\n```python\nclass Person:\n    def __init__(self):\n        self.name = \"monty\"\n\n    def __eq__(self, other):\n        return isinstance(other, Person) and other.name == self.name\n```\n\nUse instead:\n```python\nclass Person:\n    def __init__(self):\n        self.name = \"monty\"\n\n    def __eq__(self, other):\n        return isinstance(other, Person) and other.name == self.name\n\n    def __hash__(self):\n        return hash(self.name)\n```\n",
+    "preview": true
+  },
+  {
+    "name": "useless-with-lock",
+    "code": "PLW2101",
+    "linter": "Pylint",
+    "summary": "Threading lock directly created in `with` statement has no effect",
+    "message_formats": [
+      "Threading lock directly created in `with` statement has no effect"
+    ],
+    "fix": "Fix is not available.",
+    "explanation": "## What it does\nChecks for direct uses of lock objects in `with` statements.\n\n## Why is this bad?\nCreating a lock (via `threading.Lock` or similar) in a `with` statement\nhas no effect, as locks are only relevant when shared between threads.\n\nInstead, assign the lock to a variable outside the `with` statement,\nand share that variable between threads.\n\n## Example\n```python\nimport threading\n\ncounter = 0\n\n\ndef increment():\n    global counter\n\n    with threading.Lock():\n        counter += 1\n```\n\nUse instead:\n```python\nimport threading\n\ncounter = 0\nlock = threading.Lock()\n\n\ndef increment():\n    global counter\n\n    with lock:\n        counter += 1\n```\n\n## References\n- [Python documentation: `Lock Objects`](https://docs.python.org/3/library/threading.html#lock-objects)\n",
     "preview": true
   },
   {
@@ -8203,6 +8267,18 @@
     "preview": false
   },
   {
+    "name": "timeout-error-alias",
+    "code": "UP041",
+    "linter": "pyupgrade",
+    "summary": "Replace aliased errors with `TimeoutError`",
+    "message_formats": [
+      "Replace aliased errors with `TimeoutError`"
+    ],
+    "fix": "Fix is always available.",
+    "explanation": "## What it does\nChecks for uses of exceptions that alias `TimeoutError`.\n\n## Why is this bad?\n`TimeoutError` is the builtin error type used for exceptions when a system\nfunction timed out at the system level.\n\nIn Python 3.10, `socket.timeout` was aliased to `TimeoutError`. In Python\n3.11, `asyncio.TimeoutError` was aliased to `TimeoutError`.\n\nThese aliases remain in place for compatibility with older versions of\nPython, but may be removed in future versions.\n\nPrefer using `TimeoutError` directly, as it is more idiomatic and future-proof.\n\n## Example\n```python\nraise asyncio.TimeoutError\n```\n\nUse instead:\n```python\nraise TimeoutError\n```\n\n## References\n- [Python documentation: `TimeoutError`](https://docs.python.org/3/library/exceptions.html#TimeoutError)\n",
+    "preview": true
+  },
+  {
     "name": "read-whole-file",
     "code": "FURB101",
     "linter": "refurb",
@@ -8302,6 +8378,18 @@
     "preview": true
   },
   {
+    "name": "isinstance-type-none",
+    "code": "FURB168",
+    "linter": "refurb",
+    "summary": "Prefer `is` operator over `isinstance` to check if an object is `None`",
+    "message_formats": [
+      "Prefer `is` operator over `isinstance` to check if an object is `None`"
+    ],
+    "fix": "Fix is sometimes available.",
+    "explanation": "## What it does\nChecks for uses of `isinstance` that check if an object is of type `None`.\n\n## Why is this bad?\nThere is only ever one instance of `None`, so it is more efficient and\nreadable to use the `is` operator to check if an object is `None`.\n\n## Example\n```python\nisinstance(obj, type(None))\n```\n\nUse instead:\n```python\nobj is None\n```\n\n## References\n- [Python documentation: `isinstance`](https://docs.python.org/3/library/functions.html#isinstance)\n- [Python documentation: `None`](https://docs.python.org/3/library/constants.html#None)\n- [Python documentation: `type`](https://docs.python.org/3/library/functions.html#type)\n- [Python documentation: Identity comparisons](https://docs.python.org/3/reference/expressions.html#is-not)\n",
+    "preview": true
+  },
+  {
     "name": "single-item-membership-test",
     "code": "FURB171",
     "linter": "refurb",
@@ -8334,7 +8422,7 @@
       "String contains ambiguous {}. Did you mean {}?"
     ],
     "fix": "Fix is not available.",
-    "explanation": "## What it does\nChecks for ambiguous unicode characters in strings.\n\n## Why is this bad?\nThe use of ambiguous unicode characters can confuse readers and cause\nsubtle bugs.\n\n## Example\n```python\nprint(\"Ηello, world!\")  # \"Η\" is the Greek eta (`U+0397`).\n```\n\nUse instead:\n```python\nprint(\"Hello, world!\")  # \"H\" is the Latin capital H (`U+0048`).\n```\n",
+    "explanation": "## What it does\nChecks for ambiguous Unicode characters in strings.\n\n## Why is this bad?\nSome Unicode characters are visually similar to ASCII characters, but have\ndifferent code points. For example, `LATIN CAPITAL LETTER A` (`U+0041`) is\nvisually similar, but not identical, to the ASCII character `A`.\n\nThe use of ambiguous Unicode characters can confuse readers and cause\nsubtle bugs.\n\nIn [preview], this rule will also flag Unicode characters that are\nconfusable with other, non-preferred Unicode characters. For example, the\nspec recommends `GREEK CAPITAL LETTER OMEGA` over `OHM SIGN`.\n\n## Example\n```python\nprint(\"Ηello, world!\")  # \"Η\" is the Greek eta (`U+0397`).\n```\n\nUse instead:\n```python\nprint(\"Hello, world!\")  # \"H\" is the Latin capital H (`U+0048`).\n```\n\n[preview]: https://docs.astral.sh/ruff/preview/\n",
     "preview": false
   },
   {
@@ -8346,7 +8434,7 @@
       "Docstring contains ambiguous {}. Did you mean {}?"
     ],
     "fix": "Fix is not available.",
-    "explanation": "## What it does\nChecks for ambiguous unicode characters in docstrings.\n\n## Why is this bad?\nThe use of ambiguous unicode characters can confuse readers and cause\nsubtle bugs.\n\n## Example\n```python\n\"\"\"A lovely docstring (with a `U+FF09` parenthesis）.\"\"\"\n```\n\nUse instead:\n```python\n\"\"\"A lovely docstring (with no strange parentheses).\"\"\"\n```\n",
+    "explanation": "## What it does\nChecks for ambiguous Unicode characters in docstrings.\n\n## Why is this bad?\nSome Unicode characters are visually similar to ASCII characters, but have\ndifferent code points. For example, `LATIN CAPITAL LETTER A` (`U+0041`) is\nvisually similar, but not identical, to the ASCII character `A`.\n\nThe use of ambiguous Unicode characters can confuse readers and cause\nsubtle bugs.\n\nIn [preview], this rule will also flag Unicode characters that are\nconfusable with other, non-preferred Unicode characters. For example, the\nspec recommends `GREEK CAPITAL LETTER OMEGA` over `OHM SIGN`.\n\n## Example\n```python\n\"\"\"A lovely docstring (with a `U+FF09` parenthesis）.\"\"\"\n```\n\nUse instead:\n```python\n\"\"\"A lovely docstring (with no strange parentheses).\"\"\"\n```\n\n[preview]: https://docs.astral.sh/ruff/preview/\n",
     "preview": false
   },
   {
@@ -8358,7 +8446,7 @@
       "Comment contains ambiguous {}. Did you mean {}?"
     ],
     "fix": "Fix is not available.",
-    "explanation": "## What it does\nChecks for ambiguous unicode characters in comments.\n\n## Why is this bad?\nThe use of ambiguous unicode characters can confuse readers and cause\nsubtle bugs.\n\n## Example\n```python\nfoo()  # nоqa  # \"о\" is Cyrillic (`U+043E`)\n```\n\nUse instead:\n```python\nfoo()  # noqa  # \"o\" is Latin (`U+006F`)\n```\n",
+    "explanation": "## What it does\nChecks for ambiguous Unicode characters in comments.\n\n## Why is this bad?\nSome Unicode characters are visually similar to ASCII characters, but have\ndifferent code points. For example, `LATIN CAPITAL LETTER A` (`U+0041`) is\nvisually similar, but not identical, to the ASCII character `A`.\n\nThe use of ambiguous Unicode characters can confuse readers and cause\nsubtle bugs.\n\nIn [preview], this rule will also flag Unicode characters that are\nconfusable with other, non-preferred Unicode characters. For example, the\nspec recommends `GREEK CAPITAL LETTER OMEGA` over `OHM SIGN`.\n\n## Example\n```python\nfoo()  # nоqa  # \"о\" is Cyrillic (`U+043E`)\n```\n\nUse instead:\n```python\nfoo()  # noqa  # \"o\" is Latin (`U+006F`)\n```\n\n[preview]: https://docs.astral.sh/ruff/preview/\n",
     "preview": false
   },
   {
@@ -8544,7 +8632,7 @@
       "Unused blanket `noqa` directive"
     ],
     "fix": "Fix is always available.",
-    "explanation": "## What it does\nChecks for `noqa` directives that are no longer applicable.\n\n## Why is this bad?\nA `noqa` directive that no longer matches any diagnostic violations is\nlikely included by mistake, and should be removed to avoid confusion.\n\n## Example\n```python\nimport foo  # noqa: F401\n\n\ndef bar():\n    foo.bar()\n```\n\nUse instead:\n```python\nimport foo\n\n\ndef bar():\n    foo.bar()\n```\n\n## References\n- [Automatic `noqa` management](https://docs.astral.sh/ruff/configuration/#automatic-noqa-management)\n",
+    "explanation": "## What it does\nChecks for `noqa` directives that are no longer applicable.\n\n## Why is this bad?\nA `noqa` directive that no longer matches any diagnostic violations is\nlikely included by mistake, and should be removed to avoid confusion.\n\n## Example\n```python\nimport foo  # noqa: F401\n\n\ndef bar():\n    foo.bar()\n```\n\nUse instead:\n```python\nimport foo\n\n\ndef bar():\n    foo.bar()\n```\n\n## Options\n- `external`\n\n## References\n- [Ruff error suppression](https://docs.astral.sh/ruff/linter/#error-suppression)\n",
     "preview": false
   },
   {
