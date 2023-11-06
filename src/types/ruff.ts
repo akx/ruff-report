@@ -1,34 +1,30 @@
 export interface Message {
+  cell: string | null;
   code: string;
-  message: string;
-  fix: Fix | null;
-  location: Location;
   end_location: Location;
   filename: string;
+  fix: Fix | null;
+  location: Location;
+  message: string;
   noqa_row: number;
+  url: string;
 }
 
 export interface Location {
-  row: number;
   column: number;
+  row: number;
 }
 
 export interface Fix {
-  applicability: Applicability;
-  message: string;
+  applicability: string;
   edits: Edit[];
-}
-
-export enum Applicability {
-  Automatic = "Automatic",
-  Suggested = "Suggested",
-  Unspecified = "Unspecified",
+  message: string;
 }
 
 export interface Edit {
   content: string;
-  location: Location;
   end_location: Location;
+  location: Location;
 }
 
 export interface RuleExplanation {
@@ -37,6 +33,7 @@ export interface RuleExplanation {
   linter: string;
   summary: string;
   message_formats: string[];
-  autofix: string;
+  fix: string;
   explanation: string;
+  preview: boolean;
 }
