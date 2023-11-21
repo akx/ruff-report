@@ -211,7 +211,7 @@
     "message_formats": [
       "Missing return type annotation for public function `{name}`"
     ],
-    "fix": "Fix is not available.",
+    "fix": "Fix is sometimes available.",
     "explanation": "## What it does\nChecks that public functions and methods have return type annotations.\n\n## Why is this bad?\nType annotations are a good way to document the return types of functions. They also\nhelp catch bugs, when used alongside a type checker, by ensuring that the types of\nany returned values, and the types expected by callers, match expectation.\n\n## Example\n```python\ndef add(a, b):\n    return a + b\n```\n\nUse instead:\n```python\ndef add(a: int, b: int) -> int:\n    return a + b\n```\n",
     "preview": false
   },
@@ -223,7 +223,7 @@
     "message_formats": [
       "Missing return type annotation for private function `{name}`"
     ],
-    "fix": "Fix is not available.",
+    "fix": "Fix is sometimes available.",
     "explanation": "## What it does\nChecks that private functions and methods have return type annotations.\n\n## Why is this bad?\nType annotations are a good way to document the return types of functions. They also\nhelp catch bugs, when used alongside a type checker, by ensuring that the types of\nany returned values, and the types expected by callers, match expectation.\n\n## Example\n```python\ndef _add(a, b):\n    return a + b\n```\n\nUse instead:\n```python\ndef _add(a: int, b: int) -> int:\n    return a + b\n```\n",
     "preview": false
   },
@@ -235,7 +235,7 @@
     "message_formats": [
       "Missing return type annotation for special method `{name}`"
     ],
-    "fix": "Fix is always available.",
+    "fix": "Fix is sometimes available.",
     "explanation": "## What it does\nChecks that \"special\" methods, like `__init__`, `__new__`, and `__call__`, have\nreturn type annotations.\n\n## Why is this bad?\nType annotations are a good way to document the return types of functions. They also\nhelp catch bugs, when used alongside a type checker, by ensuring that the types of\nany returned values, and the types expected by callers, match expectation.\n\nNote that type checkers often allow you to omit the return type annotation for\n`__init__` methods, as long as at least one argument has a type annotation. To\nopt-in to this behavior, use the `mypy-init-return` setting in your `pyproject.toml`\nor `ruff.toml` file:\n\n```toml\n[tool.ruff.lint.flake8-annotations]\nmypy-init-return = true\n```\n\n## Example\n```python\nclass Foo:\n    def __init__(self, x: int):\n        self.x = x\n```\n\nUse instead:\n```python\nclass Foo:\n    def __init__(self, x: int) -> None:\n        self.x = x\n```\n",
     "preview": false
   },
@@ -247,7 +247,7 @@
     "message_formats": [
       "Missing return type annotation for staticmethod `{name}`"
     ],
-    "fix": "Fix is not available.",
+    "fix": "Fix is sometimes available.",
     "explanation": "## What it does\nChecks that static methods have return type annotations.\n\n## Why is this bad?\nType annotations are a good way to document the return types of functions. They also\nhelp catch bugs, when used alongside a type checker, by ensuring that the types of\nany returned values, and the types expected by callers, match expectation.\n\n## Example\n```python\nclass Foo:\n    @staticmethod\n    def bar():\n        return 1\n```\n\nUse instead:\n```python\nclass Foo:\n    @staticmethod\n    def bar() -> int:\n        return 1\n```\n",
     "preview": false
   },
@@ -259,7 +259,7 @@
     "message_formats": [
       "Missing return type annotation for classmethod `{name}`"
     ],
-    "fix": "Fix is not available.",
+    "fix": "Fix is sometimes available.",
     "explanation": "## What it does\nChecks that class methods have return type annotations.\n\n## Why is this bad?\nType annotations are a good way to document the return types of functions. They also\nhelp catch bugs, when used alongside a type checker, by ensuring that the types of\nany returned values, and the types expected by callers, match expectation.\n\n## Example\n```python\nclass Foo:\n    @classmethod\n    def bar(cls):\n        return 1\n```\n\nUse instead:\n```python\nclass Foo:\n    @classmethod\n    def bar(cls) -> int:\n        return 1\n```\n",
     "preview": false
   },
@@ -933,6 +933,18 @@
     "preview": false
   },
   {
+    "name": "mako-templates",
+    "code": "S702",
+    "linter": "flake8-bandit",
+    "summary": "Mako templates allow HTML and JavaScript rendering by default and are inherently open to XSS attacks",
+    "message_formats": [
+      "Mako templates allow HTML and JavaScript rendering by default and are inherently open to XSS attacks"
+    ],
+    "fix": "Fix is not available.",
+    "explanation": "## What it does\nChecks for uses of the `mako` templates.\n\n## Why is this bad?\nMako templates allow HTML and JavaScript rendering by default, and are\ninherently open to XSS attacks. Ensure variables in all templates are\nproperly sanitized via the `n`, `h` or `x` flags (depending on context).\nFor example, to HTML escape the variable `data`, use `${ data |h }`.\n\n## Example\n```python\nfrom mako.template import Template\n\nTemplate(\"hello\")\n```\n\nUse instead:\n```python\nfrom mako.template import Template\n\nTemplate(\"hello |h\")\n```\n\n## References\n- [Mako documentation](https://www.makotemplates.org/)\n- [OpenStack security: Cross site scripting XSS](https://security.openstack.org/guidelines/dg_cross-site-scripting-xss.html)\n- [Common Weakness Enumeration: CWE-80](https://cwe.mitre.org/data/definitions/80.html)\n",
+    "preview": true
+  },
+  {
     "name": "blind-except",
     "code": "BLE001",
     "linter": "flake8-blind-except",
@@ -953,7 +965,7 @@
       "Boolean-typed positional argument in function definition"
     ],
     "fix": "Fix is not available.",
-    "explanation": "## What it does\nChecks for the use of boolean positional arguments in function definitions,\nas determined by the presence of a `bool` type hint.\n\n## Why is this bad?\nCalling a function with boolean positional arguments is confusing as the\nmeaning of the boolean value is not clear to the caller and to future\nreaders of the code.\n\nThe use of a boolean will also limit the function to only two possible\nbehaviors, which makes the function difficult to extend in the future.\n\nInstead, consider refactoring into separate implementations for the\n`True` and `False` cases, using an `Enum`, or making the argument a\nkeyword-only argument, to force callers to be explicit when providing\nthe argument.\n\n## Example\n```python\nfrom math import ceil, floor\n\n\ndef round_number(number: float, up: bool) -> int:\n    return ceil(number) if up else floor(number)\n\n\nround_number(1.5, True)  # What does `True` mean?\nround_number(1.5, False)  # What does `False` mean?\n```\n\nInstead, refactor into separate implementations:\n```python\nfrom math import ceil, floor\n\n\ndef round_up(number: float) -> int:\n    return ceil(number)\n\n\ndef round_down(number: float) -> int:\n    return floor(number)\n\n\nround_up(1.5)\nround_down(1.5)\n```\n\nOr, refactor to use an `Enum`:\n```python\nfrom enum import Enum\n\n\nclass RoundingMethod(Enum):\n    UP = 1\n    DOWN = 2\n\n\ndef round_number(value: float, method: RoundingMethod) -> float:\n    ...\n```\n\nOr, make the argument a keyword-only argument:\n```python\nfrom math import ceil, floor\n\n\ndef round_number(number: float, *, up: bool) -> int:\n    return ceil(number) if up else floor(number)\n\n\nround_number(1.5, up=True)\nround_number(1.5, up=False)\n```\n\n## References\n- [Python documentation: Calls](https://docs.python.org/3/reference/expressions.html#calls)\n- [_How to Avoid “The Boolean Trap”_ by Adam Johnson](https://adamj.eu/tech/2021/07/10/python-type-hints-how-to-avoid-the-boolean-trap/)\n",
+    "explanation": "## What it does\nChecks for the use of boolean positional arguments in function definitions,\nas determined by the presence of a `bool` type hint.\n\n## Why is this bad?\nCalling a function with boolean positional arguments is confusing as the\nmeaning of the boolean value is not clear to the caller and to future\nreaders of the code.\n\nThe use of a boolean will also limit the function to only two possible\nbehaviors, which makes the function difficult to extend in the future.\n\nInstead, consider refactoring into separate implementations for the\n`True` and `False` cases, using an `Enum`, or making the argument a\nkeyword-only argument, to force callers to be explicit when providing\nthe argument.\n\nIn [preview], this rule will also flag annotations that include boolean\nvariants, like `bool | int`.\n\n## Example\n```python\nfrom math import ceil, floor\n\n\ndef round_number(number: float, up: bool) -> int:\n    return ceil(number) if up else floor(number)\n\n\nround_number(1.5, True)  # What does `True` mean?\nround_number(1.5, False)  # What does `False` mean?\n```\n\nInstead, refactor into separate implementations:\n```python\nfrom math import ceil, floor\n\n\ndef round_up(number: float) -> int:\n    return ceil(number)\n\n\ndef round_down(number: float) -> int:\n    return floor(number)\n\n\nround_up(1.5)\nround_down(1.5)\n```\n\nOr, refactor to use an `Enum`:\n```python\nfrom enum import Enum\n\n\nclass RoundingMethod(Enum):\n    UP = 1\n    DOWN = 2\n\n\ndef round_number(value: float, method: RoundingMethod) -> float:\n    ...\n```\n\nOr, make the argument a keyword-only argument:\n```python\nfrom math import ceil, floor\n\n\ndef round_number(number: float, *, up: bool) -> int:\n    return ceil(number) if up else floor(number)\n\n\nround_number(1.5, up=True)\nround_number(1.5, up=False)\n```\n\n## References\n- [Python documentation: Calls](https://docs.python.org/3/reference/expressions.html#calls)\n- [_How to Avoid “The Boolean Trap”_ by Adam Johnson](https://adamj.eu/tech/2021/07/10/python-type-hints-how-to-avoid-the-boolean-trap/)\n\n[preview]: https://docs.astral.sh/ruff/preview/\n",
     "preview": false
   },
   {
@@ -1058,13 +1070,13 @@
     "name": "function-call-in-default-argument",
     "code": "B008",
     "linter": "flake8-bugbear",
-    "summary": "Do not perform function call `{name}` in argument defaults",
+    "summary": "Do not perform function call `{name}` in argument defaults; instead, perform the call within the function, or read the default from a module-level singleton variable",
     "message_formats": [
-      "Do not perform function call `{name}` in argument defaults",
-      "Do not perform function call in argument defaults"
+      "Do not perform function call `{name}` in argument defaults; instead, perform the call within the function, or read the default from a module-level singleton variable",
+      "Do not perform function call in argument defaults; instead, perform the call within the function, or read the default from a module-level singleton variable"
     ],
     "fix": "Fix is not available.",
-    "explanation": "## What it does\nChecks for function calls in default function arguments.\n\n## Why is this bad?\nAny function call that's used in a default argument will only be performed\nonce, at definition time. The returned value will then be reused by all\ncalls to the function, which can lead to unexpected behaviour.\n\nCalls can be marked as an exception to this rule with the\n[`flake8-bugbear.extend-immutable-calls`] configuration option.\n\nArguments with immutable type annotations will be ignored by this rule.\nTypes outside of the standard library can be marked as immutable with the\n[`flake8-bugbear.extend-immutable-calls`] configuration option as well.\n\n## Example\n```python\ndef create_list() -> list[int]:\n    return [1, 2, 3]\n\n\ndef mutable_default(arg: list[int] = create_list()) -> list[int]:\n    arg.append(4)\n    return arg\n```\n\nUse instead:\n```python\ndef better(arg: list[int] | None = None) -> list[int]:\n    if arg is None:\n        arg = create_list()\n\n    arg.append(4)\n    return arg\n```\n\n## Options\n- `flake8-bugbear.extend-immutable-calls`\n",
+    "explanation": "## What it does\nChecks for function calls in default function arguments.\n\n## Why is this bad?\nAny function call that's used in a default argument will only be performed\nonce, at definition time. The returned value will then be reused by all\ncalls to the function, which can lead to unexpected behaviour.\n\nCalls can be marked as an exception to this rule with the\n[`flake8-bugbear.extend-immutable-calls`] configuration option.\n\nArguments with immutable type annotations will be ignored by this rule.\nTypes outside of the standard library can be marked as immutable with the\n[`flake8-bugbear.extend-immutable-calls`] configuration option as well.\n\n## Example\n```python\ndef create_list() -> list[int]:\n    return [1, 2, 3]\n\n\ndef mutable_default(arg: list[int] = create_list()) -> list[int]:\n    arg.append(4)\n    return arg\n```\n\nUse instead:\n```python\ndef better(arg: list[int] | None = None) -> list[int]:\n    if arg is None:\n        arg = create_list()\n\n    arg.append(4)\n    return arg\n```\n\nIf the use of a singleton is intentional, assign the result call to a\nmodule-level variable, and use that variable in the default argument:\n```python\nERROR = ValueError(\"Hosts weren't successfully added\")\n\n\ndef add_host(error: Exception = ERROR) -> None:\n    ...\n```\n\n## Options\n- `flake8-bugbear.extend-immutable-calls`\n",
     "preview": false
   },
   {
@@ -1100,7 +1112,7 @@
       "Do not `assert False` (`python -O` removes these calls), raise `AssertionError()`"
     ],
     "fix": "Fix is always available.",
-    "explanation": "## What it does\nChecks for uses of `assert False`.\n\n## Why is this bad?\nPython removes `assert` statements when running in optimized mode\n(`python -O`), making `assert False` an unreliable means of\nraising an `AssertionError`.\n\nInstead, raise an `AssertionError` directly.\n\n## Example\n```python\nassert False\n```\n\nUse instead:\n```python\nraise AssertionError\n```\n\n## References\n- [Python documentation: `assert`](https://docs.python.org/3/reference/simple_stmts.html#the-assert-statement)\n",
+    "explanation": "## What it does\nChecks for uses of `assert False`.\n\n## Why is this bad?\nPython removes `assert` statements when running in optimized mode\n(`python -O`), making `assert False` an unreliable means of\nraising an `AssertionError`.\n\nInstead, raise an `AssertionError` directly.\n\n## Example\n```python\nassert False\n```\n\nUse instead:\n```python\nraise AssertionError\n```\n\n## Fix safety\nThis rule's fix is marked as unsafe, as changing an `assert` to a\n`raise` will change the behavior of your program when running in\noptimized mode (`python -O`).\n\n## References\n- [Python documentation: `assert`](https://docs.python.org/3/reference/simple_stmts.html#the-assert-statement)\n",
     "preview": false
   },
   {
@@ -2076,8 +2088,8 @@
     "message_formats": [
       "Missing `from __future__ import annotations`, but uses {reason}"
     ],
-    "fix": "Fix is not available.",
-    "explanation": "## What it does\nChecks for uses of PEP 585- and PEP 604-style type annotations in Python\nmodules that lack the required `from __future__ import annotations` import\nfor compatibility with older Python versions.\n\n## Why is this bad?\nUsing PEP 585 and PEP 604 style annotations without a `from __future__ import\nannotations` import will cause runtime errors on Python versions prior to\n3.9 and 3.10, respectively.\n\nBy adding the `__future__` import, the interpreter will no longer interpret\nannotations at evaluation time, making the code compatible with both past\nand future Python versions.\n\nThis rule respects the [`target-version`] setting. For example, if your\nproject targets Python 3.10 and above, adding `from __future__ import annotations`\ndoes not impact your ability to leverage PEP 604-style unions (e.g., to\nconvert `Optional[str]` to `str | None`). As such, this rule will only\nflag such usages if your project targets Python 3.9 or below.\n\n## Example\n```python\ndef func(obj: dict[str, int | None]) -> None:\n    ...\n```\n\nUse instead:\n```python\nfrom __future__ import annotations\n\n\ndef func(obj: dict[str, int | None]) -> None:\n    ...\n```\n\n## Options\n- `target-version`\n",
+    "fix": "Fix is always available.",
+    "explanation": "## What it does\nChecks for uses of PEP 585- and PEP 604-style type annotations in Python\nmodules that lack the required `from __future__ import annotations` import\nfor compatibility with older Python versions.\n\n## Why is this bad?\nUsing PEP 585 and PEP 604 style annotations without a `from __future__ import\nannotations` import will cause runtime errors on Python versions prior to\n3.9 and 3.10, respectively.\n\nBy adding the `__future__` import, the interpreter will no longer interpret\nannotations at evaluation time, making the code compatible with both past\nand future Python versions.\n\nThis rule respects the [`target-version`] setting. For example, if your\nproject targets Python 3.10 and above, adding `from __future__ import annotations`\ndoes not impact your ability to leverage PEP 604-style unions (e.g., to\nconvert `Optional[str]` to `str | None`). As such, this rule will only\nflag such usages if your project targets Python 3.9 or below.\n\n## Example\n```python\ndef func(obj: dict[str, int | None]) -> None:\n    ...\n```\n\nUse instead:\n```python\nfrom __future__ import annotations\n\n\ndef func(obj: dict[str, int | None]) -> None:\n    ...\n```\n\n## Fix safety\nThis rule's fix is marked as unsafe, as adding `from __future__ import annotations`\nmay change the semantics of the program.\n\n## Options\n- `target-version`\n",
     "preview": false
   },
   {
@@ -2345,15 +2357,16 @@
     "preview": false
   },
   {
-    "name": "unnecessary-pass",
+    "name": "unnecessary-placeholder",
     "code": "PIE790",
     "linter": "flake8-pie",
     "summary": "Unnecessary `pass` statement",
     "message_formats": [
-      "Unnecessary `pass` statement"
+      "Unnecessary `pass` statement",
+      "Unnecessary `...` literal"
     ],
     "fix": "Fix is always available.",
-    "explanation": "## What it does\nChecks for unnecessary `pass` statements in functions, classes, and other\nblocks.\n\n## Why is this bad?\nIn Python, the `pass` statement serves as a placeholder, allowing for\nsyntactically correct empty code blocks. The primary purpose of the `pass`\nstatement is to avoid syntax errors in situations where a statement is\nsyntactically required, but no code needs to be executed.\n\nIf a `pass` statement is present in a code block that includes at least\none other statement (even, e.g., a docstring), it is unnecessary and should\nbe removed.\n\n## Example\n```python\ndef func():\n    \"\"\"Placeholder docstring.\"\"\"\n    pass\n```\n\nUse instead:\n```python\ndef func():\n    \"\"\"Placeholder docstring.\"\"\"\n```\n\n## References\n- [Python documentation: The `pass` statement](https://docs.python.org/3/reference/simple_stmts.html#the-pass-statement)\n",
+    "explanation": "## What it does\nChecks for unnecessary `pass` statements in functions, classes, and other\nblocks.\n\nIn [preview], this rule also checks for unnecessary ellipsis (`...`)\nliterals.\n\n## Why is this bad?\nIn Python, the `pass` statement and ellipsis (`...`) literal serve as\nplaceholders, allowing for syntactically correct empty code blocks. The\nprimary purpose of these nodes is to avoid syntax errors in situations\nwhere a statement or expression is syntactically required, but no code\nneeds to be executed.\n\nIf a `pass` or ellipsis is present in a code block that includes at least\none other statement (even, e.g., a docstring), it is unnecessary and should\nbe removed.\n\n## Example\n```python\ndef func():\n    \"\"\"Placeholder docstring.\"\"\"\n    pass\n```\n\nUse instead:\n```python\ndef func():\n    \"\"\"Placeholder docstring.\"\"\"\n```\n\nIn [preview]:\n```python\ndef func():\n    \"\"\"Placeholder docstring.\"\"\"\n    ...\n```\n\nUse instead:\n```python\ndef func():\n    \"\"\"Placeholder docstring.\"\"\"\n```\n\n## References\n- [Python documentation: The `pass` statement](https://docs.python.org/3/reference/simple_stmts.html#the-pass-statement)\n\n[preview]: https://docs.astral.sh/ruff/preview/\n",
     "preview": false
   },
   {
@@ -2388,7 +2401,7 @@
     "message_formats": [
       "Unnecessary spread `**`"
     ],
-    "fix": "Fix is not available.",
+    "fix": "Fix is sometimes available.",
     "explanation": "## What it does\nChecks for unnecessary dictionary unpacking operators (`**`).\n\n## Why is this bad?\nUnpacking a dictionary into another dictionary is redundant. The unpacking\noperator can be removed, making the code more readable.\n\n## Example\n```python\nfoo = {\"A\": 1, \"B\": 2}\nbar = {**foo, **{\"C\": 3}}\n```\n\nUse instead:\n```python\nfoo = {\"A\": 1, \"B\": 2}\nbar = {**foo, \"C\": 3}\n```\n\n## References\n- [Python documentation: Dictionary displays](https://docs.python.org/3/reference/expressions.html#dictionary-displays)\n",
     "preview": false
   },
@@ -2405,15 +2418,15 @@
     "preview": false
   },
   {
-    "name": "reimplemented-list-builtin",
+    "name": "reimplemented-container-builtin",
     "code": "PIE807",
     "linter": "flake8-pie",
-    "summary": "Prefer `list` over useless lambda",
+    "summary": "Prefer `{container}` over useless lambda",
     "message_formats": [
-      "Prefer `list` over useless lambda"
+      "Prefer `{container}` over useless lambda"
     ],
     "fix": "Fix is sometimes available.",
-    "explanation": "## What it does\nChecks for lambdas that can be replaced with the `list` builtin.\n\n## Why is this bad?\nUsing `list` builtin is more readable.\n\n## Example\n```python\nfrom dataclasses import dataclass, field\n\n\n@dataclass\nclass Foo:\n    bar: list[int] = field(default_factory=lambda: [])\n```\n\nUse instead:\n```python\nfrom dataclasses import dataclass, field\n\n\n@dataclass\nclass Foo:\n    bar: list[int] = field(default_factory=list)\n```\n\n## References\n- [Python documentation: `list`](https://docs.python.org/3/library/functions.html#func-list)\n",
+    "explanation": "## What it does\nChecks for lambdas that can be replaced with the `list` builtin.\n\nIn [preview], this rule will also flag lambdas that can be replaced with\nthe `dict` builtin.\n\n## Why is this bad?\nUsing container builtins are more succinct and idiomatic than wrapping\nthe literal in a lambda.\n\n## Example\n```python\nfrom dataclasses import dataclass, field\n\n\n@dataclass\nclass Foo:\n    bar: list[int] = field(default_factory=lambda: [])\n```\n\nUse instead:\n```python\nfrom dataclasses import dataclass, field\n\n\n@dataclass\nclass Foo:\n    bar: list[int] = field(default_factory=list)\n    baz: dict[str, int] = field(default_factory=dict)\n```\n\n## References\n- [Python documentation: `list`](https://docs.python.org/3/library/functions.html#func-list)\n\n[preview]: https://docs.astral.sh/ruff/preview/\n",
     "preview": false
   },
   {
@@ -3413,6 +3426,18 @@
     "preview": false
   },
   {
+    "name": "unnecessary-escaped-quote",
+    "code": "Q004",
+    "linter": "flake8-quotes",
+    "summary": "Unnecessary escape on inner quote character",
+    "message_formats": [
+      "Unnecessary escape on inner quote character"
+    ],
+    "fix": "Fix is always available.",
+    "explanation": "## What it does\nChecks for strings that include unnecessarily escaped quotes.\n\n## Why is this bad?\nIf a string contains an escaped quote that doesn't match the quote\ncharacter used for the string, it's unnecessary and can be removed.\n\n## Example\n```python\nfoo = \"bar\\'s\"\n```\n\nUse instead:\n```python\nfoo = \"bar's\"\n```\n\n## Formatter compatibility\nWe recommend against using this rule alongside the [formatter]. The\nformatter automatically removes unnecessary escapes, making the rule\nredundant.\n\n[formatter]: https://docs.astral.sh/ruff/formatter\n",
+    "preview": true
+  },
+  {
     "name": "unnecessary-paren-on-raise-exception",
     "code": "RSE102",
     "linter": "flake8-raise",
@@ -3699,7 +3724,7 @@
       "Use `key {operator} dict` instead of `key {operator} dict.keys()`"
     ],
     "fix": "Fix is always available.",
-    "explanation": "## What it does\nChecks for key-existence checks against `dict.keys()` calls.\n\n## Why is this bad?\nWhen checking for the existence of a key in a given dictionary, using\n`key in dict` is more readable and efficient than `key in dict.keys()`,\nwhile having the same semantics.\n\n## Example\n```python\nkey in foo.keys()\n```\n\nUse instead:\n```python\nkey in foo\n```\n\n## References\n- [Python documentation: Mapping Types](https://docs.python.org/3/library/stdtypes.html#mapping-types-dict)\n",
+    "explanation": "## What it does\nChecks for key-existence checks against `dict.keys()` calls.\n\n## Why is this bad?\nWhen checking for the existence of a key in a given dictionary, using\n`key in dict` is more readable and efficient than `key in dict.keys()`,\nwhile having the same semantics.\n\n## Example\n```python\nkey in foo.keys()\n```\n\nUse instead:\n```python\nkey in foo\n```\n\n## Fix safety\nGiven `key in obj.keys()`, `obj` _could_ be a dictionary, or it could be\nanother type that defines a `.keys()` method. In the latter case, removing\nthe `.keys()` attribute could lead to a runtime error.\n\nAs such, this rule's fixes are marked as unsafe. In [preview], though,\nfixes are marked as safe when Ruff can determine that `obj` is a\ndictionary.\n\n## References\n- [Python documentation: Mapping Types](https://docs.python.org/3/library/stdtypes.html#mapping-types-dict)\n\n[preview]: https://docs.astral.sh/ruff/preview/\n",
     "preview": false
   },
   {
@@ -4028,6 +4053,54 @@
     ],
     "fix": "Fix is not available.",
     "explanation": "## What it does\nChecks for trio functions that should contain await but don't.\n\n## Why is this bad?\nSome trio context managers, such as `trio.fail_after` and\n`trio.move_on_after`, have no effect unless they contain an `await`\nstatement. The use of such functions without an `await` statement is\nlikely a mistake.\n\n## Example\n```python\nasync def func():\n    with trio.move_on_after(2):\n        do_something()\n```\n\nUse instead:\n```python\nasync def func():\n    with trio.move_on_after(2):\n        do_something()\n        await awaitable()\n```\n",
+    "preview": true
+  },
+  {
+    "name": "trio-sync-call",
+    "code": "TRIO105",
+    "linter": "flake8-trio",
+    "summary": "Call to `{method_name}` is not immediately awaited",
+    "message_formats": [
+      "Call to `{method_name}` is not immediately awaited"
+    ],
+    "fix": "Fix is sometimes available.",
+    "explanation": "## What it does\nChecks for calls to trio functions that are not immediately awaited.\n\n## Why is this bad?\nMany of the functions exposed by trio are asynchronous, and must be awaited\nto take effect. Calling a trio function without an `await` can lead to\n`RuntimeWarning` diagnostics and unexpected behaviour.\n\n## Example\n```python\nasync def double_sleep(x):\n    trio.sleep(2 * x)\n```\n\nUse instead:\n```python\nasync def double_sleep(x):\n    await trio.sleep(2 * x)\n```\n\n## Fix safety\nThis rule's fix is marked as unsafe, as adding an `await` to a function\ncall changes its semantics and runtime behavior.\n",
+    "preview": true
+  },
+  {
+    "name": "trio-async-function-with-timeout",
+    "code": "TRIO109",
+    "linter": "flake8-trio",
+    "summary": "Prefer `trio.fail_after` and `trio.move_on_after` over manual `async` timeout behavior",
+    "message_formats": [
+      "Prefer `trio.fail_after` and `trio.move_on_after` over manual `async` timeout behavior"
+    ],
+    "fix": "Fix is not available.",
+    "explanation": "## What it does\nChecks for `async` functions with a `timeout` argument.\n\n## Why is this bad?\nRather than implementing asynchronous timeout behavior manually, prefer\ntrio's built-in timeout functionality, available as `trio.fail_after`,\n`trio.move_on_after`, `trio.fail_at`, and `trio.move_on_at`.\n\n## Known problems\nTo avoid false positives, this rule is only enabled if `trio` is imported\nin the module.\n\n## Example\n```python\nasync def func():\n    await long_running_task(timeout=2)\n```\n\nUse instead:\n```python\nasync def func():\n    with trio.fail_after(2):\n        await long_running_task()\n```\n",
+    "preview": true
+  },
+  {
+    "name": "trio-unneeded-sleep",
+    "code": "TRIO110",
+    "linter": "flake8-trio",
+    "summary": "Use `trio.Event` instead of awaiting `trio.sleep` in a `while` loop",
+    "message_formats": [
+      "Use `trio.Event` instead of awaiting `trio.sleep` in a `while` loop"
+    ],
+    "fix": "Fix is not available.",
+    "explanation": "## What it does\nChecks for the use of `trio.sleep` in a `while` loop.\n\n## Why is this bad?\nInstead of sleeping in a `while` loop, and waiting for a condition\nto become true, it's preferable to `wait()` on a `trio.Event`.\n\n## Example\n```python\nDONE = False\n\n\nasync def func():\n    while not DONE:\n        await trio.sleep(1)\n```\n\nUse instead:\n```python\nDONE = trio.Event()\n\n\nasync def func():\n    await DONE.wait()\n```\n",
+    "preview": true
+  },
+  {
+    "name": "trio-zero-sleep-call",
+    "code": "TRIO115",
+    "linter": "flake8-trio",
+    "summary": "Use `trio.lowlevel.checkpoint()` instead of `trio.sleep(0)`",
+    "message_formats": [
+      "Use `trio.lowlevel.checkpoint()` instead of `trio.sleep(0)`"
+    ],
+    "fix": "Fix is always available.",
+    "explanation": "## What it does\nChecks for uses of `trio.sleep(0)`.\n\n## Why is this bad?\n`trio.sleep(0)` is equivalent to calling `trio.lowlevel.checkpoint()`.\nHowever, the latter better conveys the intent of the code.\n\n## Example\n```python\nasync def func():\n    await trio.sleep(0)\n```\n\nUse instead:\n```python\nasync def func():\n    await trio.lowlevel.checkpoint()\n```\n",
     "preview": true
   },
   {
@@ -4666,7 +4739,7 @@
       "Argument name `{name}` should be lowercase"
     ],
     "fix": "Fix is not available.",
-    "explanation": "## What it does\nChecks for argument names that do not follow the `snake_case` convention.\n\n## Why is this bad?\n[PEP 8] recommends that function names should be lower case and separated\nby underscores (also known as `snake_case`).\n\n> Function names should be lowercase, with words separated by underscores\nas necessary to improve readability.\n>\n> Variable names follow the same convention as function names.\n>\n> mixedCase is allowed only in contexts where that’s already the\nprevailing style (e.g. threading.py), to retain backwards compatibility.\n\n## Example\n```python\ndef MY_FUNCTION():\n    pass\n```\n\nUse instead:\n```python\ndef my_function():\n    pass\n```\n\n[PEP 8]: https://peps.python.org/pep-0008/#function-and-method-arguments\n",
+    "explanation": "## What it does\nChecks for argument names that do not follow the `snake_case` convention.\n\n## Why is this bad?\n[PEP 8] recommends that function names should be lower case and separated\nby underscores (also known as `snake_case`).\n\n> Function names should be lowercase, with words separated by underscores\nas necessary to improve readability.\n>\n> Variable names follow the same convention as function names.\n>\n> mixedCase is allowed only in contexts where that’s already the\nprevailing style (e.g. threading.py), to retain backwards compatibility.\n\n## Example\n```python\ndef my_function(A, myArg):\n    pass\n```\n\nUse instead:\n```python\ndef my_function(a, my_arg):\n    pass\n```\n\n[PEP 8]: https://peps.python.org/pep-0008/#function-and-method-arguments\n",
     "preview": false
   },
   {
@@ -4973,9 +5046,9 @@
     "name": "pandas-df-variable-name",
     "code": "PD901",
     "linter": "pandas-vet",
-    "summary": "`df` is a bad variable name. Be kinder to your future self.",
+    "summary": "Avoid using the generic variable name `df` for DataFrames",
     "message_formats": [
-      "`df` is a bad variable name. Be kinder to your future self."
+      "Avoid using the generic variable name `df` for DataFrames"
     ],
     "fix": "Fix is not available.",
     "explanation": "## What it does\nChecks for assignments to the variable `df`.\n\n## Why is this bad?\nAlthough `df` is a common variable name for a Pandas DataFrame, it's not a\ngreat variable name for production code, as it's non-descriptive and\nprone to name conflicts.\n\nInstead, use a more descriptive variable name.\n\n## Example\n```python\nimport pandas as pd\n\ndf = pd.read_csv(\"animals.csv\")\n```\n\nUse instead:\n```python\nimport pandas as pd\n\nanimals = pd.read_csv(\"animals.csv\")\n```\n",
@@ -5206,7 +5279,7 @@
     "message_formats": [
       "Multiple spaces before operator"
     ],
-    "fix": "Fix is not available.",
+    "fix": "Fix is always available.",
     "explanation": "## What it does\nChecks for extraneous whitespace before an operator.\n\n## Why is this bad?\nAccording to [PEP 8], operators should be surrounded by at most a single space on either\nside.\n\n## Example\n```python\na = 4  + 5\n```\n\nUse instead:\n```python\na = 12 + 3\n```\n\n[PEP 8]: https://peps.python.org/pep-0008/#whitespace-in-expressions-and-statements\n",
     "preview": true
   },
@@ -5218,7 +5291,7 @@
     "message_formats": [
       "Multiple spaces after operator"
     ],
-    "fix": "Fix is not available.",
+    "fix": "Fix is always available.",
     "explanation": "## What it does\nChecks for extraneous whitespace after an operator.\n\n## Why is this bad?\nAccording to [PEP 8], operators should be surrounded by at most a single space on either\nside.\n\n## Example\n```python\na = 4 +  5\n```\n\nUse instead:\n```python\na = 12 + 3\n```\n\n[PEP 8]: https://peps.python.org/pep-0008/#whitespace-in-expressions-and-statements\n",
     "preview": true
   },
@@ -5314,7 +5387,7 @@
     "message_formats": [
       "Multiple spaces after comma"
     ],
-    "fix": "Fix is not available.",
+    "fix": "Fix is always available.",
     "explanation": "## What it does\nChecks for extraneous whitespace after a comma.\n\n## Why is this bad?\nAccording to the `black` code style, commas should be followed by a single space.\n\n## Example\n```python\na = 4,    5\n```\n\nUse instead:\n```python\na = 4, 5\n```\n",
     "preview": true
   },
@@ -5410,7 +5483,7 @@
     "message_formats": [
       "Multiple spaces after keyword"
     ],
-    "fix": "Fix is not available.",
+    "fix": "Fix is always available.",
     "explanation": "## What it does\nChecks for extraneous whitespace after keywords.\n\n## Why is this bad?\n\n\n## Example\n```python\nTrue and  False\n```\n\nUse instead:\n```python\nTrue and False\n```\n",
     "preview": true
   },
@@ -5422,7 +5495,7 @@
     "message_formats": [
       "Multiple spaces before keyword"
     ],
-    "fix": "Fix is not available.",
+    "fix": "Fix is always available.",
     "explanation": "## What it does\nChecks for extraneous whitespace before keywords.\n\n## Why is this bad?\n\n\n## Example\n```python\nTrue  and False\n```\n\nUse instead:\n```python\nTrue and False\n```\n",
     "preview": true
   },
@@ -5507,7 +5580,7 @@
       "Multiple statements on one line (colon)"
     ],
     "fix": "Fix is not available.",
-    "explanation": "## What it does\nChecks for compound statements (multiple statements on the same line).\n\n## Why is this bad?\nAccording to [PEP 8], \"compound statements are generally discouraged\".\n\n## Example\n```python\nif foo == \"blah\": do_blah_thing()\n```\n\nUse instead:\n```python\nif foo == \"blah\":\n    do_blah_thing()\n```\n[PEP 8]: https://peps.python.org/pep-0008/#other-recommendations\n",
+    "explanation": "## What it does\nChecks for compound statements (multiple statements on the same line).\n\n## Why is this bad?\nAccording to [PEP 8], \"compound statements are generally discouraged\".\n\n## Example\n```python\nif foo == \"blah\": do_blah_thing()\n```\n\nUse instead:\n```python\nif foo == \"blah\":\n    do_blah_thing()\n```\n\n[PEP 8]: https://peps.python.org/pep-0008/#other-recommendations\n",
     "preview": false
   },
   {
@@ -6065,7 +6138,7 @@
     "message_formats": [
       "Use `r\"\"\"` if any backslashes in a docstring"
     ],
-    "fix": "Fix is always available.",
+    "fix": "Fix is sometimes available.",
     "explanation": "## What it does\nChecks for docstrings that include backslashes, but are not defined as\nraw string literals.\n\n## Why is this bad?\nIn Python, backslashes are typically used to escape characters in strings.\nIn raw strings (those prefixed with an `r`), however, backslashes are\ntreated as literal characters.\n\n[PEP 257](https://peps.python.org/pep-0257/#what-is-a-docstring) recommends\nthe use of raw strings (i.e., `r\"\"\"raw triple double quotes\"\"\"`) for\ndocstrings that include backslashes. The use of a raw string ensures that\nany backslashes are treated as literal characters, and not as escape\nsequences, which avoids confusion.\n\n## Example\n```python\ndef foobar():\n    \"\"\"Docstring for foo\\bar.\"\"\"\n\n\nfoobar.__doc__  # \"Docstring for foar.\"\n```\n\nUse instead:\n```python\ndef foobar():\n    r\"\"\"Docstring for foo\\bar.\"\"\"\n\n\nfoobar.__doc__  # \"Docstring for foo\\bar.\"\n```\n\n## References\n- [PEP 257 – Docstring Conventions](https://peps.python.org/pep-0257/)\n- [Python documentation: String and Bytes literals](https://docs.python.org/3/reference/lexical_analysis.html#string-and-bytes-literals)\n",
     "preview": false
   },
@@ -6648,7 +6721,7 @@
       "Use `!=` to compare constant literals"
     ],
     "fix": "Fix is always available.",
-    "explanation": "## What it does\nChecks for `is` and `is not` comparisons against constant literals, like\nintegers and strings.\n\n## Why is this bad?\nThe `is` and `is not` comparators operate on identity, in that they check\nwhether two objects are the same object. If the objects are not the same\nobject, the comparison will always be `False`. Using `is` and `is not` with\nconstant literals often works \"by accident\", but are not guaranteed to produce\nthe expected result.\n\nAs of Python 3.8, using `is` and `is not` with constant literals will produce\na `SyntaxWarning`.\n\nInstead, use `==` and `!=` to compare constant literals, which will compare\nthe values of the objects instead of their identities.\n\n## Example\n```python\nx = 200\nif x is 200:\n    print(\"It's 200!\")\n```\n\nUse instead:\n```python\nx = 200\nif x == 200:\n    print(\"It's 200!\")\n```\n\n## References\n- [Python documentation: Identity comparisons](https://docs.python.org/3/reference/expressions.html#is-not)\n- [Python documentation: Value comparisons](https://docs.python.org/3/reference/expressions.html#value-comparisons)\n- [_Why does Python log a SyntaxWarning for ‘is’ with literals?_ by Adam Johnson](https://adamj.eu/tech/2020/01/21/why-does-python-3-8-syntaxwarning-for-is-literal/)\n",
+    "explanation": "## What it does\nChecks for `is` and `is not` comparisons against constant literals, like\nintegers and strings.\n\n## Why is this bad?\nThe `is` and `is not` comparators operate on identity, in that they check\nwhether two objects are the same object. If the objects are not the same\nobject, the comparison will always be `False`. Using `is` and `is not` with\nconstant literals often works \"by accident\", but are not guaranteed to produce\nthe expected result.\n\nAs of Python 3.8, using `is` and `is not` with constant literals will produce\na `SyntaxWarning`.\n\nInstead, use `==` and `!=` to compare constant literals, which will compare\nthe values of the objects instead of their identities.\n\nIn [preview], this rule will also flag `is` and `is not` comparisons against\nnon-constant literals, like lists, sets, and dictionaries. While such\ncomparisons will not raise a `SyntaxWarning`, they are still likely to be\nincorrect, as they will compare the identities of the objects instead of\ntheir values, which will always evaluate to `False`.\n\n## Example\n```python\nx = 200\nif x is 200:\n    print(\"It's 200!\")\n```\n\nUse instead:\n```python\nx = 200\nif x == 200:\n    print(\"It's 200!\")\n```\n\n## References\n- [Python documentation: Identity comparisons](https://docs.python.org/3/reference/expressions.html#is-not)\n- [Python documentation: Value comparisons](https://docs.python.org/3/reference/expressions.html#value-comparisons)\n- [_Why does Python log a SyntaxWarning for ‘is’ with literals?_ by Adam Johnson](https://adamj.eu/tech/2020/01/21/why-does-python-3-8-syntaxwarning-for-is-literal/)\n\n[preview]: https://docs.astral.sh/ruff/preview/\n",
     "preview": false
   },
   {
@@ -6804,7 +6877,7 @@
       "Local variable `{name}` is assigned to but never used"
     ],
     "fix": "Fix is sometimes available.",
-    "explanation": "## What it does\nChecks for the presence of unused variables in function scopes.\n\n## Why is this bad?\nA variable that is defined but not used is likely a mistake, and should\nbe removed to avoid confusion.\n\nIf a variable is intentionally defined-but-not-used, it should be\nprefixed with an underscore, or some other value that adheres to the\n[`dummy-variable-rgx`] pattern.\n\n## Example\n```python\ndef foo():\n    x = 1\n    y = 2\n    return x\n```\n\nUse instead:\n```python\ndef foo():\n    x = 1\n    return x\n```\n\n## Options\n- `dummy-variable-rgx`\n",
+    "explanation": "## What it does\nChecks for the presence of unused variables in function scopes.\n\n## Why is this bad?\nA variable that is defined but not used is likely a mistake, and should\nbe removed to avoid confusion.\n\nIf a variable is intentionally defined-but-not-used, it should be\nprefixed with an underscore, or some other value that adheres to the\n[`dummy-variable-rgx`] pattern.\n\nUnder [preview mode](https://docs.astral.sh/ruff/preview), this rule also\ntriggers on unused unpacked assignments (for example, `x, y = foo()`).\n\n## Example\n```python\ndef foo():\n    x = 1\n    y = 2\n    return x\n```\n\nUse instead:\n```python\ndef foo():\n    x = 1\n    return x\n```\n\n## Options\n- `dummy-variable-rgx`\n",
     "preview": false
   },
   {
@@ -7385,7 +7458,7 @@
       "Too many public methods ({methods} > {max_methods})"
     ],
     "fix": "Fix is not available.",
-    "explanation": "## What it does\nChecks for classes with too many public methods\n\nBy default, this rule allows up to 20 statements, as configured by the\n[`pylint.max-public-methods`] option.\n\n## Why is this bad?\nClasses with many public methods are harder to understand\nand maintain.\n\nInstead, consider refactoring the class into separate classes.\n\n## Example\nAssuming that `pylint.max-public-settings` is set to 5:\n```python\nclass Linter:\n    def __init__(self):\n        pass\n\n    def pylint(self):\n        pass\n\n    def pylint_settings(self):\n        pass\n\n    def flake8(self):\n        pass\n\n    def flake8_settings(self):\n        pass\n\n    def pydocstyle(self):\n        pass\n\n    def pydocstyle_settings(self):\n        pass\n```\n\nUse instead:\n```python\nclass Linter:\n    def __init__(self):\n        self.pylint = Pylint()\n        self.flake8 = Flake8()\n        self.pydocstyle = Pydocstyle()\n\n    def lint(self):\n        pass\n\n\nclass Pylint:\n    def lint(self):\n        pass\n\n    def settings(self):\n        pass\n\n\nclass Flake8:\n    def lint(self):\n        pass\n\n    def settings(self):\n        pass\n\n\nclass Pydocstyle:\n    def lint(self):\n        pass\n\n    def settings(self):\n        pass\n```\n\n## Options\n- `pylint.max-public-methods`\n",
+    "explanation": "## What it does\nChecks for classes with too many public methods\n\nBy default, this rule allows up to 20 public methods, as configured by\nthe [`pylint.max-public-methods`] option.\n\n## Why is this bad?\nClasses with many public methods are harder to understand\nand maintain.\n\nInstead, consider refactoring the class into separate classes.\n\n## Example\nAssuming that `pylint.max-public-settings` is set to 5:\n```python\nclass Linter:\n    def __init__(self):\n        pass\n\n    def pylint(self):\n        pass\n\n    def pylint_settings(self):\n        pass\n\n    def flake8(self):\n        pass\n\n    def flake8_settings(self):\n        pass\n\n    def pydocstyle(self):\n        pass\n\n    def pydocstyle_settings(self):\n        pass\n```\n\nUse instead:\n```python\nclass Linter:\n    def __init__(self):\n        self.pylint = Pylint()\n        self.flake8 = Flake8()\n        self.pydocstyle = Pydocstyle()\n\n    def lint(self):\n        pass\n\n\nclass Pylint:\n    def lint(self):\n        pass\n\n    def settings(self):\n        pass\n\n\nclass Flake8:\n    def lint(self):\n        pass\n\n    def settings(self):\n        pass\n\n\nclass Pydocstyle:\n    def lint(self):\n        pass\n\n    def settings(self):\n        pass\n```\n\n## Options\n- `pylint.max-public-methods`\n",
     "preview": true
   },
   {
@@ -7460,6 +7533,18 @@
     "fix": "Fix is always available.",
     "explanation": "## What it does\nChecks for repeated `isinstance` calls on the same object.\n\n## Why is this bad?\nRepeated `isinstance` calls on the same object can be merged into a\nsingle call.\n\n## Example\n```python\ndef is_number(x):\n    return isinstance(x, int) or isinstance(x, float) or isinstance(x, complex)\n```\n\nUse instead:\n```python\ndef is_number(x):\n    return isinstance(x, (int, float, complex))\n```\n\nOr, for Python 3.10 and later:\n\n```python\ndef is_number(x):\n    return isinstance(x, int | float | complex)\n```\n\n## Options\n- `target-version`\n\n## References\n- [Python documentation: `isinstance`](https://docs.python.org/3/library/functions.html#isinstance)\n",
     "preview": false
+  },
+  {
+    "name": "redefined-argument-from-local",
+    "code": "PLR1704",
+    "linter": "Pylint",
+    "summary": "Redefining argument with the local name `{name}`",
+    "message_formats": [
+      "Redefining argument with the local name `{name}`"
+    ],
+    "fix": "Fix is not available.",
+    "explanation": "## What it does\nChecks for variables defined in `for`, `try`, `with` statements\nthat redefine function parameters.\n\n## Why is this bad?\nRedefined variable can cause unexpected behavior because of overridden function parameter.\nIf nested functions are declared, inner function's body can override outer function's parameter.\n\n## Example\n```python\ndef show(host_id=10.11):\n    for host_id, host in [[12.13, \"Venus\"], [14.15, \"Mars\"]]:\n        print(host_id, host)\n```\n\nUse instead:\n```python\ndef show(host_id=10.11):\n    for inner_host_id, host in [[12.13, \"Venus\"], [14.15, \"Mars\"]]:\n        print(host_id, inner_host_id, host)\n```\n## References\n- [Pylint documentation](https://pylint.readthedocs.io/en/latest/user_guide/messages/refactor/redefined-argument-from-local.html)\n",
+    "preview": true
   },
   {
     "name": "and-or-ternary",
@@ -7567,8 +7652,8 @@
     "message_formats": [
       "Lambda may be unnecessary; consider inlining inner function"
     ],
-    "fix": "Fix is not available.",
-    "explanation": "## What it does\nChecks for `lambda` definitions that consist of a single function call\nwith the same arguments as the `lambda` itself.\n\n## Why is this bad?\nWhen a `lambda` is used to wrap a function call, and merely propagates\nthe `lambda` arguments to that function, it can typically be replaced with\nthe function itself, removing a level of indirection.\n\n## Example\n```python\ndf.apply(lambda x: str(x))\n```\n\nUse instead:\n```python\ndf.apply(str)\n```\n",
+    "fix": "Fix is always available.",
+    "explanation": "## What it does\nChecks for `lambda` definitions that consist of a single function call\nwith the same arguments as the `lambda` itself.\n\n## Why is this bad?\nWhen a `lambda` is used to wrap a function call, and merely propagates\nthe `lambda` arguments to that function, it can typically be replaced with\nthe function itself, removing a level of indirection.\n\n## Example\n```python\ndf.apply(lambda x: str(x))\n```\n\nUse instead:\n```python\ndf.apply(str)\n```\n\n## Fix safety\nThis rule's fix is marked as unsafe in cases in which the lambda body itself\ncontains an effect.\n\nFor example, replacing `lambda x, y: (func()(x, y))` with `func()` would\nlead to a change in behavior, as `func()` would be evaluated eagerly when\ndefining the lambda, rather than when the lambda is called.\n\nWhen the lambda body contains no visible effects, the fix is considered\nsafe.\n",
     "preview": true
   },
   {
@@ -7784,9 +7869,9 @@
     "name": "bad-dunder-method-name",
     "code": "PLW3201",
     "linter": "Pylint",
-    "summary": "Bad or misspelled dunder method name `{name}`. (bad-dunder-name)",
+    "summary": "Bad or misspelled dunder method name `{name}`",
     "message_formats": [
-      "Bad or misspelled dunder method name `{name}`. (bad-dunder-name)"
+      "Bad or misspelled dunder method name `{name}`"
     ],
     "fix": "Fix is not available.",
     "explanation": "## What it does\nChecks for misspelled and unknown dunder names in method definitions.\n\n## Why is this bad?\nMisspelled dunder name methods may cause your code to not function\nas expected.\n\nSince dunder methods are associated with customizing the behavior\nof a class in Python, introducing a dunder method such as `__foo__`\nthat diverges from standard Python dunder methods could potentially\nconfuse someone reading the code.\n\nThis rule will detect all methods starting and ending with at least\none underscore (e.g., `_str_`), but ignores known dunder methods (like\n`__init__`), as well as methods that are marked with `@override`.\n\n## Example\n```python\nclass Foo:\n    def __init_(self):\n        ...\n```\n\nUse instead:\n```python\nclass Foo:\n    def __init__(self):\n        ...\n```\n",
@@ -8039,9 +8124,9 @@
     "name": "replace-stdout-stderr",
     "code": "UP022",
     "linter": "pyupgrade",
-    "summary": "Sending `stdout` and `stderr` to `PIPE` is deprecated, use `capture_output`",
+    "summary": "Prefer `capture_output` over sending `stdout` and `stderr` to `PIPE`",
     "message_formats": [
-      "Sending `stdout` and `stderr` to `PIPE` is deprecated, use `capture_output`"
+      "Prefer `capture_output` over sending `stdout` and `stderr` to `PIPE`"
     ],
     "fix": "Fix is sometimes available.",
     "explanation": "## What it does\nChecks for uses of `subprocess.run` that send `stdout` and `stderr` to a\npipe.\n\n## Why is this bad?\nAs of Python 3.7, `subprocess.run` has a `capture_output` keyword argument\nthat can be set to `True` to capture `stdout` and `stderr` outputs. This is\nequivalent to setting `stdout` and `stderr` to `subprocess.PIPE`, but is\nmore explicit and readable.\n\n## Example\n```python\nimport subprocess\n\nsubprocess.run([\"foo\"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)\n```\n\nUse instead:\n```python\nimport subprocess\n\nsubprocess.run([\"foo\"], capture_output=True)\n```\n\n## References\n- [Python 3.7 release notes](https://docs.python.org/3/whatsnew/3.7.html#subprocess)\n- [Python documentation: `subprocess.run`](https://docs.python.org/3/library/subprocess.html#subprocess.run)\n",
@@ -8341,6 +8426,20 @@
     "preview": true
   },
   {
+    "name": "if-expr-min-max",
+    "code": "FURB136",
+    "linter": "refurb",
+    "summary": "Replace `if` expression with `{min_max}` call",
+    "message_formats": [
+      "Replace `if` expression with `{min_max}` call",
+      "Replace `if` expression with `{replacement}`",
+      "Replace `{expression}` with `{replacement}`"
+    ],
+    "fix": "Fix is sometimes available.",
+    "explanation": "## What it does\nChecks for `if` expressions that can be replaced with `min()` or `max()`\ncalls.\n\n## Why is this bad?\nAn `if` expression that selects the lesser or greater of two\nsub-expressions can be replaced with a `min()` or `max()` call\nrespectively. When possible, prefer `min()` and `max()`, as they're more\nconcise and readable than the equivalent `if` expression.\n\n## Example\n```python\nhighest_score = score1 if score1 > score2 else score2\n```\n\nUse instead:\n```python\nhighest_score = max(score2, score1)\n```\n\n## References\n- [Python documentation: `min`](https://docs.python.org/3.11/library/functions.html#min)\n- [Python documentation: `max`](https://docs.python.org/3.11/library/functions.html#max)\n",
+    "preview": true
+  },
+  {
     "name": "reimplemented-starmap",
     "code": "FURB140",
     "linter": "refurb",
@@ -8378,6 +8477,18 @@
     "preview": true
   },
   {
+    "name": "math-constant",
+    "code": "FURB152",
+    "linter": "refurb",
+    "summary": "Replace `{literal}` with `math.{constant}`",
+    "message_formats": [
+      "Replace `{literal}` with `math.{constant}`"
+    ],
+    "fix": "Fix is sometimes available.",
+    "explanation": "## What it does\nChecks for literals that are similar to constants in `math` module.\n\n## Why is this bad?\nHard-coding mathematical constants like π increases code duplication,\nreduces readability, and may lead to a lack of precision.\n\n## Example\n```python\nA = 3.141592 * r**2\n```\n\nUse instead:\n```python\nA = math.pi * r**2\n```\n\n## References\n- [Python documentation: `math` constants](https://docs.python.org/3/library/math.html#constants)\n",
+    "preview": true
+  },
+  {
     "name": "isinstance-type-none",
     "code": "FURB168",
     "linter": "refurb",
@@ -8387,6 +8498,18 @@
     ],
     "fix": "Fix is sometimes available.",
     "explanation": "## What it does\nChecks for uses of `isinstance` that check if an object is of type `None`.\n\n## Why is this bad?\nThere is only ever one instance of `None`, so it is more efficient and\nreadable to use the `is` operator to check if an object is `None`.\n\n## Example\n```python\nisinstance(obj, type(None))\n```\n\nUse instead:\n```python\nobj is None\n```\n\n## References\n- [Python documentation: `isinstance`](https://docs.python.org/3/library/functions.html#isinstance)\n- [Python documentation: `None`](https://docs.python.org/3/library/constants.html#None)\n- [Python documentation: `type`](https://docs.python.org/3/library/functions.html#type)\n- [Python documentation: Identity comparisons](https://docs.python.org/3/reference/expressions.html#is-not)\n",
+    "preview": true
+  },
+  {
+    "name": "type-none-comparison",
+    "code": "FURB169",
+    "linter": "refurb",
+    "summary": "Compare the identities of `{object}` and `None` instead of their respective types",
+    "message_formats": [
+      "Compare the identities of `{object}` and `None` instead of their respective types"
+    ],
+    "fix": "Fix is sometimes available.",
+    "explanation": "## What it does\nChecks for uses of `type` that compare the type of an object to the type of\n`None`.\n\n## Why is this bad?\nThere is only ever one instance of `None`, so it is more efficient and\nreadable to use the `is` operator to check if an object is `None`.\n\n## Example\n```python\ntype(obj) is type(None)\n```\n\nUse instead:\n```python\nobj is None\n```\n\n## References\n- [Python documentation: `isinstance`](https://docs.python.org/3/library/functions.html#isinstance)\n- [Python documentation: `None`](https://docs.python.org/3/library/constants.html#None)\n- [Python documentation: `type`](https://docs.python.org/3/library/functions.html#type)\n- [Python documentation: Identity comparisons](https://docs.python.org/3/reference/expressions.html#is-not)\n",
     "preview": true
   },
   {
@@ -8422,7 +8545,7 @@
       "String contains ambiguous {}. Did you mean {}?"
     ],
     "fix": "Fix is not available.",
-    "explanation": "## What it does\nChecks for ambiguous Unicode characters in strings.\n\n## Why is this bad?\nSome Unicode characters are visually similar to ASCII characters, but have\ndifferent code points. For example, `LATIN CAPITAL LETTER A` (`U+0041`) is\nvisually similar, but not identical, to the ASCII character `A`.\n\nThe use of ambiguous Unicode characters can confuse readers and cause\nsubtle bugs.\n\nIn [preview], this rule will also flag Unicode characters that are\nconfusable with other, non-preferred Unicode characters. For example, the\nspec recommends `GREEK CAPITAL LETTER OMEGA` over `OHM SIGN`.\n\n## Example\n```python\nprint(\"Ηello, world!\")  # \"Η\" is the Greek eta (`U+0397`).\n```\n\nUse instead:\n```python\nprint(\"Hello, world!\")  # \"H\" is the Latin capital H (`U+0048`).\n```\n\n[preview]: https://docs.astral.sh/ruff/preview/\n",
+    "explanation": "## What it does\nChecks for ambiguous Unicode characters in strings.\n\n## Why is this bad?\nSome Unicode characters are visually similar to ASCII characters, but have\ndifferent code points. For example, `GREEK CAPITAL LETTER ALPHA` (`U+0391`)\nis visually similar, but not identical, to the ASCII character `A`.\n\nThe use of ambiguous Unicode characters can confuse readers, cause subtle\nbugs, and even make malicious code look harmless.\n\nIn [preview], this rule will also flag Unicode characters that are\nconfusable with other, non-preferred Unicode characters. For example, the\nspec recommends `GREEK CAPITAL LETTER OMEGA` over `OHM SIGN`.\n\nYou can omit characters from being flagged as ambiguous via the\n[`allowed-confusables`] setting.\n\n## Example\n```python\nprint(\"Ηello, world!\")  # \"Η\" is the Greek eta (`U+0397`).\n```\n\nUse instead:\n```python\nprint(\"Hello, world!\")  # \"H\" is the Latin capital H (`U+0048`).\n```\n\n## Options\n- `allowed-confusables`\n\n[preview]: https://docs.astral.sh/ruff/preview/\n",
     "preview": false
   },
   {
@@ -8434,7 +8557,7 @@
       "Docstring contains ambiguous {}. Did you mean {}?"
     ],
     "fix": "Fix is not available.",
-    "explanation": "## What it does\nChecks for ambiguous Unicode characters in docstrings.\n\n## Why is this bad?\nSome Unicode characters are visually similar to ASCII characters, but have\ndifferent code points. For example, `LATIN CAPITAL LETTER A` (`U+0041`) is\nvisually similar, but not identical, to the ASCII character `A`.\n\nThe use of ambiguous Unicode characters can confuse readers and cause\nsubtle bugs.\n\nIn [preview], this rule will also flag Unicode characters that are\nconfusable with other, non-preferred Unicode characters. For example, the\nspec recommends `GREEK CAPITAL LETTER OMEGA` over `OHM SIGN`.\n\n## Example\n```python\n\"\"\"A lovely docstring (with a `U+FF09` parenthesis）.\"\"\"\n```\n\nUse instead:\n```python\n\"\"\"A lovely docstring (with no strange parentheses).\"\"\"\n```\n\n[preview]: https://docs.astral.sh/ruff/preview/\n",
+    "explanation": "## What it does\nChecks for ambiguous Unicode characters in docstrings.\n\n## Why is this bad?\nSome Unicode characters are visually similar to ASCII characters, but have\ndifferent code points. For example, `GREEK CAPITAL LETTER ALPHA` (`U+0391`)\nis visually similar, but not identical, to the ASCII character `A`.\n\nThe use of ambiguous Unicode characters can confuse readers, cause subtle\nbugs, and even make malicious code look harmless.\n\nIn [preview], this rule will also flag Unicode characters that are\nconfusable with other, non-preferred Unicode characters. For example, the\nspec recommends `GREEK CAPITAL LETTER OMEGA` over `OHM SIGN`.\n\nYou can omit characters from being flagged as ambiguous via the\n[`allowed-confusables`] setting.\n\n## Example\n```python\n\"\"\"A lovely docstring (with a `U+FF09` parenthesis）.\"\"\"\n```\n\nUse instead:\n```python\n\"\"\"A lovely docstring (with no strange parentheses).\"\"\"\n```\n\n## Options\n- `allowed-confusables`\n\n[preview]: https://docs.astral.sh/ruff/preview/\n",
     "preview": false
   },
   {
@@ -8446,7 +8569,7 @@
       "Comment contains ambiguous {}. Did you mean {}?"
     ],
     "fix": "Fix is not available.",
-    "explanation": "## What it does\nChecks for ambiguous Unicode characters in comments.\n\n## Why is this bad?\nSome Unicode characters are visually similar to ASCII characters, but have\ndifferent code points. For example, `LATIN CAPITAL LETTER A` (`U+0041`) is\nvisually similar, but not identical, to the ASCII character `A`.\n\nThe use of ambiguous Unicode characters can confuse readers and cause\nsubtle bugs.\n\nIn [preview], this rule will also flag Unicode characters that are\nconfusable with other, non-preferred Unicode characters. For example, the\nspec recommends `GREEK CAPITAL LETTER OMEGA` over `OHM SIGN`.\n\n## Example\n```python\nfoo()  # nоqa  # \"о\" is Cyrillic (`U+043E`)\n```\n\nUse instead:\n```python\nfoo()  # noqa  # \"o\" is Latin (`U+006F`)\n```\n\n[preview]: https://docs.astral.sh/ruff/preview/\n",
+    "explanation": "## What it does\nChecks for ambiguous Unicode characters in comments.\n\n## Why is this bad?\nSome Unicode characters are visually similar to ASCII characters, but have\ndifferent code points. For example, `GREEK CAPITAL LETTER ALPHA` (`U+0391`)\nis visually similar, but not identical, to the ASCII character `A`.\n\nThe use of ambiguous Unicode characters can confuse readers, cause subtle\nbugs, and even make malicious code look harmless.\n\nIn [preview], this rule will also flag Unicode characters that are\nconfusable with other, non-preferred Unicode characters. For example, the\nspec recommends `GREEK CAPITAL LETTER OMEGA` over `OHM SIGN`.\n\nYou can omit characters from being flagged as ambiguous via the\n[`allowed-confusables`] setting.\n\n## Example\n```python\nfoo()  # nоqa  # \"о\" is Cyrillic (`U+043E`)\n```\n\nUse instead:\n```python\nfoo()  # noqa  # \"o\" is Latin (`U+006F`)\n```\n\n## Options\n- `allowed-confusables`\n\n[preview]: https://docs.astral.sh/ruff/preview/\n",
     "preview": false
   },
   {
@@ -8569,7 +8692,7 @@
       "Prefer `next({iterable})` over single element slice"
     ],
     "fix": "Fix is always available.",
-    "explanation": "## What it does\nChecks for uses of `list(...)[0]` that can be replaced with\n`next(iter(...))`.\n\n## Why is this bad?\nCalling `list(...)` will create a new list of the entire collection, which\ncan be very expensive for large collections. If you only need the first\nelement of the collection, you can use `next(...)` or `next(iter(...)` to\nlazily fetch the first element.\n\nNote that migrating from `list(...)[0]` to `next(iter(...))` can change\nthe behavior of your program in two ways:\n\n1. First, `list(...)` will eagerly evaluate the entire collection, while\n   `next(iter(...))` will only evaluate the first element. As such, any\n   side effects that occur during iteration will be delayed.\n2. Second, `list(...)[0]` will raise `IndexError` if the collection is\n   empty, while `next(iter(...))` will raise `StopIteration`.\n\n## Example\n```python\nhead = list(x)[0]\nhead = [x * x for x in range(10)][0]\n```\n\nUse instead:\n```python\nhead = next(iter(x))\nhead = next(x * x for x in range(10))\n```\n\n## References\n- [Iterators and Iterables in Python: Run Efficient Iterations](https://realpython.com/python-iterators-iterables/#when-to-use-an-iterator-in-python)\n",
+    "explanation": "## What it does\nChecks for uses of `list(...)[0]` that can be replaced with\n`next(iter(...))`.\n\n## Why is this bad?\nCalling `list(...)` will create a new list of the entire collection, which\ncan be very expensive for large collections. If you only need the first\nelement of the collection, you can use `next(...)` or `next(iter(...)` to\nlazily fetch the first element.\n\n## Example\n```python\nhead = list(x)[0]\nhead = [x * x for x in range(10)][0]\n```\n\nUse instead:\n```python\nhead = next(iter(x))\nhead = next(x * x for x in range(10))\n```\n\n## Fix safety\nThis rule's fix is marked as unsafe, as migrating from `list(...)[0]` to\n`next(iter(...))` can change the behavior of your program in two ways:\n\n1. First, `list(...)` will eagerly evaluate the entire collection, while\n   `next(iter(...))` will only evaluate the first element. As such, any\n   side effects that occur during iteration will be delayed.\n2. Second, `list(...)[0]` will raise `IndexError` if the collection is\n   empty, while `next(iter(...))` will raise `StopIteration`.\n\n## References\n- [Iterators and Iterables in Python: Run Efficient Iterations](https://realpython.com/python-iterators-iterables/#when-to-use-an-iterator-in-python)\n",
     "preview": false
   },
   {
@@ -8594,7 +8717,7 @@
       "Avoid quadratic list summation"
     ],
     "fix": "Fix is always available.",
-    "explanation": "## What it does\nChecks for the use of `sum()` to flatten lists of lists, which has\nquadratic complexity.\n\n## Why is this bad?\nThe use of `sum()` to flatten lists of lists is quadratic in the number of\nlists, as `sum()` creates a new list for each element in the summation.\n\nInstead, consider using another method of flattening lists to avoid\nquadratic complexity. The following methods are all linear in the number of\nlists:\n\n- `functools.reduce(operator.iconcat, lists, [])`\n- `list(itertools.chain.from_iterable(lists)`\n- `[item for sublist in lists for item in sublist]`\n\n## Example\n```python\nlists = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]\njoined = sum(lists, [])\n```\n\nUse instead:\n```python\nimport functools\nimport operator\n\n\nlists = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]\nfunctools.reduce(operator.iconcat, lists, [])\n```\n\n## References\n- [_How Not to Flatten a List of Lists in Python_](https://mathieularose.com/how-not-to-flatten-a-list-of-lists-in-python)\n- [_How do I make a flat list out of a list of lists?_](https://stackoverflow.com/questions/952914/how-do-i-make-a-flat-list-out-of-a-list-of-lists/953097#953097)\n",
+    "explanation": "## What it does\nChecks for the use of `sum()` to flatten lists of lists, which has\nquadratic complexity.\n\n## Why is this bad?\nThe use of `sum()` to flatten lists of lists is quadratic in the number of\nlists, as `sum()` creates a new list for each element in the summation.\n\nInstead, consider using another method of flattening lists to avoid\nquadratic complexity. The following methods are all linear in the number of\nlists:\n\n- `functools.reduce(operator.iconcat, lists, [])`\n- `list(itertools.chain.from_iterable(lists))`\n- `[item for sublist in lists for item in sublist]`\n\n## Example\n```python\nlists = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]\njoined = sum(lists, [])\n```\n\nUse instead:\n```python\nimport functools\nimport operator\n\n\nlists = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]\nfunctools.reduce(operator.iconcat, lists, [])\n```\n\n## References\n- [_How Not to Flatten a List of Lists in Python_](https://mathieularose.com/how-not-to-flatten-a-list-of-lists-in-python)\n- [_How do I make a flat list out of a list of lists?_](https://stackoverflow.com/questions/952914/how-do-i-make-a-flat-list-out-of-a-list-of-lists/953097#953097)\n",
     "preview": true
   },
   {
@@ -8704,7 +8827,7 @@
       "Use `raise` without specifying exception name"
     ],
     "fix": "Fix is always available.",
-    "explanation": "## What it does\nChecks for needless exception names in `raise` statements.\n\n## Why is this bad?\nIt's redundant to specify the exception name in a `raise` statement if the\nexception is being re-raised.\n\n## Example\n```python\ndef foo():\n    try:\n        ...\n    except ValueError as exc:\n        raise exc\n```\n\nUse instead:\n```python\ndef foo():\n    try:\n        ...\n    except ValueError:\n        raise\n```\n",
+    "explanation": "## What it does\nChecks for needless exception names in `raise` statements.\n\n## Why is this bad?\nIt's redundant to specify the exception name in a `raise` statement if the\nexception is being re-raised.\n\n## Example\n```python\ndef foo():\n    try:\n        ...\n    except ValueError as exc:\n        raise exc\n```\n\nUse instead:\n```python\ndef foo():\n    try:\n        ...\n    except ValueError:\n        raise\n```\n\n## Fix safety\nThis rule's fix is marked as unsafe, as it doesn't properly handle bound\nexceptions that are shadowed between the `except` and `raise` statements.\n",
     "preview": false
   },
   {
