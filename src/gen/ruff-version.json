@@ -1,9 +1,9 @@
 {
-  "version": "0.1.13",
+  "version": "0.2.0",
   "commit_info": {
-    "short_commit_hash": "d16c4a2d2",
-    "commit_hash": "d16c4a2d25a27dad1ef26c0e496471139adb4522",
-    "commit_date": "2024-01-12",
+    "short_commit_hash": "1fadefa67",
+    "commit_hash": "1fadefa67b26508cc59cf38e6130bde2243c929d",
+    "commit_date": "2024-02-01",
     "last_tag": null,
     "commits_since_last_tag": 0
   }
