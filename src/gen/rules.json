@@ -850,8 +850,8 @@
       "`lxml` is vulnerable to XML attacks"
     ],
     "fix": "Fix is not available.",
-    "explanation": "## What it does\nChecks for imports of the`lxml` module.\n\n## Why is this bad?\nUsing various methods from the `lxml` module to parse untrusted XML data is\nknown to be vulnerable to XML attacks. Replace vulnerable imports with the\nequivalent `defusedxml` package.\n\n## Example\n```python\nimport lxml\n```\n",
-    "preview": true
+    "explanation": "## Removed\nThis rule was removed as the `lxml` library has been modified to address\nknown vulnerabilities and unsafe defaults. As such, the `defusedxml`\nlibrary is no longer necessary, `defusedxml` has [deprecated] its `lxml`\nmodule.\n\n## What it does\nChecks for imports of the `lxml` module.\n\n## Why is this bad?\nUsing various methods from the `lxml` module to parse untrusted XML data is\nknown to be vulnerable to XML attacks. Replace vulnerable imports with the\nequivalent `defusedxml` package.\n\n## Example\n```python\nimport lxml\n```\n\n[deprecated]: https://github.com/tiran/defusedxml/blob/c7445887f5e1bcea470a16f61369d29870cfcfe1/README.md#defusedxmllxml\n",
+    "preview": false
   },
   {
     "name": "suspicious-xmlrpc-import",
@@ -958,7 +958,7 @@
       "{cryptographic_key} key sizes below {minimum_key_size} bits are considered breakable"
     ],
     "fix": "Fix is not available.",
-    "explanation": "## What it does\nChecks for uses of cryptographic keys with vulnerable key sizes.\n\n## Why is this bad?\nSmall keys are easily breakable. For DSA and RSA, keys should be at least\n2048 bits long. For EC, keys should be at least 224 bits long.\n\n## Example\n```python\nfrom cryptography.hazmat.primitives.asymmetric import dsa, ec\n\ndsa.generate_private_key(key_size=512)\nec.generate_private_key(curve=ec.SECT163K1)\n```\n\nUse instead:\n```python\nfrom cryptography.hazmat.primitives.asymmetric import dsa, ec\n\ndsa.generate_private_key(key_size=4096)\nec.generate_private_key(curve=ec.SECP384R1)\n```\n\n## References\n- [CSRC: Transitioning the Use of Cryptographic Algorithms and Key Lengths](https://csrc.nist.gov/pubs/sp/800/131/a/r2/final)\n",
+    "explanation": "## What it does\nChecks for uses of cryptographic keys with vulnerable key sizes.\n\n## Why is this bad?\nSmall keys are easily breakable. For DSA and RSA, keys should be at least\n2048 bits long. For EC, keys should be at least 224 bits long.\n\n## Example\n```python\nfrom cryptography.hazmat.primitives.asymmetric import dsa, ec\n\ndsa.generate_private_key(key_size=512)\nec.generate_private_key(curve=ec.SECT163K1())\n```\n\nUse instead:\n```python\nfrom cryptography.hazmat.primitives.asymmetric import dsa, ec\n\ndsa.generate_private_key(key_size=4096)\nec.generate_private_key(curve=ec.SECP384R1())\n```\n\n## References\n- [CSRC: Transitioning the Use of Cryptographic Algorithms and Key Lengths](https://csrc.nist.gov/pubs/sp/800/131/a/r2/final)\n",
     "preview": false
   },
   {
@@ -1824,7 +1824,7 @@
       "Unnecessary `{obj_type}` call (rewrite as a literal)"
     ],
     "fix": "Fix is always available.",
-    "explanation": "## What it does\nChecks for unnecessary `dict`, `list` or `tuple` calls that can be\nrewritten as empty literals.\n\n## Why is this bad?\nIt's unnecessary to call e.g., `dict()` as opposed to using an empty\nliteral (`{}`). The former is slower because the name `dict` must be\nlooked up in the global scope in case it has been rebound.\n\n## Examples\n```python\ndict()\ndict(a=1, b=2)\nlist()\ntuple()\n```\n\nUse instead:\n```python\n{}\n{\"a\": 1, \"b\": 2}\n[]\n()\n```\n\n## Fix safety\nThis rule's fix is marked as unsafe, as it may occasionally drop comments\nwhen rewriting the call. In most cases, though, comments will be preserved.\n",
+    "explanation": "## What it does\nChecks for unnecessary `dict`, `list` or `tuple` calls that can be\nrewritten as empty literals.\n\n## Why is this bad?\nIt's unnecessary to call e.g., `dict()` as opposed to using an empty\nliteral (`{}`). The former is slower because the name `dict` must be\nlooked up in the global scope in case it has been rebound.\n\n## Examples\n```python\ndict()\ndict(a=1, b=2)\nlist()\ntuple()\n```\n\nUse instead:\n```python\n{}\n{\"a\": 1, \"b\": 2}\n[]\n()\n```\n\n## Fix safety\nThis rule's fix is marked as unsafe, as it may occasionally drop comments\nwhen rewriting the call. In most cases, though, comments will be preserved.\n\n## Options\n- `lint.flake8-comprehensions.allow-dict-calls-with-keyword-arguments`\n",
     "preview": false
   },
   {
@@ -1837,7 +1837,7 @@
       "Unnecessary `{literal}` literal passed to `tuple()` (remove the outer call to `tuple()`)"
     ],
     "fix": "Fix is always available.",
-    "explanation": "## What it does\nChecks for `tuple` calls that take unnecessary list or tuple literals as\narguments.\n\n## Why is this bad?\nIt's unnecessary to use a list or tuple literal within a `tuple()` call,\nsince there is a literal syntax for these types.\n\nIf a list literal was passed, then it should be rewritten as a `tuple`\nliteral. Otherwise, if a tuple literal was passed, then the outer call\nto `list()` should be removed.\n\n## Examples\n```python\ntuple([1, 2])\ntuple((1, 2))\n```\n\nUse instead:\n```python\n(1, 2)\n(1, 2)\n```\n\n## Fix safety\nThis rule's fix is marked as unsafe, as it may occasionally drop comments\nwhen rewriting the call. In most cases, though, comments will be preserved.\n",
+    "explanation": "## What it does\nChecks for `tuple` calls that take unnecessary list or tuple literals as\narguments.\n\n## Why is this bad?\nIt's unnecessary to use a list or tuple literal within a `tuple()` call,\nsince there is a literal syntax for these types.\n\nIf a list literal was passed, then it should be rewritten as a `tuple`\nliteral. Otherwise, if a tuple literal was passed, then the outer call\nto `tuple()` should be removed.\n\n## Examples\n```python\ntuple([1, 2])\ntuple((1, 2))\n```\n\nUse instead:\n```python\n(1, 2)\n(1, 2)\n```\n\n## Fix safety\nThis rule's fix is marked as unsafe, as it may occasionally drop comments\nwhen rewriting the call. In most cases, though, comments will be preserved.\n",
     "preview": false
   },
   {
@@ -3445,7 +3445,7 @@
       "`pytest.raises()` block should contain a single simple statement"
     ],
     "fix": "Fix is not available.",
-    "explanation": "## What it does\nChecks for `pytest.raises` context managers with multiple statements.\n\n## Why is this bad?\nWhen a `pytest.raises` is used as a context manager and contains multiple\nstatements, it can lead to the test passing when it actually should fail.\nTo avoid this, a `pytest.raises` context manager should only contain\na single simple statement that raises the expected exception.\n\n## Example\n```python\nimport pytest\n\n\ndef test_foo():\n    with pytest.raises(MyError):\n        setup()  # may raise `MyError`\n        func_to_test()\n        assert foo()  # not executed\n```\n\nUse instead:\n```python\nimport pytest\n\n\ndef test_foo():\n    setup()\n    with pytest.raises(MyException):\n        func_to_test()\n    assert foo()\n```\n\n## References\n- [`pytest` documentation: `pytest.raises`](https://docs.pytest.org/en/latest/reference/reference.html#pytest-raises)\n",
+    "explanation": "## What it does\nChecks for `pytest.raises` context managers with multiple statements.\n\n## Why is this bad?\nWhen a `pytest.raises` is used as a context manager and contains multiple\nstatements, it can lead to the test passing when it actually should fail.\nTo avoid this, a `pytest.raises` context manager should only contain\na single simple statement that raises the expected exception.\n\n## Example\n```python\nimport pytest\n\n\ndef test_foo():\n    with pytest.raises(MyError):\n        setup()\n        func_to_test()  # not executed if `setup()` raises `MyError`\n        assert foo()  # not executed\n```\n\nUse instead:\n```python\nimport pytest\n\n\ndef test_foo():\n    setup()\n    with pytest.raises(MyError):\n        func_to_test()\n    assert foo()\n```\n\n## References\n- [`pytest` documentation: `pytest.raises`](https://docs.pytest.org/en/latest/reference/reference.html#pytest-raises)\n",
     "preview": false
   },
   {
@@ -4693,7 +4693,7 @@
       "`os.path.islink()` should be replaced by `Path.is_symlink()`"
     ],
     "fix": "Fix is not available.",
-    "explanation": "## What it does\nChecks for uses of `os.path.islink`.\n\n## Why is this bad?\n`pathlib` offers a high-level API for path manipulation, as compared to\nthe lower-level API offered by `os`. When possible, using `Path` object\nmethods such as `Path.is_link()` can improve readability over the `os`\nmodule's counterparts (e.g., `os.path.islink()`).\n\nNote that `os` functions may be preferable if performance is a concern,\ne.g., in hot loops.\n\n## Examples\n```python\nimport os\n\nos.path.islink(\"docs\")\n```\n\nUse instead:\n```python\nfrom pathlib import Path\n\nPath(\"docs\").is_link()\n```\n\n## References\n- [Python documentation: `Path.is_link`](https://docs.python.org/3/library/pathlib.html#pathlib.Path.is_link)\n- [Python documentation: `os.path.islink`](https://docs.python.org/3/library/os.path.html#os.path.islink)\n- [PEP 428](https://peps.python.org/pep-0428/)\n- [Correspondence between `os` and `pathlib`](https://docs.python.org/3/library/pathlib.html#correspondence-to-tools-in-the-os-module)\n- [Why you should be using pathlib](https://treyhunner.com/2018/12/why-you-should-be-using-pathlib/)\n- [No really, pathlib is great](https://treyhunner.com/2019/01/no-really-pathlib-is-great/)\n",
+    "explanation": "## What it does\nChecks for uses of `os.path.islink`.\n\n## Why is this bad?\n`pathlib` offers a high-level API for path manipulation, as compared to\nthe lower-level API offered by `os`. When possible, using `Path` object\nmethods such as `Path.is_symlink()` can improve readability over the `os`\nmodule's counterparts (e.g., `os.path.islink()`).\n\nNote that `os` functions may be preferable if performance is a concern,\ne.g., in hot loops.\n\n## Examples\n```python\nimport os\n\nos.path.islink(\"docs\")\n```\n\nUse instead:\n```python\nfrom pathlib import Path\n\nPath(\"docs\").is_symlink()\n```\n\n## References\n- [Python documentation: `Path.is_symlink`](https://docs.python.org/3/library/pathlib.html#pathlib.Path.is_symlink)\n- [Python documentation: `os.path.islink`](https://docs.python.org/3/library/os.path.html#os.path.islink)\n- [PEP 428](https://peps.python.org/pep-0428/)\n- [Correspondence between `os` and `pathlib`](https://docs.python.org/3/library/pathlib.html#correspondence-to-tools-in-the-os-module)\n- [Why you should be using pathlib](https://treyhunner.com/2018/12/why-you-should-be-using-pathlib/)\n- [No really, pathlib is great](https://treyhunner.com/2019/01/no-really-pathlib-is-great/)\n",
     "preview": false
   },
   {
@@ -4850,7 +4850,7 @@
       "`os.path.getatime` should be replaced by `Path.stat().st_atime`"
     ],
     "fix": "Fix is not available.",
-    "explanation": "## What it does\nChecks for uses of `os.path.getatime`.\n\n## Why is this bad?\n`pathlib` offers a high-level API for path manipulation, as compared to\nthe lower-level API offered by `os`.\n\nWhen possible, using `Path` object methods such as `Path.stat()` can\nimprove readability over the `os` module's counterparts (e.g.,\n`os.path.getsize()`).\n\nNote that `os` functions may be preferable if performance is a concern,\ne.g., in hot loops.\n\n## Examples\n```python\nimport os\n\nos.path.getsize(__file__)\n```\n\nUse instead:\n```python\nfrom pathlib import Path\n\nPath(__file__).stat().st_size\n```\n\n## References\n- [Python documentation: `Path.stat`](https://docs.python.org/3/library/pathlib.html#pathlib.Path.stat)\n- [Python documentation: `os.path.getsize`](https://docs.python.org/3/library/os.path.html#os.path.getsize)\n- [PEP 428](https://peps.python.org/pep-0428/)\n- [Correspondence between `os` and `pathlib`](https://docs.python.org/3/library/pathlib.html#correspondence-to-tools-in-the-os-module)\n- [Why you should be using pathlib](https://treyhunner.com/2018/12/why-you-should-be-using-pathlib/)\n- [No really, pathlib is great](https://treyhunner.com/2019/01/no-really-pathlib-is-great/)\n",
+    "explanation": "## What it does\nChecks for uses of `os.path.getatime`.\n\n## Why is this bad?\n`pathlib` offers a high-level API for path manipulation, as compared to\nthe lower-level API offered by `os`.\n\nWhen possible, using `Path` object methods such as `Path.stat()` can\nimprove readability over the `os` module's counterparts (e.g.,\n`os.path.getatime()`).\n\nNote that `os` functions may be preferable if performance is a concern,\ne.g., in hot loops.\n\n## Examples\n```python\nimport os\n\nos.path.getatime(__file__)\n```\n\nUse instead:\n```python\nfrom pathlib import Path\n\nPath(__file__).stat().st_atime\n```\n\n## References\n- [Python documentation: `Path.stat`](https://docs.python.org/3/library/pathlib.html#pathlib.Path.stat)\n- [Python documentation: `os.path.getatime`](https://docs.python.org/3/library/os.path.html#os.path.getatime)\n- [PEP 428](https://peps.python.org/pep-0428/)\n- [Correspondence between `os` and `pathlib`](https://docs.python.org/3/library/pathlib.html#correspondence-to-tools-in-the-os-module)\n- [Why you should be using pathlib](https://treyhunner.com/2018/12/why-you-should-be-using-pathlib/)\n- [No really, pathlib is great](https://treyhunner.com/2019/01/no-really-pathlib-is-great/)\n",
     "preview": false
   },
   {
@@ -4862,7 +4862,7 @@
       "`os.path.getmtime` should be replaced by `Path.stat().st_mtime`"
     ],
     "fix": "Fix is not available.",
-    "explanation": "## What it does\nChecks for uses of `os.path.getatime`.\n\n## Why is this bad?\n`pathlib` offers a high-level API for path manipulation, as compared to\nthe lower-level API offered by `os`.\n\nWhen possible, using `Path` object methods such as `Path.stat()` can\nimprove readability over the `os` module's counterparts (e.g.,\n`os.path.getsize()`).\n\nNote that `os` functions may be preferable if performance is a concern,\ne.g., in hot loops.\n\n## Examples\n```python\nimport os\n\nos.path.getsize(__file__)\n```\n\nUse instead:\n```python\nfrom pathlib import Path\n\nPath(__file__).stat().st_size\n```\n\n## References\n- [Python documentation: `Path.stat`](https://docs.python.org/3/library/pathlib.html#pathlib.Path.stat)\n- [Python documentation: `os.path.getsize`](https://docs.python.org/3/library/os.path.html#os.path.getsize)\n- [PEP 428](https://peps.python.org/pep-0428/)\n- [Correspondence between `os` and `pathlib`](https://docs.python.org/3/library/pathlib.html#correspondence-to-tools-in-the-os-module)\n- [Why you should be using pathlib](https://treyhunner.com/2018/12/why-you-should-be-using-pathlib/)\n- [No really, pathlib is great](https://treyhunner.com/2019/01/no-really-pathlib-is-great/)\n",
+    "explanation": "## What it does\nChecks for uses of `os.path.getmtime`.\n\n## Why is this bad?\n`pathlib` offers a high-level API for path manipulation, as compared to\nthe lower-level API offered by `os`.\n\nWhen possible, using `Path` object methods such as `Path.stat()` can\nimprove readability over the `os` module's counterparts (e.g.,\n`os.path.getmtime()`).\n\nNote that `os` functions may be preferable if performance is a concern,\ne.g., in hot loops.\n\n## Examples\n```python\nimport os\n\nos.path.getmtime(__file__)\n```\n\nUse instead:\n```python\nfrom pathlib import Path\n\nPath(__file__).stat().st_mtime\n```\n\n## References\n- [Python documentation: `Path.stat`](https://docs.python.org/3/library/pathlib.html#pathlib.Path.stat)\n- [Python documentation: `os.path.getmtime`](https://docs.python.org/3/library/os.path.html#os.path.getmtime)\n- [PEP 428](https://peps.python.org/pep-0428/)\n- [Correspondence between `os` and `pathlib`](https://docs.python.org/3/library/pathlib.html#correspondence-to-tools-in-the-os-module)\n- [Why you should be using pathlib](https://treyhunner.com/2018/12/why-you-should-be-using-pathlib/)\n- [No really, pathlib is great](https://treyhunner.com/2019/01/no-really-pathlib-is-great/)\n",
     "preview": false
   },
   {
@@ -4874,7 +4874,7 @@
       "`os.path.getctime` should be replaced by `Path.stat().st_ctime`"
     ],
     "fix": "Fix is not available.",
-    "explanation": "## What it does\nChecks for uses of `os.path.getatime`.\n\n## Why is this bad?\n`pathlib` offers a high-level API for path manipulation, as compared to\nthe lower-level API offered by `os`.\n\nWhen possible, using `Path` object methods such as `Path.stat()` can\nimprove readability over the `os` module's counterparts (e.g.,\n`os.path.getsize()`).\n\nNote that `os` functions may be preferable if performance is a concern,\ne.g., in hot loops.\n\n## Examples\n```python\nimport os\n\nos.path.getsize(__file__)\n```\n\nUse instead:\n```python\nfrom pathlib import Path\n\nPath(__file__).stat().st_size\n```\n\n## References\n- [Python documentation: `Path.stat`](https://docs.python.org/3/library/pathlib.html#pathlib.Path.stat)\n- [Python documentation: `os.path.getsize`](https://docs.python.org/3/library/os.path.html#os.path.getsize)\n- [PEP 428](https://peps.python.org/pep-0428/)\n- [Correspondence between `os` and `pathlib`](https://docs.python.org/3/library/pathlib.html#correspondence-to-tools-in-the-os-module)\n- [Why you should be using pathlib](https://treyhunner.com/2018/12/why-you-should-be-using-pathlib/)\n- [No really, pathlib is great](https://treyhunner.com/2019/01/no-really-pathlib-is-great/)\n",
+    "explanation": "## What it does\nChecks for uses of `os.path.getctime`.\n\n## Why is this bad?\n`pathlib` offers a high-level API for path manipulation, as compared to\nthe lower-level API offered by `os`.\n\nWhen possible, using `Path` object methods such as `Path.stat()` can\nimprove readability over the `os` module's counterparts (e.g.,\n`os.path.getctime()`).\n\nNote that `os` functions may be preferable if performance is a concern,\ne.g., in hot loops.\n\n## Examples\n```python\nimport os\n\nos.path.getctime(__file__)\n```\n\nUse instead:\n```python\nfrom pathlib import Path\n\nPath(__file__).stat().st_ctime\n```\n\n## References\n- [Python documentation: `Path.stat`](https://docs.python.org/3/library/pathlib.html#pathlib.Path.stat)\n- [Python documentation: `os.path.getctime`](https://docs.python.org/3/library/os.path.html#os.path.getctime)\n- [PEP 428](https://peps.python.org/pep-0428/)\n- [Correspondence between `os` and `pathlib`](https://docs.python.org/3/library/pathlib.html#correspondence-to-tools-in-the-os-module)\n- [Why you should be using pathlib](https://treyhunner.com/2018/12/why-you-should-be-using-pathlib/)\n- [No really, pathlib is great](https://treyhunner.com/2019/01/no-really-pathlib-is-great/)\n",
     "preview": false
   },
   {
@@ -5003,9 +5003,9 @@
     "name": "invalid-class-name",
     "code": "N801",
     "linter": "pep8-naming",
-    "summary": "Class name `{name}` should use CapWords convention ",
+    "summary": "Class name `{name}` should use CapWords convention",
     "message_formats": [
-      "Class name `{name}` should use CapWords convention "
+      "Class name `{name}` should use CapWords convention"
     ],
     "fix": "Fix is not available.",
     "explanation": "## What it does\nChecks for class names that do not follow the `CamelCase` convention.\n\n## Why is this bad?\n[PEP 8] recommends the use of the `CapWords` (or `CamelCase`) convention\nfor class names:\n\n> Class names should normally use the `CapWords` convention.\n>\n> The naming convention for functions may be used instead in cases where the interface is\n> documented and used primarily as a callable.\n>\n> Note that there is a separate convention for builtin names: most builtin names are single\n> words (or two words run together), with the `CapWords` convention used only for exception\n> names and builtin constants.\n\n## Example\n```python\nclass my_class:\n    pass\n```\n\nUse instead:\n```python\nclass MyClass:\n    pass\n```\n\n[PEP 8]: https://peps.python.org/pep-0008/#class-names\n",
@@ -5043,8 +5043,8 @@
     "message_formats": [
       "First argument of a class method should be named `cls`"
     ],
-    "fix": "Fix is not available.",
-    "explanation": "## What it does\nChecks for class methods that use a name other than `cls` for their\nfirst argument.\n\n## Why is this bad?\n[PEP 8] recommends the use of `cls` as the first argument for all class\nmethods:\n\n> Always use `cls` for the first argument to class methods.\n>\n> If a function argument’s name clashes with a reserved keyword, it is generally better to\n> append a single trailing underscore rather than use an abbreviation or spelling corruption.\n> Thus `class_` is better than `clss`. (Perhaps better is to avoid such clashes by using a synonym.)\n\nNames can be excluded from this rule using the [`lint.pep8-naming.ignore-names`]\nor [`lint.pep8-naming.extend-ignore-names`] configuration options. For example,\nto allow the use of `klass` as the first argument to class methods, set\nthe [`lint.pep8-naming.extend-ignore-names`] option to `[\"klass\"]`.\n\n## Example\n```python\nclass Example:\n    @classmethod\n    def function(self, data):\n        ...\n```\n\nUse instead:\n```python\nclass Example:\n    @classmethod\n    def function(cls, data):\n        ...\n```\n\n## Options\n- `lint.pep8-naming.classmethod-decorators`\n- `lint.pep8-naming.staticmethod-decorators`\n- `lint.pep8-naming.ignore-names`\n- `lint.pep8-naming.extend-ignore-names`\n\n[PEP 8]: https://peps.python.org/pep-0008/#function-and-method-arguments\n",
+    "fix": "Fix is sometimes available.",
+    "explanation": "## What it does\nChecks for class methods that use a name other than `cls` for their\nfirst argument.\n\n## Why is this bad?\n[PEP 8] recommends the use of `cls` as the first argument for all class\nmethods:\n\n> Always use `cls` for the first argument to class methods.\n>\n> If a function argument’s name clashes with a reserved keyword, it is generally better to\n> append a single trailing underscore rather than use an abbreviation or spelling corruption.\n> Thus `class_` is better than `clss`. (Perhaps better is to avoid such clashes by using a synonym.)\n\nNames can be excluded from this rule using the [`lint.pep8-naming.ignore-names`]\nor [`lint.pep8-naming.extend-ignore-names`] configuration options. For example,\nto allow the use of `klass` as the first argument to class methods, set\nthe [`lint.pep8-naming.extend-ignore-names`] option to `[\"klass\"]`.\n\n## Example\n```python\nclass Example:\n    @classmethod\n    def function(self, data):\n        ...\n```\n\nUse instead:\n```python\nclass Example:\n    @classmethod\n    def function(cls, data):\n        ...\n```\n\n## Fix safety\nThis rule's fix is marked as unsafe, as renaming a method parameter\ncan change the behavior of the program.\n\n## Options\n- `lint.pep8-naming.classmethod-decorators`\n- `lint.pep8-naming.staticmethod-decorators`\n- `lint.pep8-naming.ignore-names`\n- `lint.pep8-naming.extend-ignore-names`\n\n[PEP 8]: https://peps.python.org/pep-0008/#function-and-method-arguments\n",
     "preview": false
   },
   {
@@ -5055,8 +5055,8 @@
     "message_formats": [
       "First argument of a method should be named `self`"
     ],
-    "fix": "Fix is not available.",
-    "explanation": "## What it does\nChecks for instance methods that use a name other than `self` for their\nfirst argument.\n\n## Why is this bad?\n[PEP 8] recommends the use of `self` as first argument for all instance\nmethods:\n\n> Always use self for the first argument to instance methods.\n>\n> If a function argument’s name clashes with a reserved keyword, it is generally better to\n> append a single trailing underscore rather than use an abbreviation or spelling corruption.\n> Thus `class_` is better than `clss`. (Perhaps better is to avoid such clashes by using a synonym.)\n\nNames can be excluded from this rule using the [`lint.pep8-naming.ignore-names`]\nor [`lint.pep8-naming.extend-ignore-names`] configuration options. For example,\nto allow the use of `this` as the first argument to instance methods, set\nthe [`lint.pep8-naming.extend-ignore-names`] option to `[\"this\"]`.\n\n## Example\n```python\nclass Example:\n    def function(cls, data):\n        ...\n```\n\nUse instead:\n```python\nclass Example:\n    def function(self, data):\n        ...\n```\n\n## Options\n- `lint.pep8-naming.classmethod-decorators`\n- `lint.pep8-naming.staticmethod-decorators`\n- `lint.pep8-naming.ignore-names`\n- `lint.pep8-naming.extend-ignore-names`\n\n[PEP 8]: https://peps.python.org/pep-0008/#function-and-method-arguments\n",
+    "fix": "Fix is sometimes available.",
+    "explanation": "## What it does\nChecks for instance methods that use a name other than `self` for their\nfirst argument.\n\n## Why is this bad?\n[PEP 8] recommends the use of `self` as first argument for all instance\nmethods:\n\n> Always use self for the first argument to instance methods.\n>\n> If a function argument’s name clashes with a reserved keyword, it is generally better to\n> append a single trailing underscore rather than use an abbreviation or spelling corruption.\n> Thus `class_` is better than `clss`. (Perhaps better is to avoid such clashes by using a synonym.)\n\nNames can be excluded from this rule using the [`lint.pep8-naming.ignore-names`]\nor [`lint.pep8-naming.extend-ignore-names`] configuration options. For example,\nto allow the use of `this` as the first argument to instance methods, set\nthe [`lint.pep8-naming.extend-ignore-names`] option to `[\"this\"]`.\n\n## Example\n```python\nclass Example:\n    def function(cls, data):\n        ...\n```\n\nUse instead:\n```python\nclass Example:\n    def function(self, data):\n        ...\n```\n\n## Fix safety\nThis rule's fix is marked as unsafe, as renaming a method parameter\ncan change the behavior of the program.\n\n## Options\n- `lint.pep8-naming.classmethod-decorators`\n- `lint.pep8-naming.staticmethod-decorators`\n- `lint.pep8-naming.ignore-names`\n- `lint.pep8-naming.extend-ignore-names`\n\n[PEP 8]: https://peps.python.org/pep-0008/#function-and-method-arguments\n",
     "preview": false
   },
   {
@@ -5829,6 +5829,78 @@
     "preview": true
   },
   {
+    "name": "blank-line-between-methods",
+    "code": "E301",
+    "linter": "pycodestyle",
+    "summary": "Expected {BLANK_LINES_NESTED_LEVEL:?} blank line, found 0",
+    "message_formats": [
+      "Expected {BLANK_LINES_NESTED_LEVEL:?} blank line, found 0"
+    ],
+    "fix": "Fix is always available.",
+    "explanation": "## What it does\nChecks for missing blank lines between methods of a class.\n\n## Why is this bad?\nPEP 8 recommends exactly one blank line between methods of a class.\n\n## Example\n```python\nclass MyClass(object):\n    def func1():\n        pass\n    def func2():\n        pass\n```\n\nUse instead:\n```python\nclass MyClass(object):\n    def func1():\n        pass\n\n    def func2():\n        pass\n```\n\n## Typing stub files (`.pyi`)\nThe typing style guide recommends to not use blank lines between methods except to group\nthem. That's why this rule is not enabled in typing stub files.\n\n## References\n- [PEP 8](https://peps.python.org/pep-0008/#blank-lines)\n- [Flake 8 rule](https://www.flake8rules.com/rules/E301.html)\n- [Typing Style Guide](https://typing.readthedocs.io/en/latest/source/stubs.html#blank-lines)\n",
+    "preview": true
+  },
+  {
+    "name": "blank-lines-top-level",
+    "code": "E302",
+    "linter": "pycodestyle",
+    "summary": "Expected {expected_blank_lines:?} blank lines, found {actual_blank_lines}",
+    "message_formats": [
+      "Expected {expected_blank_lines:?} blank lines, found {actual_blank_lines}"
+    ],
+    "fix": "Fix is always available.",
+    "explanation": "## What it does\nChecks for missing blank lines between top level functions and classes.\n\n## Why is this bad?\nPEP 8 recommends exactly two blank lines between top level functions and classes.\n\nNote: The rule respects the [`lint.isort.lines-after-imports`] setting when determining\nthe required number of blank lines between top-level `import` statements and function or class definitions\nfor compatibility with isort.\n\n## Example\n```python\ndef func1():\n    pass\ndef func2():\n    pass\n```\n\nUse instead:\n```python\ndef func1():\n    pass\n\n\ndef func2():\n    pass\n```\n\n## Typing stub files (`.pyi`)\nThe typing style guide recommends to not use blank lines between classes and functions except to group\nthem. That's why this rule is not enabled in typing stub files.\n\n## References\n- [PEP 8](https://peps.python.org/pep-0008/#blank-lines)\n- [Flake 8 rule](https://www.flake8rules.com/rules/E302.html)\n- [Typing Style Guide](https://typing.readthedocs.io/en/latest/source/stubs.html#blank-lines)\n",
+    "preview": true
+  },
+  {
+    "name": "too-many-blank-lines",
+    "code": "E303",
+    "linter": "pycodestyle",
+    "summary": "Too many blank lines ({actual_blank_lines})",
+    "message_formats": [
+      "Too many blank lines ({actual_blank_lines})"
+    ],
+    "fix": "Fix is always available.",
+    "explanation": "## What it does\nChecks for extraneous blank lines.\n\n## Why is this bad?\nPEP 8 recommends using blank lines as follows:\n- No more than two blank lines between top-level statements.\n- No more than one blank line between non-top-level statements.\n\n## Example\n```python\ndef func1():\n    pass\n\n\n\ndef func2():\n    pass\n```\n\nUse instead:\n```python\ndef func1():\n    pass\n\n\ndef func2():\n    pass\n```\n\n## Typing stub files (`.pyi`)\nThe rule allows at most one blank line in typing stub files in accordance to the typing style guide recommendation.\n\nNote: The rule respects the following `isort` settings when determining the maximum number of blank lines allowed between two statements:\n* [`lint.isort.lines-after-imports`]: For top-level statements directly following an import statement.\n* [`lint.isort.lines-between-types`]: For `import` statements directly following a `from ... import ...` statement or vice versa.\n\n## References\n- [PEP 8](https://peps.python.org/pep-0008/#blank-lines)\n- [Flake 8 rule](https://www.flake8rules.com/rules/E303.html)\n- [Typing Style Guide](https://typing.readthedocs.io/en/latest/source/stubs.html#blank-lines)\n",
+    "preview": true
+  },
+  {
+    "name": "blank-line-after-decorator",
+    "code": "E304",
+    "linter": "pycodestyle",
+    "summary": "Blank lines found after function decorator ({lines})",
+    "message_formats": [
+      "Blank lines found after function decorator ({lines})"
+    ],
+    "fix": "Fix is always available.",
+    "explanation": "## What it does\nChecks for extraneous blank line(s) after function decorators.\n\n## Why is this bad?\nThere should be no blank lines between a decorator and the object it is decorating.\n\n## Example\n```python\nclass User(object):\n\n    @property\n\n    def name(self):\n        pass\n```\n\nUse instead:\n```python\nclass User(object):\n\n    @property\n    def name(self):\n        pass\n```\n\n## References\n- [PEP 8](https://peps.python.org/pep-0008/#blank-lines)\n- [Flake 8 rule](https://www.flake8rules.com/rules/E304.html)\n",
+    "preview": true
+  },
+  {
+    "name": "blank-lines-after-function-or-class",
+    "code": "E305",
+    "linter": "pycodestyle",
+    "summary": "Expected 2 blank lines after class or function definition, found ({blank_lines})",
+    "message_formats": [
+      "Expected 2 blank lines after class or function definition, found ({blank_lines})"
+    ],
+    "fix": "Fix is always available.",
+    "explanation": "## What it does\nChecks for missing blank lines after the end of function or class.\n\n## Why is this bad?\nPEP 8 recommends using blank lines as following:\n- Two blank lines are expected between functions and classes\n- One blank line is expected between methods of a class.\n\n## Example\n```python\nclass User(object):\n    pass\nuser = User()\n```\n\nUse instead:\n```python\nclass User(object):\n    pass\n\n\nuser = User()\n```\n\n## Typing stub files (`.pyi`)\nThe typing style guide recommends to not use blank lines between statements except to group\nthem. That's why this rule is not enabled in typing stub files.\n\n## References\n- [PEP 8](https://peps.python.org/pep-0008/#blank-lines)\n- [Flake 8 rule](https://www.flake8rules.com/rules/E305.html)\n- [Typing Style Guide](https://typing.readthedocs.io/en/latest/source/stubs.html#blank-lines)\n",
+    "preview": true
+  },
+  {
+    "name": "blank-lines-before-nested-definition",
+    "code": "E306",
+    "linter": "pycodestyle",
+    "summary": "Expected 1 blank line before a nested definition, found 0",
+    "message_formats": [
+      "Expected 1 blank line before a nested definition, found 0"
+    ],
+    "fix": "Fix is always available.",
+    "explanation": "## What it does\nChecks for 1 blank line between nested function or class definitions.\n\n## Why is this bad?\nPEP 8 recommends using blank lines as following:\n- Two blank lines are expected between functions and classes\n- One blank line is expected between methods of a class.\n\n## Example\n```python\ndef outer():\n    def inner():\n        pass\n    def inner2():\n        pass\n```\n\nUse instead:\n```python\ndef outer():\n    def inner():\n        pass\n\n    def inner2():\n        pass\n```\n\n## Typing stub files (`.pyi`)\nThe typing style guide recommends to not use blank lines between classes and functions except to group\nthem. That's why this rule is not enabled in typing stub files.\n\n## References\n- [PEP 8](https://peps.python.org/pep-0008/#blank-lines)\n- [Flake 8 rule](https://www.flake8rules.com/rules/E306.html)\n- [Typing Style Guide](https://typing.readthedocs.io/en/latest/source/stubs.html#blank-lines)\n",
+    "preview": true
+  },
+  {
     "name": "multiple-imports-on-one-line",
     "code": "E401",
     "linter": "pycodestyle",
@@ -5850,7 +5922,7 @@
       "Module level import not at top of file"
     ],
     "fix": "Fix is not available.",
-    "explanation": "## What it does\nChecks for imports that are not at the top of the file. For Jupyter notebooks, this\nchecks for imports that are not at the top of the cell.\n\n## Why is this bad?\nAccording to [PEP 8], \"imports are always put at the top of the file, just after any\nmodule comments and docstrings, and before module globals and constants.\"\n\nThis rule makes an exception for `sys.path` modifications,  allowing for\n`sys.path.insert`, `sys.path.append`, and similar modifications between import\nstatements.\n\n## Example\n```python\n\"One string\"\n\"Two string\"\na = 1\nimport os\nfrom sys import x\n```\n\nUse instead:\n```python\nimport os\nfrom sys import x\n\n\"One string\"\n\"Two string\"\na = 1\n```\n\n[PEP 8]: https://peps.python.org/pep-0008/#imports\n",
+    "explanation": "## What it does\nChecks for imports that are not at the top of the file. For Jupyter notebooks, this\nchecks for imports that are not at the top of the cell.\n\n## Why is this bad?\nAccording to [PEP 8], \"imports are always put at the top of the file, just after any\nmodule comments and docstrings, and before module globals and constants.\"\n\nThis rule makes an exception for `sys.path` modifications,  allowing for\n`sys.path.insert`, `sys.path.append`, and similar modifications between import\nstatements.\n\nIn [preview], this rule also allows `os.environ` modifications between import\nstatements.\n\n## Example\n```python\n\"One string\"\n\"Two string\"\na = 1\nimport os\nfrom sys import x\n```\n\nUse instead:\n```python\nimport os\nfrom sys import x\n\n\"One string\"\n\"Two string\"\na = 1\n```\n\n[PEP 8]: https://peps.python.org/pep-0008/#imports\n[preview]: https://docs.astral.sh/ruff/preview/\n",
     "preview": false
   },
   {
@@ -5918,15 +5990,15 @@
     "name": "true-false-comparison",
     "code": "E712",
     "linter": "pycodestyle",
-    "summary": "Comparison to `True` should be `cond is True` or `if cond:`",
+    "summary": "Avoid equality comparisons to `True`; use `if {cond}:` for truth checks",
     "message_formats": [
-      "Comparison to `True` should be `cond is True` or `if cond:`",
-      "Comparison to `True` should be `cond is not True` or `if not cond:`",
-      "Comparison to `False` should be `cond is False` or `if not cond:`",
-      "Comparison to `False` should be `cond is not False` or `if cond:`"
+      "Avoid equality comparisons to `True`; use `if {cond}:` for truth checks",
+      "Avoid inequality comparisons to `True`; use `if not {cond}:` for false checks",
+      "Avoid equality comparisons to `False`; use `if not {cond}:` for false checks",
+      "Avoid inequality comparisons to `False`; use `if {cond}:` for truth checks"
     ],
     "fix": "Fix is always available.",
-    "explanation": "## What it does\nChecks for comparisons to booleans which are not using the `is` operator.\n\n## Why is this bad?\nAccording to [PEP 8], \"Comparisons to singletons like None should always be done with\nis or is not, never the equality operators.\"\n\n## Example\n```python\nif arg == True:\n    pass\nif False == arg:\n    pass\n```\n\nUse instead:\n```python\nif arg is True:\n    pass\nif arg is False:\n    pass\n```\n\n[PEP 8]: https://peps.python.org/pep-0008/#programming-recommendations\n",
+    "explanation": "## What it does\nChecks for equality comparisons to boolean literals.\n\n## Why is this bad?\n[PEP 8] recommends against using the equality operators `==` and `!=` to\ncompare values to `True` or `False`.\n\nInstead, use `if cond:` or `if not cond:` to check for truth values.\n\nIf you intend to check if a value is the boolean literal `True` or `False`,\nconsider using `is` or `is not` to check for identity instead.\n\n## Example\n```python\nif foo == True:\n    ...\n\nif bar == False:\n    ...\n```\n\nUse instead:\n```python\nif foo:\n    ...\n\nif not bar:\n    ...\n```\n\n[PEP 8]: https://peps.python.org/pep-0008/#programming-recommendations\n",
     "preview": false
   },
   {
@@ -6312,7 +6384,7 @@
       "Docstring is under-indented"
     ],
     "fix": "Fix is always available.",
-    "explanation": "## What it does\nChecks for under-indented docstrings.\n\n## Why is this bad?\n[PEP 257] recommends that docstrings be indented to the same level as their\nopening quotes. Avoid under-indenting docstrings, for consistency.\n\n## Example\n```python\ndef sort_list(l: list[int]) -> list[int]:\n    \"\"\"Return a sorted copy of the list.\n\nSort the list in ascending order and return a copy of the result using the bubble sort\nalgorithm.\n    \"\"\"\n```\n\nUse instead:\n```python\ndef sort_list(l: list[int]) -> list[int]:\n    \"\"\"Return a sorted copy of the list.\n\n    Sort the list in ascending order and return a copy of the result using the bubble\n    sort algorithm.\n    \"\"\"\n```\n\n## References\n- [PEP 257 – Docstring Conventions](https://peps.python.org/pep-0257/)\n- [NumPy Style Guide](https://numpydoc.readthedocs.io/en/latest/format.html)\n- [Google Python Style Guide - Docstrings](https://google.github.io/styleguide/pyguide.html#38-comments-and-docstrings)\n\n[PEP 257]: https://peps.python.org/pep-0257/\n",
+    "explanation": "## What it does\nChecks for under-indented docstrings.\n\n## Why is this bad?\n[PEP 257] recommends that docstrings be indented to the same level as their\nopening quotes. Avoid under-indenting docstrings, for consistency.\n\n## Example\n```python\ndef sort_list(l: list[int]) -> list[int]:\n    \"\"\"Return a sorted copy of the list.\n\nSort the list in ascending order and return a copy of the result using the bubble sort\nalgorithm.\n    \"\"\"\n```\n\nUse instead:\n```python\ndef sort_list(l: list[int]) -> list[int]:\n    \"\"\"Return a sorted copy of the list.\n\n    Sort the list in ascending order and return a copy of the result using the bubble\n    sort algorithm.\n    \"\"\"\n```\n\n## Formatter compatibility\nWe recommend against using this rule alongside the [formatter]. The\nformatter enforces consistent indentation, making the rule redundant.\n\n## References\n- [PEP 257 – Docstring Conventions](https://peps.python.org/pep-0257/)\n- [NumPy Style Guide](https://numpydoc.readthedocs.io/en/latest/format.html)\n- [Google Python Style Guide - Docstrings](https://google.github.io/styleguide/pyguide.html#38-comments-and-docstrings)\n\n[PEP 257]: https://peps.python.org/pep-0257/\n[formatter]: https://docs.astral.sh/ruff/formatter/\n",
     "preview": false
   },
   {
@@ -6421,7 +6493,7 @@
       "Use triple single quotes `'''`"
     ],
     "fix": "Fix is sometimes available.",
-    "explanation": "## What it does\nChecks for docstrings that use `'''triple single quotes'''` instead of\n`\"\"\"triple double quotes\"\"\"`.\n\n## Why is this bad?\n[PEP 257](https://peps.python.org/pep-0257/#what-is-a-docstring) recommends\nthe use of `\"\"\"triple double quotes\"\"\"` for docstrings, to ensure\nconsistency.\n\n## Example\n```python\ndef kos_root():\n    '''Return the pathname of the KOS root directory.'''\n```\n\nUse instead:\n```python\ndef kos_root():\n    \"\"\"Return the pathname of the KOS root directory.\"\"\"\n```\n\n## References\n- [PEP 257 – Docstring Conventions](https://peps.python.org/pep-0257/)\n- [NumPy Style Guide](https://numpydoc.readthedocs.io/en/latest/format.html)\n- [Google Python Style Guide - Docstrings](https://google.github.io/styleguide/pyguide.html#38-comments-and-docstrings)\n",
+    "explanation": "## What it does\nChecks for docstrings that use `'''triple single quotes'''` instead of\n`\"\"\"triple double quotes\"\"\"`.\n\n## Why is this bad?\n[PEP 257](https://peps.python.org/pep-0257/#what-is-a-docstring) recommends\nthe use of `\"\"\"triple double quotes\"\"\"` for docstrings, to ensure\nconsistency.\n\n## Example\n```python\ndef kos_root():\n    '''Return the pathname of the KOS root directory.'''\n```\n\nUse instead:\n```python\ndef kos_root():\n    \"\"\"Return the pathname of the KOS root directory.\"\"\"\n```\n\n## Formatter compatibility\nWe recommend against using this rule alongside the [formatter]. The\nformatter enforces consistent quotes, making the rule redundant.\n\n## References\n- [PEP 257 – Docstring Conventions](https://peps.python.org/pep-0257/)\n- [NumPy Style Guide](https://numpydoc.readthedocs.io/en/latest/format.html)\n- [Google Python Style Guide - Docstrings](https://google.github.io/styleguide/pyguide.html#38-comments-and-docstrings)\n\n[formatter]: https://docs.astral.sh/ruff/formatter/\n",
     "preview": false
   },
   {
@@ -6688,7 +6760,7 @@
       "`{name}` imported but unused"
     ],
     "fix": "Fix is sometimes available.",
-    "explanation": "## What it does\nChecks for unused imports.\n\n## Why is this bad?\nUnused imports add a performance overhead at runtime, and risk creating\nimport cycles. They also increase the cognitive load of reading the code.\n\nIf an import statement is used to check for the availability or existence\nof a module, consider using `importlib.util.find_spec` instead.\n\n## Example\n```python\nimport numpy as np  # unused import\n\n\ndef area(radius):\n    return 3.14 * radius**2\n```\n\nUse instead:\n```python\ndef area(radius):\n    return 3.14 * radius**2\n```\n\nTo check the availability of a module, use `importlib.util.find_spec`:\n```python\nfrom importlib.util import find_spec\n\nif find_spec(\"numpy\") is not None:\n    print(\"numpy is installed\")\nelse:\n    print(\"numpy is not installed\")\n```\n\n## Options\n- `lint.pyflakes.extend-generics`\n\n## References\n- [Python documentation: `import`](https://docs.python.org/3/reference/simple_stmts.html#the-import-statement)\n- [Python documentation: `importlib.util.find_spec`](https://docs.python.org/3/library/importlib.html#importlib.util.find_spec)\n",
+    "explanation": "## What it does\nChecks for unused imports.\n\n## Why is this bad?\nUnused imports add a performance overhead at runtime, and risk creating\nimport cycles. They also increase the cognitive load of reading the code.\n\nIf an import statement is used to check for the availability or existence\nof a module, consider using `importlib.util.find_spec` instead.\n\nIf an import statement is used to re-export a symbol as part of a module's\npublic interface, consider using a \"redundant\" import alias, which\ninstructs Ruff (and other tools) to respect the re-export, and avoid\nmarking it as unused, as in:\n\n```python\nfrom module import member as member\n```\n\n## Example\n```python\nimport numpy as np  # unused import\n\n\ndef area(radius):\n    return 3.14 * radius**2\n```\n\nUse instead:\n```python\ndef area(radius):\n    return 3.14 * radius**2\n```\n\nTo check the availability of a module, use `importlib.util.find_spec`:\n```python\nfrom importlib.util import find_spec\n\nif find_spec(\"numpy\") is not None:\n    print(\"numpy is installed\")\nelse:\n    print(\"numpy is not installed\")\n```\n\n## Options\n- `lint.ignore-init-module-imports`\n\n## References\n- [Python documentation: `import`](https://docs.python.org/3/reference/simple_stmts.html#the-import-statement)\n- [Python documentation: `importlib.util.find_spec`](https://docs.python.org/3/library/importlib.html#importlib.util.find_spec)\n- [Typing documentation: interface conventions](https://typing.readthedocs.io/en/latest/source/libraries.html#library-interface-public-and-private-symbols)\n",
     "preview": false
   },
   {
@@ -7231,7 +7303,7 @@
       "Use specific rule codes when ignoring type issues"
     ],
     "fix": "Fix is not available.",
-    "explanation": "## What it does\nCheck for `type: ignore` annotations that suppress all type warnings, as\nopposed to targeting specific type warnings.\n\n## Why is this bad?\nSuppressing all warnings can hide issues in the code.\n\nBlanket `type: ignore` annotations are also more difficult to interpret and\nmaintain, as the annotation does not clarify which warnings are intended\nto be suppressed.\n\n## Example\n```python\nfrom foo import secrets  # type: ignore\n```\n\nUse instead:\n```python\nfrom foo import secrets  # type: ignore[attr-defined]\n```\n\n## References\n- [mypy](https://mypy.readthedocs.io/en/stable/common_issues.html#spurious-errors-and-locally-silencing-the-checker)\n",
+    "explanation": "## What it does\nCheck for `type: ignore` annotations that suppress all type warnings, as\nopposed to targeting specific type warnings.\n\n## Why is this bad?\nSuppressing all warnings can hide issues in the code.\n\nBlanket `type: ignore` annotations are also more difficult to interpret and\nmaintain, as the annotation does not clarify which warnings are intended\nto be suppressed.\n\n## Example\n```python\nfrom foo import secrets  # type: ignore\n```\n\nUse instead:\n```python\nfrom foo import secrets  # type: ignore[attr-defined]\n```\n\n## References\nMypy supports a [built-in setting](https://mypy.readthedocs.io/en/stable/error_code_list2.html#check-that-type-ignore-include-an-error-code-ignore-without-code)\nto enforce that all `type: ignore` annotations include an error code, akin\nto enabling this rule:\n```toml\n[tool.mypy]\nenable_error_code = [\"ignore-without-code\"]\n```\n",
     "preview": false
   },
   {
@@ -7588,6 +7660,18 @@
     "preview": true
   },
   {
+    "name": "dict-iter-missing-items",
+    "code": "PLE1141",
+    "linter": "Pylint",
+    "summary": "Unpacking a dictionary in iteration without calling `.items()`",
+    "message_formats": [
+      "Unpacking a dictionary in iteration without calling `.items()`"
+    ],
+    "fix": "Fix is always available.",
+    "explanation": "## What it does\nChecks for dictionary unpacking in a for loop without calling `.items()`.\n\n## Why is this bad?\nWhen iterating over a dictionary in a for loop, if a dictionary is unpacked\nwithout calling `.items()`, it could lead to a runtime error if the keys are not\na tuple of two elements.\n\nIt is likely that you're looking for an iteration over (key, value) pairs which\ncan only be achieved when calling `.items()`.\n\n## Example\n```python\ndata = {\"Paris\": 2_165_423, \"New York City\": 8_804_190, \"Tokyo\": 13_988_129}\n\nfor city, population in data:\n    print(f\"{city} has population {population}.\")\n```\n\nUse instead:\n```python\ndata = {\"Paris\": 2_165_423, \"New York City\": 8_804_190, \"Tokyo\": 13_988_129}\n\nfor city, population in data.items():\n    print(f\"{city} has population {population}.\")\n```\n",
+    "preview": true
+  },
+  {
     "name": "await-outside-async",
     "code": "PLE1142",
     "linter": "Pylint",
@@ -7671,6 +7755,18 @@
     "fix": "Fix is not available.",
     "explanation": "## What it does\nChecks for `os.getenv` calls with an invalid `key` argument.\n\n## Why is this bad?\n`os.getenv` only supports strings as the first argument (`key`).\n\nIf the provided argument is not a string, `os.getenv` will throw a\n`TypeError` at runtime.\n\n## Example\n```python\nos.getenv(1)\n```\n\nUse instead:\n```python\nos.getenv(\"1\")\n```\n",
     "preview": false
+  },
+  {
+    "name": "singledispatch-method",
+    "code": "PLE1519",
+    "linter": "Pylint",
+    "summary": "`@singledispatch` decorator should not be used on methods",
+    "message_formats": [
+      "`@singledispatch` decorator should not be used on methods"
+    ],
+    "fix": "Fix is sometimes available.",
+    "explanation": "## What it does\nChecks for `@singledispatch` decorators on class and instance methods.\n\n## Why is this bad?\nThe `@singledispatch` decorator is intended for use with functions, not methods.\n\nInstead, use the `@singledispatchmethod` decorator, or migrate the method to a\nstandalone function or `@staticmethod`.\n\n## Example\n```python\nfrom functools import singledispatch\n\n\nclass Class:\n    @singledispatch\n    def method(self, arg):\n        ...\n```\n\nUse instead:\n```python\nfrom functools import singledispatchmethod\n\n\nclass Class:\n    @singledispatchmethod\n    def method(self, arg):\n        ...\n```\n\n## Fix safety\nThis rule's fix is marked as unsafe, as migrating from `@singledispatch` to\n`@singledispatchmethod` may change the behavior of the code.\n",
+    "preview": true
   },
   {
     "name": "yield-from-in-async-function",
@@ -8080,7 +8176,7 @@
       "Use a `set` literal when testing for membership"
     ],
     "fix": "Fix is always available.",
-    "explanation": "## What it does\nChecks for membership tests on `list` and `tuple` literals.\n\n## Why is this bad?\nWhen testing for membership in a static sequence, prefer a `set` literal\nover a `list` or `tuple`, as Python optimizes `set` membership tests.\n\n## Example\n```python\n1 in [1, 2, 3]\n```\n\nUse instead:\n```python\n1 in {1, 2, 3}\n```\n\n## Fix safety\nThis rule's fix is marked as unsafe, as the use of a `set` literal will\nerror at runtime if the sequence contains unhashable elements (like lists\nor dictionaries).\n\n## References\n- [What’s New In Python 3.2](https://docs.python.org/3/whatsnew/3.2.html#optimizations)\n",
+    "explanation": "## What it does\nChecks for membership tests on `list` and `tuple` literals.\n\n## Why is this bad?\nWhen testing for membership in a static sequence, prefer a `set` literal\nover a `list` or `tuple`, as Python optimizes `set` membership tests.\n\n## Example\n```python\n1 in [1, 2, 3]\n```\n\nUse instead:\n```python\n1 in {1, 2, 3}\n```\n\n## Fix safety\nThis rule's fix is marked as unsafe, as the use of a `set` literal will\nerror at runtime if the sequence contains unhashable elements (like lists\nor dictionaries). While Ruff will attempt to infer the hashability of the\nelements, it may not always be able to do so.\n\n## References\n- [What’s New In Python 3.2](https://docs.python.org/3/whatsnew/3.2.html#optimizations)\n",
     "preview": true
   },
   {
@@ -8156,6 +8252,18 @@
     "fix": "Fix is not available.",
     "explanation": "## What it does\nChecks for uses of named expressions (e.g., `a := 42`) that can be\nreplaced by regular assignment statements (e.g., `a = 42`).\n\n## Why is this bad?\nWhile a top-level named expression is syntactically and semantically valid,\nit's less clear than a regular assignment statement. Named expressions are\nintended to be used in comprehensions and generator expressions, where\nassignment statements are not allowed.\n\n## Example\n```python\n(a := 42)\n```\n\nUse instead:\n```python\na = 42\n```\n",
     "preview": false
+  },
+  {
+    "name": "useless-exception-statement",
+    "code": "PLW0133",
+    "linter": "Pylint",
+    "summary": "Missing `raise` statement on exception",
+    "message_formats": [
+      "Missing `raise` statement on exception"
+    ],
+    "fix": "Fix is sometimes available.",
+    "explanation": "## What it does\nChecks for an exception that is not raised.\n\n## Why is this bad?\nIt's unnecessary to create an exception without raising it. For example,\n`ValueError(\"...\")` on its own will have no effect (unlike\n`raise ValueError(\"...\")`) and is likely a mistake.\n\n## Example\n```python\nValueError(\"...\")\n```\n\nUse instead:\n```python\nraise ValueError(\"...\")\n```\n\n## Fix safety\nThis rule's fix is marked as unsafe, as converting a useless exception\nstatement to a `raise` statement will change the program's behavior.\n",
+    "preview": true
   },
   {
     "name": "super-without-brackets",
@@ -8878,6 +8986,18 @@
     "preview": true
   },
   {
+    "name": "readlines-in-for",
+    "code": "FURB129",
+    "linter": "refurb",
+    "summary": "Instead of calling `readlines()`, iterate over file object directly",
+    "message_formats": [
+      "Instead of calling `readlines()`, iterate over file object directly"
+    ],
+    "fix": "Fix is always available.",
+    "explanation": "## What it does\nChecks for uses of `readlines()` when iterating over a file line-by-line.\n\n## Why is this bad?\nRather than iterating over all lines in a file by calling `readlines()`,\nit's more convenient and performant to iterate over the file object\ndirectly.\n\n## Example\n```python\nwith open(\"file.txt\") as fp:\n    for line in fp.readlines():\n        ...\n```\n\nUse instead:\n```python\nwith open(\"file.txt\") as fp:\n    for line in fp:\n        ...\n```\n\n## References\n- [Python documentation: `io.IOBase.readlines`](https://docs.python.org/3/library/io.html#io.IOBase.readlines)\n",
+    "preview": true
+  },
+  {
     "name": "delete-full-slice",
     "code": "FURB131",
     "linter": "refurb",
@@ -9093,7 +9213,7 @@
       "Docstring contains ambiguous {}. Did you mean {}?"
     ],
     "fix": "Fix is not available.",
-    "explanation": "## What it does\nChecks for ambiguous Unicode characters in docstrings.\n\n## Why is this bad?\nSome Unicode characters are visually similar to ASCII characters, but have\ndifferent code points. For example, `GREEK CAPITAL LETTER ALPHA` (`U+0391`)\nis visually similar, but not identical, to the ASCII character `A`.\n\nThe use of ambiguous Unicode characters can confuse readers, cause subtle\nbugs, and even make malicious code look harmless.\n\nIn [preview], this rule will also flag Unicode characters that are\nconfusable with other, non-preferred Unicode characters. For example, the\nspec recommends `GREEK CAPITAL LETTER OMEGA` over `OHM SIGN`.\n\nYou can omit characters from being flagged as ambiguous via the\n[`allowed-confusables`] setting.\n\n## Example\n```python\n\"\"\"A lovely docstring (with a `U+FF09` parenthesis）.\"\"\"\n```\n\nUse instead:\n```python\n\"\"\"A lovely docstring (with no strange parentheses).\"\"\"\n```\n\n## Options\n- `lint.allowed-confusables`\n\n[preview]: https://docs.astral.sh/ruff/preview/\n",
+    "explanation": "## What it does\nChecks for ambiguous Unicode characters in docstrings.\n\n## Why is this bad?\nSome Unicode characters are visually similar to ASCII characters, but have\ndifferent code points. For example, `GREEK CAPITAL LETTER ALPHA` (`U+0391`)\nis visually similar, but not identical, to the ASCII character `A`.\n\nThe use of ambiguous Unicode characters can confuse readers, cause subtle\nbugs, and even make malicious code look harmless.\n\nIn [preview], this rule will also flag Unicode characters that are\nconfusable with other, non-preferred Unicode characters. For example, the\nspec recommends `GREEK CAPITAL LETTER OMEGA` over `OHM SIGN`.\n\nYou can omit characters from being flagged as ambiguous via the\n[`lint.allowed-confusables`] setting.\n\n## Example\n```python\n\"\"\"A lovely docstring (with a `U+FF09` parenthesis）.\"\"\"\n```\n\nUse instead:\n```python\n\"\"\"A lovely docstring (with no strange parentheses).\"\"\"\n```\n\n## Options\n- `lint.allowed-confusables`\n\n[preview]: https://docs.astral.sh/ruff/preview/\n",
     "preview": false
   },
   {
@@ -9105,7 +9225,7 @@
       "Comment contains ambiguous {}. Did you mean {}?"
     ],
     "fix": "Fix is not available.",
-    "explanation": "## What it does\nChecks for ambiguous Unicode characters in comments.\n\n## Why is this bad?\nSome Unicode characters are visually similar to ASCII characters, but have\ndifferent code points. For example, `GREEK CAPITAL LETTER ALPHA` (`U+0391`)\nis visually similar, but not identical, to the ASCII character `A`.\n\nThe use of ambiguous Unicode characters can confuse readers, cause subtle\nbugs, and even make malicious code look harmless.\n\nIn [preview], this rule will also flag Unicode characters that are\nconfusable with other, non-preferred Unicode characters. For example, the\nspec recommends `GREEK CAPITAL LETTER OMEGA` over `OHM SIGN`.\n\nYou can omit characters from being flagged as ambiguous via the\n[`allowed-confusables`] setting.\n\n## Example\n```python\nfoo()  # nоqa  # \"о\" is Cyrillic (`U+043E`)\n```\n\nUse instead:\n```python\nfoo()  # noqa  # \"o\" is Latin (`U+006F`)\n```\n\n## Options\n- `lint.allowed-confusables`\n\n[preview]: https://docs.astral.sh/ruff/preview/\n",
+    "explanation": "## What it does\nChecks for ambiguous Unicode characters in comments.\n\n## Why is this bad?\nSome Unicode characters are visually similar to ASCII characters, but have\ndifferent code points. For example, `GREEK CAPITAL LETTER ALPHA` (`U+0391`)\nis visually similar, but not identical, to the ASCII character `A`.\n\nThe use of ambiguous Unicode characters can confuse readers, cause subtle\nbugs, and even make malicious code look harmless.\n\nIn [preview], this rule will also flag Unicode characters that are\nconfusable with other, non-preferred Unicode characters. For example, the\nspec recommends `GREEK CAPITAL LETTER OMEGA` over `OHM SIGN`.\n\nYou can omit characters from being flagged as ambiguous via the\n[`lint.allowed-confusables`] setting.\n\n## Example\n```python\nfoo()  # nоqa  # \"о\" is Cyrillic (`U+043E`)\n```\n\nUse instead:\n```python\nfoo()  # noqa  # \"o\" is Latin (`U+006F`)\n```\n\n## Options\n- `lint.allowed-confusables`\n\n[preview]: https://docs.astral.sh/ruff/preview/\n",
     "preview": false
   },
   {
@@ -9125,9 +9245,9 @@
     "name": "asyncio-dangling-task",
     "code": "RUF006",
     "linter": "Ruff-specific rules",
-    "summary": "Store a reference to the return value of `asyncio.{method}`",
+    "summary": "Store a reference to the return value of `{expr}.{method}`",
     "message_formats": [
-      "Store a reference to the return value of `asyncio.{method}`"
+      "Store a reference to the return value of `{expr}.{method}`"
     ],
     "fix": "Fix is not available.",
     "explanation": "## What it does\nChecks for `asyncio.create_task` and `asyncio.ensure_future` calls\nthat do not store a reference to the returned result.\n\n## Why is this bad?\nPer the `asyncio` documentation, the event loop only retains a weak\nreference to tasks. If the task returned by `asyncio.create_task` and\n`asyncio.ensure_future` is not stored in a variable, or a collection,\nor otherwise referenced, it may be garbage collected at any time. This\ncan lead to unexpected and inconsistent behavior, as your tasks may or\nmay not run to completion.\n\n## Example\n```python\nimport asyncio\n\nfor i in range(10):\n    # This creates a weak reference to the task, which may be garbage\n    # collected at any time.\n    asyncio.create_task(some_coro(param=i))\n```\n\nUse instead:\n```python\nimport asyncio\n\nbackground_tasks = set()\n\nfor i in range(10):\n    task = asyncio.create_task(some_coro(param=i))\n\n    # Add task to the set. This creates a strong reference.\n    background_tasks.add(task)\n\n    # To prevent keeping references to finished tasks forever,\n    # make each task remove its own reference from the set after\n    # completion:\n    task.add_done_callback(background_tasks.discard)\n```\n\n## References\n- [_The Heisenbug lurking in your async code_](https://textual.textualize.io/blog/2023/02/11/the-heisenbug-lurking-in-your-async-code/)\n- [The Python Standard Library](https://docs.python.org/3/library/asyncio-task.html#asyncio.create_task)\n",
@@ -9227,7 +9347,7 @@
       "Prefer `next({iterable})` over single element slice"
     ],
     "fix": "Fix is always available.",
-    "explanation": "## What it does\nChecks for uses of `list(...)[0]` that can be replaced with\n`next(iter(...))`.\n\n## Why is this bad?\nCalling `list(...)` will create a new list of the entire collection, which\ncan be very expensive for large collections. If you only need the first\nelement of the collection, you can use `next(...)` or `next(iter(...)` to\nlazily fetch the first element.\n\n## Example\n```python\nhead = list(x)[0]\nhead = [x * x for x in range(10)][0]\n```\n\nUse instead:\n```python\nhead = next(iter(x))\nhead = next(x * x for x in range(10))\n```\n\n## Fix safety\nThis rule's fix is marked as unsafe, as migrating from `list(...)[0]` to\n`next(iter(...))` can change the behavior of your program in two ways:\n\n1. First, `list(...)` will eagerly evaluate the entire collection, while\n   `next(iter(...))` will only evaluate the first element. As such, any\n   side effects that occur during iteration will be delayed.\n2. Second, `list(...)[0]` will raise `IndexError` if the collection is\n   empty, while `next(iter(...))` will raise `StopIteration`.\n\n## References\n- [Iterators and Iterables in Python: Run Efficient Iterations](https://realpython.com/python-iterators-iterables/#when-to-use-an-iterator-in-python)\n",
+    "explanation": "## What it does\nChecks the following constructs, all of which can be replaced by\n`next(iter(...))`:\n\n- `list(...)[0]`\n- `tuple(...)[0]`\n- `list(i for i in ...)[0]`\n- `[i for i in ...][0]`\n- `list(...).pop(0)`\n\n## Why is this bad?\nCalling e.g. `list(...)` will create a new list of the entire collection,\nwhich can be very expensive for large collections. If you only need the\nfirst element of the collection, you can use `next(...)` or\n`next(iter(...)` to lazily fetch the first element. The same is true for\nthe other constructs.\n\n## Example\n```python\nhead = list(x)[0]\nhead = [x * x for x in range(10)][0]\n```\n\nUse instead:\n```python\nhead = next(iter(x))\nhead = next(x * x for x in range(10))\n```\n\n## Fix safety\nThis rule's fix is marked as unsafe, as migrating from (e.g.) `list(...)[0]`\nto `next(iter(...))` can change the behavior of your program in two ways:\n\n1. First, all above mentioned constructs will eagerly evaluate the entire\n   collection, while `next(iter(...))` will only evaluate the first\n   element. As such, any side effects that occur during iteration will be\n   delayed.\n2. Second, accessing members of a collection via square bracket notation\n   `[0]` of the `pop()` function will raise `IndexError` if the collection\n   is empty, while `next(iter(...))` will raise `StopIteration`.\n\n## References\n- [Iterators and Iterables in Python: Run Efficient Iterations](https://realpython.com/python-iterators-iterables/#when-to-use-an-iterator-in-python)\n",
     "preview": false
   },
   {
@@ -9365,6 +9485,30 @@
     "preview": true
   },
   {
+    "name": "missing-f-string-syntax",
+    "code": "RUF027",
+    "linter": "Ruff-specific rules",
+    "summary": "Possible f-string without an `f` prefix",
+    "message_formats": [
+      "Possible f-string without an `f` prefix"
+    ],
+    "fix": "Fix is always available.",
+    "explanation": "## What it does\nChecks for strings that contain f-string syntax but are not f-strings.\n\n## Why is this bad?\nAn f-string missing an `f` at the beginning won't format anything, and instead\ntreat the interpolation syntax as literal.\n\nSince there are many possible string literals which contain syntax similar to f-strings yet are not intended to be,\nthis lint will disqualify any literal that satisfies any of the following conditions:\n\n1. The string literal is a standalone expression. For example, a docstring.\n2. The literal is part of a function call with argument names that match at least one variable (for example: `format(\"Message: {value}\", value = \"Hello World\")`)\n3. The literal (or a parent expression of the literal) has a direct method call on it (for example: `\"{value}\".format(...)`)\n4. The string has no `{...}` expression sections, or uses invalid f-string syntax.\n5. The string references variables that are not in scope, or it doesn't capture variables at all.\n6. Any format specifiers in the potential f-string are invalid.\n\n## Example\n\n```python\nname = \"Sarah\"\ndayofweek = \"Tuesday\"\nmsg = \"Hello {name}! It is {dayofweek} today!\"\n```\n\nUse instead:\n```python\nname = \"Sarah\"\ndayofweek = \"Tuesday\"\nmsg = f\"Hello {name}! It is {dayofweek} today!\"\n```\n",
+    "preview": true
+  },
+  {
+    "name": "invalid-formatter-suppression-comment",
+    "code": "RUF028",
+    "linter": "Ruff-specific rules",
+    "summary": "This suppression comment is invalid because {}",
+    "message_formats": [
+      "This suppression comment is invalid because {}"
+    ],
+    "fix": "Fix is always available.",
+    "explanation": "## What it does\nChecks for formatter suppression comments that are ineffective or incompatible\nwith Ruff's formatter.\n\n## Why is this bad?\nSuppression comments that do not actually prevent formatting could cause unintended changes\nwhen the formatter is run.\n\n## Examples\nIn the following example, all suppression comments would cause\na rule violation.\n\n```python\ndef decorator():\n    pass\n\n\n@decorator\n# fmt: off\ndef example():\n    if True:\n        # fmt: skip\n        expression = [\n            # fmt: off\n            1,\n            2,\n        ]\n        # yapf: disable\n    # fmt: on\n    # yapf: enable\n```\n",
+    "preview": true
+  },
+  {
     "name": "unused-noqa",
     "code": "RUF100",
     "linter": "Ruff-specific rules",
@@ -9459,7 +9603,7 @@
       "Consider moving this statement to an `else` block"
     ],
     "fix": "Fix is not available.",
-    "explanation": "## What it does\nChecks for `return` statements in `try` blocks.\n\n## Why is this bad?\nThe `try`-`except` statement has an `else` clause for code that should\nrun _only_ if no exceptions were raised. Using the `else` clause is more\nexplicit than using a `return` statement inside of a `try` block.\n\n## Example\n```python\nimport logging\n\n\ndef reciprocal(n):\n    try:\n        rec = 1 / n\n        print(f\"reciprocal of {n} is {rec}\")\n        return rec\n    except ZeroDivisionError as exc:\n        logging.exception(\"Exception occurred\")\n```\n\nUse instead:\n```python\nimport logging\n\n\ndef reciprocal(n):\n    try:\n        rec = 1 / n\n    except ZeroDivisionError as exc:\n        logging.exception(\"Exception occurred\")\n    else:\n        print(f\"reciprocal of {n} is {rec}\")\n        return rec\n```\n\n## References\n- [Python documentation: Errors and Exceptions](https://docs.python.org/3/tutorial/errors.html)\n",
+    "explanation": "## What it does\nChecks for `return` statements in `try` blocks.\n\n## Why is this bad?\nThe `try`-`except` statement has an `else` clause for code that should\nrun _only_ if no exceptions were raised. Using the `else` clause is more\nexplicit than using a `return` statement inside of a `try` block.\n\n## Example\n```python\nimport logging\n\n\ndef reciprocal(n):\n    try:\n        rec = 1 / n\n        print(f\"reciprocal of {n} is {rec}\")\n        return rec\n    except ZeroDivisionError:\n        logging.exception(\"Exception occurred\")\n```\n\nUse instead:\n```python\nimport logging\n\n\ndef reciprocal(n):\n    try:\n        rec = 1 / n\n    except ZeroDivisionError:\n        logging.exception(\"Exception occurred\")\n    else:\n        print(f\"reciprocal of {n} is {rec}\")\n        return rec\n```\n\n## References\n- [Python documentation: Errors and Exceptions](https://docs.python.org/3/tutorial/errors.html)\n",
     "preview": false
   },
   {
