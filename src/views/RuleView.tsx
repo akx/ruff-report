@@ -1,7 +1,7 @@
 import React from "react";
 import { useParams } from "react-router-dom";
 import { Button, Group, Title } from "@mantine/core";
-import { useReportData } from "../contexts/reportData";
+import { useLoadedReportData } from "../contexts/reportData";
 import { countBy } from "lodash";
 import { ExtendedMessage } from "../types/ruff-report";
 import { PopularityTable } from "../components/PopularityTable";
@@ -64,7 +64,7 @@ function RuleHeader({
 
 export default function RuleView() {
   const { code } = useParams<{ code: string }>();
-  const { messages: allFilteredMessages } = useReportData().filtered;
+  const { messages: allFilteredMessages } = useLoadedReportData().filtered;
   const messages = allFilteredMessages.filter((m) => m.code === code);
   const ruleInfo = code ? ruleMap[code] : undefined;
   const uniqueFiles = new Set(messages.map((m) => m.shortFilename));

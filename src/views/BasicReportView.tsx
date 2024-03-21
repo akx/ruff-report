@@ -3,7 +3,7 @@ import { Title } from "@mantine/core";
 import { PopularityTable } from "../components/PopularityTable";
 import { countBy } from "lodash";
 import React from "react";
-import { useReportData } from "../contexts/reportData";
+import { useLoadedReportData } from "../contexts/reportData";
 import { renderCodeLink } from "./utils";
 import { Facet } from "../types/ui";
 import FacetTabs from "../components/FacetTabs";
@@ -24,7 +24,7 @@ const facets: Facet[] = filterableKeys.map((key) => ({
 }));
 
 export default function BasicReportView() {
-  const { messages } = useReportData().filtered;
+  const { messages } = useLoadedReportData().filtered;
   if (!messages.length) {
     return <NoDataAlert />;
   }

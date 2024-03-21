@@ -1,6 +1,6 @@
 import React from "react";
 import { Table } from "@mantine/core";
-import { useReportData } from "../contexts/reportData";
+import { useLoadedReportData } from "../contexts/reportData";
 import { ExtendedMessage } from "../types/ruff-report";
 import { renderFileLink } from "./utils";
 import { Facet } from "../types/ui";
@@ -43,7 +43,7 @@ const facets: Facet[] = [
 ];
 
 export default function FilesView() {
-  const { messages } = useReportData().filtered;
+  const { messages } = useLoadedReportData().filtered;
   if (!messages.length) {
     return <NoDataAlert />;
   }

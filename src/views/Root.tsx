@@ -4,7 +4,10 @@ import { Message } from "../types/ruff";
 import { FilterAPI, useFilters } from "../hooks/useFilters";
 import { ProcessedMessages, ValuesKey } from "../types/ruff-report";
 import { AppShell } from "@mantine/core";
-import { ReportDataContext } from "../contexts/reportData";
+import {
+  ReportDataContext,
+  ReportDataContextType,
+} from "../contexts/reportData";
 import { Outlet } from "react-router-dom";
 import { Nav } from "../components/Nav";
 
@@ -23,20 +26,24 @@ function applyFilters(
 }
 
 export default function Root() {
-  const [rawData, setRawData] = React.useState<Message[]>([]);
-  const processed = React.useMemo(() => processMessages(rawData), [rawData]);
+  const [rawData, setRawData] = React.useState<Message[] | null>(null);
+  const processed = React.useMemo(
+    () => processMessages(rawData ?? []),
+    [rawData],
+  );
   const filters = useFilters(processed);
   const filtered = React.useMemo(
     () => applyFilters(processed, filters.filters),
     [filters, processed],
   );
-  const reportDataContext: ReportDataContext = React.useMemo(
+  const reportDataContext: ReportDataContextType = React.useMemo(
     () => ({
       processed,
       filtered,
       filters,
-      rawData,
+      rawData: rawData ?? [],
       setRawData,
+      loaded: rawData !== null,
     }),
     [processed, filtered, filters, rawData],
   );

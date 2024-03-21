@@ -1,7 +1,7 @@
 import React from "react";
 import { useParams } from "react-router-dom";
 import { Badge, Table, Title } from "@mantine/core";
-import { useReportData } from "../contexts/reportData";
+import { useLoadedReportData } from "../contexts/reportData";
 import { countBy } from "lodash";
 import { ExtendedMessage } from "../types/ruff-report";
 import { PopularityTable } from "../components/PopularityTable";
@@ -57,7 +57,7 @@ const facets: Facet[] = [
 
 export default function FileView() {
   const { ["*"]: file } = useParams<{ ["*"]: string }>();
-  const { messages: allFilteredMessages } = useReportData().filtered;
+  const { messages: allFilteredMessages } = useLoadedReportData().filtered;
   const messages = allFilteredMessages.filter((m) => m.shortFilename === file);
   if (!messages.length || !file) {
     return <NoDataAlert />;
