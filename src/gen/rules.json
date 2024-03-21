@@ -236,7 +236,7 @@
       "Missing return type annotation for special method `{name}`"
     ],
     "fix": "Fix is sometimes available.",
-    "explanation": "## What it does\nChecks that \"special\" methods, like `__init__`, `__new__`, and `__call__`, have\nreturn type annotations.\n\n## Why is this bad?\nType annotations are a good way to document the return types of functions. They also\nhelp catch bugs, when used alongside a type checker, by ensuring that the types of\nany returned values, and the types expected by callers, match expectation.\n\nNote that type checkers often allow you to omit the return type annotation for\n`__init__` methods, as long as at least one argument has a type annotation. To\nopt-in to this behavior, use the `mypy-init-return` setting in your `pyproject.toml`\nor `ruff.toml` file:\n\n```toml\n[tool.ruff.lint.flake8-annotations]\nmypy-init-return = true\n```\n\n## Example\n```python\nclass Foo:\n    def __init__(self, x: int):\n        self.x = x\n```\n\nUse instead:\n```python\nclass Foo:\n    def __init__(self, x: int) -> None:\n        self.x = x\n```\n",
+    "explanation": "## What it does\nChecks that \"special\" methods, like `__init__`, `__new__`, and `__call__`, have\nreturn type annotations.\n\n## Why is this bad?\nType annotations are a good way to document the return types of functions. They also\nhelp catch bugs, when used alongside a type checker, by ensuring that the types of\nany returned values, and the types expected by callers, match expectation.\n\nNote that type checkers often allow you to omit the return type annotation for\n`__init__` methods, as long as at least one argument has a type annotation. To\nopt in to this behavior, use the `mypy-init-return` setting in your `pyproject.toml`\nor `ruff.toml` file:\n\n```toml\n[tool.ruff.lint.flake8-annotations]\nmypy-init-return = true\n```\n\n## Example\n```python\nclass Foo:\n    def __init__(self, x: int):\n        self.x = x\n```\n\nUse instead:\n```python\nclass Foo:\n    def __init__(self, x: int) -> None:\n        self.x = x\n```\n",
     "preview": false
   },
   {
@@ -490,7 +490,7 @@
       "Deserialization with the `marshal` module is possibly dangerous"
     ],
     "fix": "Fix is not available.",
-    "explanation": "## What it does\nChecks for calls to `marshal` functions.\n\n## Why is this bad?\nDeserializing untrusted data with `marshal` is insecure as it can allow for\nthe creation of arbitrary objects, which can then be used to achieve\narbitrary code execution and otherwise unexpected behavior.\n\nAvoid deserializing untrusted data with `marshal`. Instead, consider safer\nformats, such as JSON.\n\nIf you must deserialize untrusted data with `marshal`, consider signing the\ndata with a secret key and verifying the signature before deserializing the\npayload, This will prevent an attacker from injecting arbitrary objects\ninto the serialized data.\n\n## Example\n```python\nimport marshal\n\nwith open(\"foo.marshal\", \"rb\") as file:\n    foo = marshal.load(file)\n```\n\nUse instead:\n```python\nimport json\n\nwith open(\"foo.json\", \"rb\") as file:\n    foo = json.load(file)\n```\n\n## References\n- [Python documentation: `marshal` — Internal Python object serialization](https://docs.python.org/3/library/marshal.html)\n- [Common Weakness Enumeration: CWE-502](https://cwe.mitre.org/data/definitions/502.html)\n",
+    "explanation": "## What it does\nChecks for calls to `marshal` functions.\n\n## Why is this bad?\nDeserializing untrusted data with `marshal` is insecure, as it can allow for\nthe creation of arbitrary objects, which can then be used to achieve\narbitrary code execution and otherwise unexpected behavior.\n\nAvoid deserializing untrusted data with `marshal`. Instead, consider safer\nformats, such as JSON.\n\nIf you must deserialize untrusted data with `marshal`, consider signing the\ndata with a secret key and verifying the signature before deserializing the\npayload. This will prevent an attacker from injecting arbitrary objects\ninto the serialized data.\n\n## Example\n```python\nimport marshal\n\nwith open(\"foo.marshal\", \"rb\") as file:\n    foo = marshal.load(file)\n```\n\nUse instead:\n```python\nimport json\n\nwith open(\"foo.json\", \"rb\") as file:\n    foo = json.load(file)\n```\n\n## References\n- [Python documentation: `marshal` — Internal Python object serialization](https://docs.python.org/3/library/marshal.html)\n- [Common Weakness Enumeration: CWE-502](https://cwe.mitre.org/data/definitions/502.html)\n",
     "preview": false
   },
   {
@@ -574,7 +574,7 @@
       "Audit URL open for permitted schemes. Allowing use of `file:` or custom schemes is often unexpected."
     ],
     "fix": "Fix is not available.",
-    "explanation": "## What it does\nChecks for uses of URL open functions that unexpected schemes.\n\n## Why is this bad?\nSome URL open functions allow the use of `file:` or custom schemes (for use\ninstead of `http:` or `https:`). An attacker may be able to use these\nschemes to access or modify unauthorized resources, and cause unexpected\nbehavior.\n\nTo mitigate this risk, audit all uses of URL open functions and ensure that\nonly permitted schemes are used (e.g., allowing `http:` and `https:` and\ndisallowing `file:` and `ftp:`).\n\n## Example\n```python\nfrom urllib.request import urlopen\n\nurl = input(\"Enter a URL: \")\n\nwith urlopen(url) as response:\n    ...\n```\n\nUse instead:\n```python\nfrom urllib.request import urlopen\n\nurl = input(\"Enter a URL: \")\n\nif not url.startswith((\"http:\", \"https:\")):\n    raise ValueError(\"URL must start with 'http:' or 'https:'\")\n\nwith urlopen(url) as response:\n    ...\n```\n\n## References\n- [Python documentation: `urlopen`](https://docs.python.org/3/library/urllib.request.html#urllib.request.urlopen)\n",
+    "explanation": "## What it does\nChecks for uses of URL open functions that unexpected schemes.\n\n## Why is this bad?\nSome URL open functions allow the use of `file:` or custom schemes (for use\ninstead of `http:` or `https:`). An attacker may be able to use these\nschemes to access or modify unauthorized resources, and cause unexpected\nbehavior.\n\nTo mitigate this risk, audit all uses of URL open functions and ensure that\nonly permitted schemes are used (e.g., allowing `http:` and `https:`, and\ndisallowing `file:` and `ftp:`).\n\n## Example\n```python\nfrom urllib.request import urlopen\n\nurl = input(\"Enter a URL: \")\n\nwith urlopen(url) as response:\n    ...\n```\n\nUse instead:\n```python\nfrom urllib.request import urlopen\n\nurl = input(\"Enter a URL: \")\n\nif not url.startswith((\"http:\", \"https:\")):\n    raise ValueError(\"URL must start with 'http:' or 'https:'\")\n\nwith urlopen(url) as response:\n    ...\n```\n\n## References\n- [Python documentation: `urlopen`](https://docs.python.org/3/library/urllib.request.html#urllib.request.urlopen)\n",
     "preview": false
   },
   {
@@ -586,7 +586,7 @@
       "Standard pseudo-random generators are not suitable for cryptographic purposes"
     ],
     "fix": "Fix is not available.",
-    "explanation": "## What it does\nChecks for uses of cryptographically weak pseudo-random number generators.\n\n## Why is this bad?\nCryptographically weak pseudo-random number generators are insecure as they\nare easily predictable. This can allow an attacker to guess the generated\nnumbers and compromise the security of the system.\n\nInstead, use a cryptographically secure pseudo-random number generator\n(such as using the [`secrets` module](https://docs.python.org/3/library/secrets.html))\nwhen generating random numbers for security purposes.\n\n## Example\n```python\nimport random\n\nrandom.randrange(10)\n```\n\nUse instead:\n```python\nimport secrets\n\nsecrets.randbelow(10)\n```\n\n## References\n- [Python documentation: `random` — Generate pseudo-random numbers](https://docs.python.org/3/library/random.html)\n",
+    "explanation": "## What it does\nChecks for uses of cryptographically weak pseudo-random number generators.\n\n## Why is this bad?\nCryptographically weak pseudo-random number generators are insecure, as they\nare easily predictable. This can allow an attacker to guess the generated\nnumbers and compromise the security of the system.\n\nInstead, use a cryptographically secure pseudo-random number generator\n(such as using the [`secrets` module](https://docs.python.org/3/library/secrets.html))\nwhen generating random numbers for security purposes.\n\n## Example\n```python\nimport random\n\nrandom.randrange(10)\n```\n\nUse instead:\n```python\nimport secrets\n\nsecrets.randbelow(10)\n```\n\n## References\n- [Python documentation: `random` — Generate pseudo-random numbers](https://docs.python.org/3/library/random.html)\n",
     "preview": false
   },
   {
@@ -725,12 +725,12 @@
     "name": "hashlib-insecure-hash-function",
     "code": "S324",
     "linter": "flake8-bandit",
-    "summary": "Probable use of insecure hash functions in `hashlib`: `{string}`",
+    "summary": "Probable use of insecure hash functions in `{library}`: `{string}`",
     "message_formats": [
-      "Probable use of insecure hash functions in `hashlib`: `{string}`"
+      "Probable use of insecure hash functions in `{library}`: `{string}`"
     ],
     "fix": "Fix is not available.",
-    "explanation": "## What it does\nChecks for uses of weak or broken cryptographic hash functions.\n\n## Why is this bad?\nWeak or broken cryptographic hash functions may be susceptible to\ncollision attacks (where two different inputs produce the same hash) or\npre-image attacks (where an attacker can find an input that produces a\ngiven hash). This can lead to security vulnerabilities in applications\nthat rely on these hash functions.\n\nAvoid using weak or broken cryptographic hash functions in security\ncontexts. Instead, use a known secure hash function such as SHA256.\n\n## Example\n```python\nimport hashlib\n\n\ndef certificate_is_valid(certificate: bytes, known_hash: str) -> bool:\n    hash = hashlib.md5(certificate).hexdigest()\n    return hash == known_hash\n```\n\nUse instead:\n```python\nimport hashlib\n\n\ndef certificate_is_valid(certificate: bytes, known_hash: str) -> bool:\n    hash = hashlib.sha256(certificate).hexdigest()\n    return hash == known_hash\n```\n\n## References\n- [Python documentation: `hashlib` — Secure hashes and message digests](https://docs.python.org/3/library/hashlib.html)\n- [Common Weakness Enumeration: CWE-327](https://cwe.mitre.org/data/definitions/327.html)\n- [Common Weakness Enumeration: CWE-328](https://cwe.mitre.org/data/definitions/328.html)\n- [Common Weakness Enumeration: CWE-916](https://cwe.mitre.org/data/definitions/916.html)\n",
+    "explanation": "## What it does\nChecks for uses of weak or broken cryptographic hash functions in\n`hashlib` and `crypt` libraries.\n\n## Why is this bad?\nWeak or broken cryptographic hash functions may be susceptible to\ncollision attacks (where two different inputs produce the same hash) or\npre-image attacks (where an attacker can find an input that produces a\ngiven hash). This can lead to security vulnerabilities in applications\nthat rely on these hash functions.\n\nAvoid using weak or broken cryptographic hash functions in security\ncontexts. Instead, use a known secure hash function such as SHA256.\n\n## Example\n```python\nimport hashlib\n\n\ndef certificate_is_valid(certificate: bytes, known_hash: str) -> bool:\n    hash = hashlib.md5(certificate).hexdigest()\n    return hash == known_hash\n```\n\nUse instead:\n```python\nimport hashlib\n\n\ndef certificate_is_valid(certificate: bytes, known_hash: str) -> bool:\n    hash = hashlib.sha256(certificate).hexdigest()\n    return hash == known_hash\n```\n\n## References\n- [Python documentation: `hashlib` — Secure hashes and message digests](https://docs.python.org/3/library/hashlib.html)\n- [Python documentation: `crypt` — Function to check Unix passwords](https://docs.python.org/3/library/crypt.html)\n- [Common Weakness Enumeration: CWE-327](https://cwe.mitre.org/data/definitions/327.html)\n- [Common Weakness Enumeration: CWE-328](https://cwe.mitre.org/data/definitions/328.html)\n- [Common Weakness Enumeration: CWE-916](https://cwe.mitre.org/data/definitions/916.html)\n",
     "preview": false
   },
   {
@@ -862,7 +862,7 @@
       "XMLRPC is vulnerable to remote XML attacks"
     ],
     "fix": "Fix is not available.",
-    "explanation": "## What it does\nChecks for imports of the `xmlrpc` module.\n\n## Why is this bad?\nXMLRPC is a particularly dangerous XML module as it is also concerned with\ncommunicating data over a network. Use the `defused.xmlrpc.monkey_patch()`\nfunction to monkey-patch the `xmlrpclib` module and mitigate remote XML\nattacks.\n\n## Example\n```python\nimport xmlrpc\n```\n",
+    "explanation": "## What it does\nChecks for imports of the `xmlrpc` module.\n\n## Why is this bad?\nXMLRPC is a particularly dangerous XML module, as it is also concerned with\ncommunicating data over a network. Use the `defused.xmlrpc.monkey_patch()`\nfunction to monkey-patch the `xmlrpclib` module and mitigate remote XML\nattacks.\n\n## Example\n```python\nimport xmlrpc\n```\n",
     "preview": true
   },
   {
@@ -983,7 +983,7 @@
       "Paramiko call with policy set to automatically trust the unknown host key"
     ],
     "fix": "Fix is not available.",
-    "explanation": "## What it does\nChecks for uses of policies disabling SSH verification in Paramiko.\n\n## Why is this bad?\nBy default, Paramiko checks the identity of remote host when establishing\nan SSH connection. Disabling the verification might lead to the client\nconnecting to a malicious host, without the client knowing.\n\n## Example\n```python\nfrom paramiko import client\n\nssh_client = client.SSHClient()\nssh_client.set_missing_host_key_policy(client.AutoAddPolicy)\n```\n\nUse instead:\n```python\nfrom paramiko import client\n\nssh_client = client.SSHClient()\nssh_client.set_missing_host_key_policy(client.RejectPolicy)\n```\n\n## References\n- [Paramiko documentation: set_missing_host_key_policy](https://docs.paramiko.org/en/latest/api/client.html#paramiko.client.SSHClient.set_missing_host_key_policy)\n",
+    "explanation": "## What it does\nChecks for uses of policies disabling SSH verification in Paramiko.\n\n## Why is this bad?\nBy default, Paramiko checks the identity of the remote host when establishing\nan SSH connection. Disabling the verification might lead to the client\nconnecting to a malicious host, without the client knowing.\n\n## Example\n```python\nfrom paramiko import client\n\nssh_client = client.SSHClient()\nssh_client.set_missing_host_key_policy(client.AutoAddPolicy)\n```\n\nUse instead:\n```python\nfrom paramiko import client\n\nssh_client = client.SSHClient()\nssh_client.set_missing_host_key_policy(client.RejectPolicy)\n```\n\n## References\n- [Paramiko documentation: set_missing_host_key_policy](https://docs.paramiko.org/en/latest/api/client.html#paramiko.client.SSHClient.set_missing_host_key_policy)\n",
     "preview": false
   },
   {
@@ -1096,7 +1096,7 @@
       "Starting a process with a partial executable path"
     ],
     "fix": "Fix is not available.",
-    "explanation": "## What it does\nChecks for the starting of a process with a partial executable path.\n\n## Why is this bad?\nStarting a process with a partial executable path can allow attackers to\nexecute arbitrary executable by adjusting the `PATH` environment variable.\nConsider using a full path to the executable instead.\n\n## Example\n```python\nimport subprocess\n\nsubprocess.Popen([\"ruff\", \"check\", \"file.py\"])\n```\n\nUse instead:\n```python\nimport subprocess\n\nsubprocess.Popen([\"/usr/bin/ruff\", \"check\", \"file.py\"])\n```\n\n## References\n- [Python documentation: `subprocess.Popen()`](https://docs.python.org/3/library/subprocess.html#subprocess.Popen)\n- [Common Weakness Enumeration: CWE-426](https://cwe.mitre.org/data/definitions/426.html)\n",
+    "explanation": "## What it does\nChecks for the starting of a process with a partial executable path.\n\n## Why is this bad?\nStarting a process with a partial executable path can allow attackers to\nexecute an arbitrary executable by adjusting the `PATH` environment variable.\nConsider using a full path to the executable instead.\n\n## Example\n```python\nimport subprocess\n\nsubprocess.Popen([\"ruff\", \"check\", \"file.py\"])\n```\n\nUse instead:\n```python\nimport subprocess\n\nsubprocess.Popen([\"/usr/bin/ruff\", \"check\", \"file.py\"])\n```\n\n## References\n- [Python documentation: `subprocess.Popen()`](https://docs.python.org/3/library/subprocess.html#subprocess.Popen)\n- [Common Weakness Enumeration: CWE-426](https://cwe.mitre.org/data/definitions/426.html)\n",
     "preview": false
   },
   {
@@ -1124,6 +1124,18 @@
     "preview": false
   },
   {
+    "name": "django-extra",
+    "code": "S610",
+    "linter": "flake8-bandit",
+    "summary": "Use of Django `extra` can lead to SQL injection vulnerabilities",
+    "message_formats": [
+      "Use of Django `extra` can lead to SQL injection vulnerabilities"
+    ],
+    "fix": "Fix is not available.",
+    "explanation": "## What it does\nChecks for uses of Django's `extra` function.\n\n## Why is this bad?\nDjango's `extra` function can be used to execute arbitrary SQL queries,\nwhich can in turn lead to SQL injection vulnerabilities.\n\n## Example\n```python\nfrom django.contrib.auth.models import User\n\nUser.objects.all().extra(select={\"test\": \"%secure\" % \"nos\"})\n```\n\n## References\n- [Django documentation: SQL injection protection](https://docs.djangoproject.com/en/dev/topics/security/#sql-injection-protection)\n- [Common Weakness Enumeration: CWE-89](https://cwe.mitre.org/data/definitions/89.html)\n",
+    "preview": true
+  },
+  {
     "name": "django-raw-sql",
     "code": "S611",
     "linter": "flake8-bandit",
@@ -1144,7 +1156,7 @@
       "Use of insecure `logging.config.listen` detected"
     ],
     "fix": "Fix is not available.",
-    "explanation": "## What it does\nChecks for insecure `logging.config.listen` calls.\n\n## Why is this bad?\n`logging.config.listen` starts a server that listens for logging\nconfiguration requests. This is insecure as parts of the configuration are\npassed to the built-in `eval` function, which can be used to execute\narbitrary code.\n\n## Example\n```python\nimport logging\n\nlogging.config.listen(9999)\n```\n\n## References\n- [Python documentation: `logging.config.listen()`](https://docs.python.org/3/library/logging.config.html#logging.config.listen)\n",
+    "explanation": "## What it does\nChecks for insecure `logging.config.listen` calls.\n\n## Why is this bad?\n`logging.config.listen` starts a server that listens for logging\nconfiguration requests. This is insecure, as parts of the configuration are\npassed to the built-in `eval` function, which can be used to execute\narbitrary code.\n\n## Example\n```python\nimport logging\n\nlogging.config.listen(9999)\n```\n\n## References\n- [Python documentation: `logging.config.listen()`](https://docs.python.org/3/library/logging.config.html#logging.config.listen)\n",
     "preview": false
   },
   {
@@ -1735,12 +1747,13 @@
     "name": "unnecessary-generator-list",
     "code": "C400",
     "linter": "flake8-comprehensions",
-    "summary": "Unnecessary generator (rewrite as a `list` comprehension)",
+    "summary": "Unnecessary generator (rewrite using `list()`",
     "message_formats": [
+      "Unnecessary generator (rewrite using `list()`",
       "Unnecessary generator (rewrite as a `list` comprehension)"
     ],
     "fix": "Fix is always available.",
-    "explanation": "## What it does\nChecks for unnecessary generators that can be rewritten as `list`\ncomprehensions.\n\n## Why is this bad?\nIt is unnecessary to use `list` around a generator expression, since\nthere are equivalent comprehensions for these types. Using a\ncomprehension is clearer and more idiomatic.\n\n## Examples\n```python\nlist(f(x) for x in foo)\n```\n\nUse instead:\n```python\n[f(x) for x in foo]\n```\n\n## Fix safety\nThis rule's fix is marked as unsafe, as it may occasionally drop comments\nwhen rewriting the call. In most cases, though, comments will be preserved.\n",
+    "explanation": "## What it does\nChecks for unnecessary generators that can be rewritten as `list`\ncomprehensions (or with `list` directly).\n\n## Why is this bad?\nIt is unnecessary to use `list` around a generator expression, since\nthere are equivalent comprehensions for these types. Using a\ncomprehension is clearer and more idiomatic.\n\nFurther, if the comprehension can be removed entirely, as in the case of\n`list(x for x in foo)`, it's better to use `list(foo)` directly, since it's\neven more direct.\n\n## Examples\n```python\nlist(f(x) for x in foo)\nlist(x for x in foo)\n```\n\nUse instead:\n```python\n[f(x) for x in foo]\nlist(foo)\n```\n\n## Fix safety\nThis rule's fix is marked as unsafe, as it may occasionally drop comments\nwhen rewriting the call. In most cases, though, comments will be preserved.\n",
     "preview": false
   },
   {
@@ -1824,7 +1837,7 @@
       "Unnecessary `{obj_type}` call (rewrite as a literal)"
     ],
     "fix": "Fix is always available.",
-    "explanation": "## What it does\nChecks for unnecessary `dict`, `list` or `tuple` calls that can be\nrewritten as empty literals.\n\n## Why is this bad?\nIt's unnecessary to call e.g., `dict()` as opposed to using an empty\nliteral (`{}`). The former is slower because the name `dict` must be\nlooked up in the global scope in case it has been rebound.\n\n## Examples\n```python\ndict()\ndict(a=1, b=2)\nlist()\ntuple()\n```\n\nUse instead:\n```python\n{}\n{\"a\": 1, \"b\": 2}\n[]\n()\n```\n\n## Fix safety\nThis rule's fix is marked as unsafe, as it may occasionally drop comments\nwhen rewriting the call. In most cases, though, comments will be preserved.\n\n## Options\n- `lint.flake8-comprehensions.allow-dict-calls-with-keyword-arguments`\n",
+    "explanation": "## What it does\nChecks for unnecessary `dict`, `list` or `tuple` calls that can be\nrewritten as empty literals.\n\n## Why is this bad?\nIt's unnecessary to call, e.g., `dict()` as opposed to using an empty\nliteral (`{}`). The former is slower because the name `dict` must be\nlooked up in the global scope in case it has been rebound.\n\n## Examples\n```python\ndict()\ndict(a=1, b=2)\nlist()\ntuple()\n```\n\nUse instead:\n```python\n{}\n{\"a\": 1, \"b\": 2}\n[]\n()\n```\n\n## Fix safety\nThis rule's fix is marked as unsafe, as it may occasionally drop comments\nwhen rewriting the call. In most cases, though, comments will be preserved.\n\n## Options\n- `lint.flake8-comprehensions.allow-dict-calls-with-keyword-arguments`\n",
     "preview": false
   },
   {
@@ -2139,7 +2152,7 @@
       "Model does not define `__str__` method"
     ],
     "fix": "Fix is not available.",
-    "explanation": "## What it does\nChecks that `__str__` method is defined in Django models.\n\n## Why is this bad?\nDjango models should define `__str__` method to return a string representation\nof the model instance, as Django calls this method to display the object in\nthe Django Admin and elsewhere.\n\nModels without `__str__` method will display a non-meaningful representation\nof the object in the Django Admin.\n\n## Example\n```python\nfrom django.db import models\n\n\nclass MyModel(models.Model):\n    field = models.CharField(max_length=255)\n```\n\nUse instead:\n```python\nfrom django.db import models\n\n\nclass MyModel(models.Model):\n    field = models.CharField(max_length=255)\n\n    def __str__(self):\n        return f\"{self.field}\"\n```\n",
+    "explanation": "## What it does\nChecks that a `__str__` method is defined in Django models.\n\n## Why is this bad?\nDjango models should define a `__str__` method to return a string representation\nof the model instance, as Django calls this method to display the object in\nthe Django Admin and elsewhere.\n\nModels without a `__str__` method will display a non-meaningful representation\nof the object in the Django Admin.\n\n## Example\n```python\nfrom django.db import models\n\n\nclass MyModel(models.Model):\n    field = models.CharField(max_length=255)\n```\n\nUse instead:\n```python\nfrom django.db import models\n\n\nclass MyModel(models.Model):\n    field = models.CharField(max_length=255)\n\n    def __str__(self):\n        return f\"{self.field}\"\n```\n",
     "preview": false
   },
   {
@@ -2692,7 +2705,7 @@
       "Call `{attr}` once with a `tuple`"
     ],
     "fix": "Fix is always available.",
-    "explanation": "## What it does\nChecks for `startswith` or `endswith` calls on the same value with\ndifferent prefixes or suffixes.\n\n## Why is this bad?\nThe `startswith` and `endswith` methods accept tuples of prefixes or\nsuffixes respectively. Passing a tuple of prefixes or suffixes is more\nmore efficient and readable than calling the method multiple times.\n\n## Example\n```python\nmsg = \"Hello, world!\"\nif msg.startswith(\"Hello\") or msg.startswith(\"Hi\"):\n    print(\"Greetings!\")\n```\n\nUse instead:\n```python\nmsg = \"Hello, world!\"\nif msg.startswith((\"Hello\", \"Hi\")):\n    print(\"Greetings!\")\n```\n\n## Fix safety\nThis rule's fix is unsafe, as in some cases, it will be unable to determine\nwhether the argument to an existing `.startswith` or `.endswith` call is a\ntuple. For example, given `msg.startswith(x) or msg.startswith(y)`, if `x`\nor `y` is a tuple, and the semantic model is unable to detect it as such,\nthe rule will suggest `msg.startswith((x, y))`, which will error at\nruntime.\n\n## References\n- [Python documentation: `str.startswith`](https://docs.python.org/3/library/stdtypes.html#str.startswith)\n- [Python documentation: `str.endswith`](https://docs.python.org/3/library/stdtypes.html#str.endswith)\n",
+    "explanation": "## What it does\nChecks for `startswith` or `endswith` calls on the same value with\ndifferent prefixes or suffixes.\n\n## Why is this bad?\nThe `startswith` and `endswith` methods accept tuples of prefixes or\nsuffixes respectively. Passing a tuple of prefixes or suffixes is more\nefficient and readable than calling the method multiple times.\n\n## Example\n```python\nmsg = \"Hello, world!\"\nif msg.startswith(\"Hello\") or msg.startswith(\"Hi\"):\n    print(\"Greetings!\")\n```\n\nUse instead:\n```python\nmsg = \"Hello, world!\"\nif msg.startswith((\"Hello\", \"Hi\")):\n    print(\"Greetings!\")\n```\n\n## Fix safety\nThis rule's fix is unsafe, as in some cases, it will be unable to determine\nwhether the argument to an existing `.startswith` or `.endswith` call is a\ntuple. For example, given `msg.startswith(x) or msg.startswith(y)`, if `x`\nor `y` is a tuple, and the semantic model is unable to detect it as such,\nthe rule will suggest `msg.startswith((x, y))`, which will error at\nruntime.\n\n## References\n- [Python documentation: `str.startswith`](https://docs.python.org/3/library/stdtypes.html#str.startswith)\n- [Python documentation: `str.endswith`](https://docs.python.org/3/library/stdtypes.html#str.endswith)\n",
     "preview": false
   },
   {
@@ -3028,7 +3041,7 @@
       "Multiple literal members in a union. Use a single literal, e.g. `Literal[{}]`"
     ],
     "fix": "Fix is sometimes available.",
-    "explanation": "## What it does\nChecks for the presence of multiple literal types in a union.\n\n## Why is this bad?\nLiteral types accept multiple arguments and it is clearer to specify them\nas a single literal.\n\n## Example\n```python\nfrom typing import Literal\n\nfield: Literal[1] | Literal[2]\n```\n\nUse instead:\n```python\nfrom typing import Literal\n\nfield: Literal[1, 2]\n```\n",
+    "explanation": "## What it does\nChecks for the presence of multiple literal types in a union.\n\n## Why is this bad?\nLiteral types accept multiple arguments, and it is clearer to specify them\nas a single literal.\n\n## Example\n```python\nfrom typing import Literal\n\nfield: Literal[1] | Literal[2]\n```\n\nUse instead:\n```python\nfrom typing import Literal\n\nfield: Literal[1, 2]\n```\n",
     "preview": false
   },
   {
@@ -3385,7 +3398,7 @@
       "Wrong values type in `@pytest.mark.parametrize` expected `{values}` of `{row}`"
     ],
     "fix": "Fix is not available.",
-    "explanation": "## What it does\nChecks for the type of parameter values passed to `pytest.mark.parametrize`.\n\n## Why is this bad?\nThe `argvalues` argument of `pytest.mark.parametrize` takes an iterator of\nparameter values, which can be provided as lists or tuples.\n\nTo aid in readability, it's recommended to use a consistent style for the\nlist of values rows, and, in the case of multiple parameters, for each row\nof values.\n\nThe style for the list of values rows can be configured via the\nthe [`lint.flake8-pytest-style.parametrize-values-type`] setting, while the\nstyle for each row of values can be configured via the\nthe [`lint.flake8-pytest-style.parametrize-values-row-type`] setting.\n\nFor example, [`lint.flake8-pytest-style.parametrize-values-type`] will lead to\nthe following expectations:\n\n- `tuple`: `@pytest.mark.parametrize(\"value\", (\"a\", \"b\", \"c\"))`\n- `list`: `@pytest.mark.parametrize(\"value\", [\"a\", \"b\", \"c\"])`\n\nSimilarly, [`lint.flake8-pytest-style.parametrize-values-row-type`] will lead to\nthe following expectations:\n\n- `tuple`: `@pytest.mark.parametrize((\"key\", \"value\"), [(\"a\", \"b\"), (\"c\", \"d\")])`\n- `list`: `@pytest.mark.parametrize((\"key\", \"value\"), [[\"a\", \"b\"], [\"c\", \"d\"]])`\n\n## Example\n```python\nimport pytest\n\n\n# expected list, got tuple\n@pytest.mark.parametrize(\"param\", (1, 2))\ndef test_foo(param):\n    ...\n\n\n# expected top-level list, got tuple\n@pytest.mark.parametrize(\n    (\"param1\", \"param2\"),\n    (\n        (1, 2),\n        (3, 4),\n    ),\n)\ndef test_bar(param1, param2):\n    ...\n\n\n# expected individual rows to be tuples, got lists\n@pytest.mark.parametrize(\n    (\"param1\", \"param2\"),\n    [\n        [1, 2],\n        [3, 4],\n    ],\n)\ndef test_baz(param1, param2):\n    ...\n```\n\nUse instead:\n```python\nimport pytest\n\n\n@pytest.mark.parametrize(\"param\", [1, 2, 3])\ndef test_foo(param):\n    ...\n\n\n@pytest.mark.parametrize((\"param1\", \"param2\"), [(1, 2), (3, 4)])\ndef test_bar(param1, param2):\n    ...\n```\n\n## Options\n- `lint.flake8-pytest-style.parametrize-values-type`\n- `lint.flake8-pytest-style.parametrize-values-row-type`\n\n## References\n- [`pytest` documentation: How to parametrize fixtures and test functions](https://docs.pytest.org/en/latest/how-to/parametrize.html#pytest-mark-parametrize)\n",
+    "explanation": "## What it does\nChecks for the type of parameter values passed to `pytest.mark.parametrize`.\n\n## Why is this bad?\nThe `argvalues` argument of `pytest.mark.parametrize` takes an iterator of\nparameter values, which can be provided as lists or tuples.\n\nTo aid in readability, it's recommended to use a consistent style for the\nlist of values rows, and, in the case of multiple parameters, for each row\nof values.\n\nThe style for the list of values rows can be configured via the\n[`lint.flake8-pytest-style.parametrize-values-type`] setting, while the\nstyle for each row of values can be configured via the\n[`lint.flake8-pytest-style.parametrize-values-row-type`] setting.\n\nFor example, [`lint.flake8-pytest-style.parametrize-values-type`] will lead to\nthe following expectations:\n\n- `tuple`: `@pytest.mark.parametrize(\"value\", (\"a\", \"b\", \"c\"))`\n- `list`: `@pytest.mark.parametrize(\"value\", [\"a\", \"b\", \"c\"])`\n\nSimilarly, [`lint.flake8-pytest-style.parametrize-values-row-type`] will lead to\nthe following expectations:\n\n- `tuple`: `@pytest.mark.parametrize((\"key\", \"value\"), [(\"a\", \"b\"), (\"c\", \"d\")])`\n- `list`: `@pytest.mark.parametrize((\"key\", \"value\"), [[\"a\", \"b\"], [\"c\", \"d\"]])`\n\n## Example\n```python\nimport pytest\n\n\n# expected list, got tuple\n@pytest.mark.parametrize(\"param\", (1, 2))\ndef test_foo(param):\n    ...\n\n\n# expected top-level list, got tuple\n@pytest.mark.parametrize(\n    (\"param1\", \"param2\"),\n    (\n        (1, 2),\n        (3, 4),\n    ),\n)\ndef test_bar(param1, param2):\n    ...\n\n\n# expected individual rows to be tuples, got lists\n@pytest.mark.parametrize(\n    (\"param1\", \"param2\"),\n    [\n        [1, 2],\n        [3, 4],\n    ],\n)\ndef test_baz(param1, param2):\n    ...\n```\n\nUse instead:\n```python\nimport pytest\n\n\n@pytest.mark.parametrize(\"param\", [1, 2, 3])\ndef test_foo(param):\n    ...\n\n\n@pytest.mark.parametrize((\"param1\", \"param2\"), [(1, 2), (3, 4)])\ndef test_bar(param1, param2):\n    ...\n```\n\n## Options\n- `lint.flake8-pytest-style.parametrize-values-type`\n- `lint.flake8-pytest-style.parametrize-values-row-type`\n\n## References\n- [`pytest` documentation: How to parametrize fixtures and test functions](https://docs.pytest.org/en/latest/how-to/parametrize.html#pytest-mark-parametrize)\n",
     "preview": false
   },
   {
@@ -3748,7 +3761,7 @@
       "Unnecessary assignment to `{name}` before `return` statement"
     ],
     "fix": "Fix is always available.",
-    "explanation": "## What it does\nChecks for variable assignments that immediately precede a `return` of the\nassigned variable.\n\n## Why is this bad?\nThe variable assignment is not necessary as the value can be returned\ndirectly.\n\n## Example\n```python\ndef foo():\n    bar = 1\n    return bar\n```\n\nUse instead:\n```python\ndef foo():\n    return 1\n```\n",
+    "explanation": "## What it does\nChecks for variable assignments that immediately precede a `return` of the\nassigned variable.\n\n## Why is this bad?\nThe variable assignment is not necessary, as the value can be returned\ndirectly.\n\n## Example\n```python\ndef foo():\n    bar = 1\n    return bar\n```\n\nUse instead:\n```python\ndef foo():\n    return 1\n```\n",
     "preview": false
   },
   {
@@ -4052,7 +4065,7 @@
       "Use `not ...` instead of `False if ... else True`"
     ],
     "fix": "Fix is always available.",
-    "explanation": "## What it does\nChecks for `if` expressions that can be replaced by negating a given\ncondition.\n\n## Why is this bad?\n`if` expressions that evaluate to `False` for a truthy condition an `True`\nfor a falsey condition can be replaced with `not` operators, which are more\nconcise and readable.\n\n## Example\n```python\nFalse if a else True\n```\n\nUse instead:\n```python\nnot a\n```\n\n## References\n- [Python documentation: Truth Value Testing](https://docs.python.org/3/library/stdtypes.html#truth-value-testing)\n",
+    "explanation": "## What it does\nChecks for `if` expressions that can be replaced by negating a given\ncondition.\n\n## Why is this bad?\n`if` expressions that evaluate to `False` for a truthy condition and `True`\nfor a falsey condition can be replaced with `not` operators, which are more\nconcise and readable.\n\n## Example\n```python\nFalse if a else True\n```\n\nUse instead:\n```python\nnot a\n```\n\n## References\n- [Python documentation: Truth Value Testing](https://docs.python.org/3/library/stdtypes.html#truth-value-testing)\n",
     "preview": false
   },
   {
@@ -4211,7 +4224,7 @@
       "`{name}` is banned: {message}"
     ],
     "fix": "Fix is not available.",
-    "explanation": "## What it does\nChecks for banned imports.\n\n## Why is this bad?\nProjects may want to ensure that specific modules or module members are\nnot be imported or accessed.\n\nSecurity or other company policies may be a reason to impose\nrestrictions on importing external Python libraries. In some cases,\nprojects may adopt conventions around the use of certain modules or\nmodule members that are not enforceable by the language itself.\n\nThis rule enforces certain import conventions project-wide in an\nautomatic way.\n\n## Options\n- `lint.flake8-tidy-imports.banned-api`\n",
+    "explanation": "## What it does\nChecks for banned imports.\n\n## Why is this bad?\nProjects may want to ensure that specific modules or module members are\nnot imported or accessed.\n\nSecurity or other company policies may be a reason to impose\nrestrictions on importing external Python libraries. In some cases,\nprojects may adopt conventions around the use of certain modules or\nmodule members that are not enforceable by the language itself.\n\nThis rule enforces certain import conventions project-wide automatically.\n\n## Options\n- `lint.flake8-tidy-imports.banned-api`\n",
     "preview": false
   },
   {
@@ -4898,7 +4911,7 @@
       "Replace `{function}` with `Path.glob` or `Path.rglob`"
     ],
     "fix": "Fix is not available.",
-    "explanation": "## What it does\nChecks for the use of `glob` and `iglob`.\n\n## Why is this bad?\n`pathlib` offers a high-level API for path manipulation, as compared to\nthe lower-level API offered by `os` and `glob`.\n\nWhen possible, using `Path` object methods such as `Path.glob()` can\nimprove readability over their low-level counterparts (e.g.,\n`glob.glob()`).\n\nNote that `glob.glob` and `Path.glob` are not exact equivalents:\n\n|                   | `glob`                                                                                                                                                             | `Path.glob`                                                                                                                                |\n|-------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------|\n| Hidden files      | Excludes hidden files by default. From Python 3.11 onwards, the `include_hidden` keyword can used to include hidden directories.                                   | Includes hidden files by default.                                                                                                          |\n| Iterator          | `iglob` returns an iterator. Under the hood, `glob` simply converts the iterator to a list.                                                                        | `Path.glob` returns an iterator.                                                                                                           |\n| Working directory | `glob` takes a `root_dir` keyword to set the current working directory.                                                                                            | `Path.rglob` can be used to return the relative path.                                                                                      |\n| Globstar (`**`)   | `glob` requires the `recursive` flag to be set to `True` for the `**` pattern to match any files and zero or more directories, subdirectories, and symbolic links. | The `**` pattern in `Path.glob` means \"this directory and all subdirectories, recursively\". In other words, it enables recursive globbing. |\n\n## Example\n```python\nimport glob\nimport os\n\nglob.glob(os.path.join(path, \"requirements*.txt\"))\n```\n\nUse instead:\n```python\nfrom pathlib import Path\n\nPath(path).glob(\"requirements*.txt\")\n```\n\n## References\n- [Python documentation: `Path.glob`](https://docs.python.org/3/library/pathlib.html#pathlib.Path.glob)\n- [Python documentation: `Path.rglob`](https://docs.python.org/3/library/pathlib.html#pathlib.Path.rglob)\n- [Python documentation: `glob.glob`](https://docs.python.org/3/library/glob.html#glob.glob)\n- [Python documentation: `glob.iglob`](https://docs.python.org/3/library/glob.html#glob.iglob)\n",
+    "explanation": "## What it does\nChecks for the use of `glob` and `iglob`.\n\n## Why is this bad?\n`pathlib` offers a high-level API for path manipulation, as compared to\nthe lower-level API offered by `os` and `glob`.\n\nWhen possible, using `Path` object methods such as `Path.glob()` can\nimprove readability over their low-level counterparts (e.g.,\n`glob.glob()`).\n\nNote that `glob.glob` and `Path.glob` are not exact equivalents:\n\n|                   | `glob`                                                                                                                                                             | `Path.glob`                                                                                                                                |\n|-------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------|\n| Hidden files      | Excludes hidden files by default. From Python 3.11 onwards, the `include_hidden` keyword can be used to include hidden directories.                                   | Includes hidden files by default.                                                                                                          |\n| Iterator          | `iglob` returns an iterator. Under the hood, `glob` simply converts the iterator to a list.                                                                        | `Path.glob` returns an iterator.                                                                                                           |\n| Working directory | `glob` takes a `root_dir` keyword to set the current working directory.                                                                                            | `Path.rglob` can be used to return the relative path.                                                                                      |\n| Globstar (`**`)   | `glob` requires the `recursive` flag to be set to `True` for the `**` pattern to match any files and zero or more directories, subdirectories, and symbolic links. | The `**` pattern in `Path.glob` means \"this directory and all subdirectories, recursively\". In other words, it enables recursive globbing. |\n\n## Example\n```python\nimport glob\nimport os\n\nglob.glob(os.path.join(path, \"requirements*.txt\"))\n```\n\nUse instead:\n```python\nfrom pathlib import Path\n\nPath(path).glob(\"requirements*.txt\")\n```\n\n## References\n- [Python documentation: `Path.glob`](https://docs.python.org/3/library/pathlib.html#pathlib.Path.glob)\n- [Python documentation: `Path.rglob`](https://docs.python.org/3/library/pathlib.html#pathlib.Path.rglob)\n- [Python documentation: `glob.glob`](https://docs.python.org/3/library/glob.html#glob.glob)\n- [Python documentation: `glob.iglob`](https://docs.python.org/3/library/glob.html#glob.iglob)\n",
     "preview": false
   },
   {
@@ -4959,7 +4972,7 @@
       "Type alias `np.{type_name}` is deprecated, replace with builtin type"
     ],
     "fix": "Fix is sometimes available.",
-    "explanation": "## What it does\nChecks for deprecated NumPy type aliases.\n\n## Why is this bad?\nNumPy's `np.int` has long been an alias of the builtin `int`. The same\ngoes for `np.float`, `np.bool`, and others. These aliases exist\nprimarily for historic reasons, and have been a cause of\nfrequent confusion for newcomers.\n\nThese aliases were been deprecated in 1.20, and removed in 1.24.\n\n## Examples\n```python\nimport numpy as np\n\nnp.bool\n```\n\nUse instead:\n```python\nbool\n```\n",
+    "explanation": "## What it does\nChecks for deprecated NumPy type aliases.\n\n## Why is this bad?\nNumPy's `np.int` has long been an alias of the builtin `int`. The same\ngoes for `np.float`, `np.bool`, and others. These aliases exist\nprimarily for historic reasons, and have been a cause of\nfrequent confusion for newcomers.\n\nThese aliases were deprecated in 1.20, and removed in 1.24.\n\n## Examples\n```python\nimport numpy as np\n\nnp.bool\n```\n\nUse instead:\n```python\nbool\n```\n",
     "preview": false
   },
   {
@@ -5188,7 +5201,7 @@
       "Invalid module name: '{name}'"
     ],
     "fix": "Fix is not available.",
-    "explanation": "## What it does\nChecks for module names that do not follow the `snake_case` naming\nconvention or are otherwise invalid.\n\n## Why is this bad?\n[PEP 8] recommends the use of the `snake_case` naming convention for\nmodule names:\n\n> Modules should have short, all-lowercase names. Underscores can be used in the\n> module name if it improves readability. Python packages should also have short,\n> all-lowercase names, although the use of underscores is discouraged.\n>\n> When an extension module written in C or C++ has an accompanying Python module that\n> provides a higher level (e.g. more object oriented) interface, the C/C++ module has\n> a leading underscore (e.g. `_socket`).\n\nFurther, in order for Python modules to be importable, they must be valid\nidentifiers. As such, they cannot start with a digit, or collide with hard\nkeywords, like `import` or `class`.\n\n## Example\n- Instead of `example-module-name` or `example module name`, use `example_module_name`.\n- Instead of `ExampleModule`, use `example_module`.\n\n[PEP 8]: https://peps.python.org/pep-0008/#package-and-module-names\n",
+    "explanation": "## What it does\nChecks for module names that do not follow the `snake_case` naming\nconvention or are otherwise invalid.\n\n## Why is this bad?\n[PEP 8] recommends the use of the `snake_case` naming convention for\nmodule names:\n\n> Modules should have short, all-lowercase names. Underscores can be used in the\n> module name if it improves readability. Python packages should also have short,\n> all-lowercase names, although the use of underscores is discouraged.\n>\n> When an extension module written in C or C++ has an accompanying Python module that\n> provides a higher level (e.g. more object-oriented) interface, the C/C++ module has\n> a leading underscore (e.g. `_socket`).\n\nFurther, in order for Python modules to be importable, they must be valid\nidentifiers. As such, they cannot start with a digit, or collide with hard\nkeywords, like `import` or `class`.\n\n## Example\n- Instead of `example-module-name` or `example module name`, use `example_module_name`.\n- Instead of `ExampleModule`, use `example_module`.\n\n[PEP 8]: https://peps.python.org/pep-0008/#package-and-module-names\n",
     "preview": false
   },
   {
@@ -5284,7 +5297,7 @@
       "Use `.to_numpy()` instead of `.values`"
     ],
     "fix": "Fix is not available.",
-    "explanation": "## What it does\nChecks for uses of `.values` on Pandas Series and Index objects.\n\n## Why is this bad?\nThe `.values` attribute is ambiguous as it's return type is unclear. As\nsuch, it is no longer recommended by the Pandas documentation.\n\nInstead, use `.to_numpy()` to return a NumPy array, or `.array` to return a\nPandas `ExtensionArray`.\n\n## Example\n```python\nimport pandas as pd\n\nanimals = pd.read_csv(\"animals.csv\").values  # Ambiguous.\n```\n\nUse instead:\n```python\nimport pandas as pd\n\nanimals = pd.read_csv(\"animals.csv\").to_numpy()  # Explicit.\n```\n\n## References\n- [Pandas documentation: Accessing the values in a Series or Index](https://pandas.pydata.org/pandas-docs/stable/whatsnew/v0.24.0.html#accessing-the-values-in-a-series-or-index)\n",
+    "explanation": "## What it does\nChecks for uses of `.values` on Pandas Series and Index objects.\n\n## Why is this bad?\nThe `.values` attribute is ambiguous as its return type is unclear. As\nsuch, it is no longer recommended by the Pandas documentation.\n\nInstead, use `.to_numpy()` to return a NumPy array, or `.array` to return a\nPandas `ExtensionArray`.\n\n## Example\n```python\nimport pandas as pd\n\nanimals = pd.read_csv(\"animals.csv\").values  # Ambiguous.\n```\n\nUse instead:\n```python\nimport pandas as pd\n\nanimals = pd.read_csv(\"animals.csv\").to_numpy()  # Explicit.\n```\n\n## References\n- [Pandas documentation: Accessing the values in a Series or Index](https://pandas.pydata.org/pandas-docs/stable/whatsnew/v0.24.0.html#accessing-the-values-in-a-series-or-index)\n",
     "preview": false
   },
   {
@@ -5885,7 +5898,7 @@
       "Expected 2 blank lines after class or function definition, found ({blank_lines})"
     ],
     "fix": "Fix is always available.",
-    "explanation": "## What it does\nChecks for missing blank lines after the end of function or class.\n\n## Why is this bad?\nPEP 8 recommends using blank lines as following:\n- Two blank lines are expected between functions and classes\n- One blank line is expected between methods of a class.\n\n## Example\n```python\nclass User(object):\n    pass\nuser = User()\n```\n\nUse instead:\n```python\nclass User(object):\n    pass\n\n\nuser = User()\n```\n\n## Typing stub files (`.pyi`)\nThe typing style guide recommends to not use blank lines between statements except to group\nthem. That's why this rule is not enabled in typing stub files.\n\n## References\n- [PEP 8](https://peps.python.org/pep-0008/#blank-lines)\n- [Flake 8 rule](https://www.flake8rules.com/rules/E305.html)\n- [Typing Style Guide](https://typing.readthedocs.io/en/latest/source/stubs.html#blank-lines)\n",
+    "explanation": "## What it does\nChecks for missing blank lines after the end of function or class.\n\n## Why is this bad?\nPEP 8 recommends using blank lines as follows:\n- Two blank lines are expected between functions and classes\n- One blank line is expected between methods of a class.\n\n## Example\n```python\nclass User(object):\n    pass\nuser = User()\n```\n\nUse instead:\n```python\nclass User(object):\n    pass\n\n\nuser = User()\n```\n\n## Typing stub files (`.pyi`)\nThe typing style guide recommends to not use blank lines between statements except to group\nthem. That's why this rule is not enabled in typing stub files.\n\n## References\n- [PEP 8](https://peps.python.org/pep-0008/#blank-lines)\n- [Flake 8 rule](https://www.flake8rules.com/rules/E305.html)\n- [Typing Style Guide](https://typing.readthedocs.io/en/latest/source/stubs.html#blank-lines)\n",
     "preview": true
   },
   {
@@ -5897,7 +5910,7 @@
       "Expected 1 blank line before a nested definition, found 0"
     ],
     "fix": "Fix is always available.",
-    "explanation": "## What it does\nChecks for 1 blank line between nested function or class definitions.\n\n## Why is this bad?\nPEP 8 recommends using blank lines as following:\n- Two blank lines are expected between functions and classes\n- One blank line is expected between methods of a class.\n\n## Example\n```python\ndef outer():\n    def inner():\n        pass\n    def inner2():\n        pass\n```\n\nUse instead:\n```python\ndef outer():\n    def inner():\n        pass\n\n    def inner2():\n        pass\n```\n\n## Typing stub files (`.pyi`)\nThe typing style guide recommends to not use blank lines between classes and functions except to group\nthem. That's why this rule is not enabled in typing stub files.\n\n## References\n- [PEP 8](https://peps.python.org/pep-0008/#blank-lines)\n- [Flake 8 rule](https://www.flake8rules.com/rules/E306.html)\n- [Typing Style Guide](https://typing.readthedocs.io/en/latest/source/stubs.html#blank-lines)\n",
+    "explanation": "## What it does\nChecks for 1 blank line between nested function or class definitions.\n\n## Why is this bad?\nPEP 8 recommends using blank lines as follows:\n- Two blank lines are expected between functions and classes\n- One blank line is expected between methods of a class.\n\n## Example\n```python\ndef outer():\n    def inner():\n        pass\n    def inner2():\n        pass\n```\n\nUse instead:\n```python\ndef outer():\n    def inner():\n        pass\n\n    def inner2():\n        pass\n```\n\n## Typing stub files (`.pyi`)\nThe typing style guide recommends to not use blank lines between classes and functions except to group\nthem. That's why this rule is not enabled in typing stub files.\n\n## References\n- [PEP 8](https://peps.python.org/pep-0008/#blank-lines)\n- [Flake 8 rule](https://www.flake8rules.com/rules/E306.html)\n- [Typing Style Guide](https://typing.readthedocs.io/en/latest/source/stubs.html#blank-lines)\n",
     "preview": true
   },
   {
@@ -5936,6 +5949,18 @@
     "fix": "Fix is not available.",
     "explanation": "## What it does\nChecks for lines that exceed the specified maximum character length.\n\n## Why is this bad?\nOverlong lines can hurt readability. [PEP 8], for example, recommends\nlimiting lines to 79 characters. By default, this rule enforces a limit\nof 88 characters for compatibility with Black, though that limit is\nconfigurable via the [`line-length`] setting.\n\nIn the interest of pragmatism, this rule makes a few exceptions when\ndetermining whether a line is overlong. Namely, it:\n\n1. Ignores lines that consist of a single \"word\" (i.e., without any\n   whitespace between its characters).\n2. Ignores lines that end with a URL, as long as the URL starts before\n   the line-length threshold.\n3. Ignores line that end with a pragma comment (e.g., `# type: ignore`\n   or `# noqa`), as long as the pragma comment starts before the\n   line-length threshold. That is, a line will not be flagged as\n   overlong if a pragma comment _causes_ it to exceed the line length.\n   (This behavior aligns with that of the Ruff formatter.)\n\nIf [`lint.pycodestyle.ignore-overlong-task-comments`] is `true`, this rule will\nalso ignore comments that start with any of the specified [`lint.task-tags`]\n(e.g., `# TODO:`).\n\n## Example\n```python\nmy_function(param1, param2, param3, param4, param5, param6, param7, param8, param9, param10)\n```\n\nUse instead:\n```python\nmy_function(\n    param1, param2, param3, param4, param5,\n    param6, param7, param8, param9, param10\n)\n```\n\n## Error suppression\nHint: when suppressing `E501` errors within multi-line strings (like\ndocstrings), the `noqa` directive should come at the end of the string\n(after the closing triple quote), and will apply to the entire string, like\nso:\n\n```python\n\"\"\"Lorem ipsum dolor sit amet.\n\nLorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor.\n\"\"\"  # noqa: E501\n```\n\n## Options\n- `line-length`\n- `lint.task-tags`\n- `lint.pycodestyle.ignore-overlong-task-comments`\n- `lint.pycodestyle.max-line-length`\n\n[PEP 8]: https://peps.python.org/pep-0008/#maximum-line-length\n",
     "preview": false
+  },
+  {
+    "name": "redundant-backslash",
+    "code": "E502",
+    "linter": "pycodestyle",
+    "summary": "Redundant backslash",
+    "message_formats": [
+      "Redundant backslash"
+    ],
+    "fix": "Fix is always available.",
+    "explanation": "## What it does\nChecks for redundant backslashes between brackets.\n\n## Why is this bad?\nExplicit line joins using a backslash are redundant between brackets.\n\n## Example\n```python\nx = (2 + \\\n    2)\n```\n\nUse instead:\n```python\nx = (2 +\n    2)\n```\n\n[PEP 8]: https://peps.python.org/pep-0008/#maximum-line-length\n",
+    "preview": true
   },
   {
     "name": "multiple-statements-on-one-line-colon",
@@ -6155,7 +6180,7 @@
       "No newline at end of file"
     ],
     "fix": "Fix is always available.",
-    "explanation": "## What it does\nChecks for files missing a new line at the end of the file.\n\n## Why is this bad?\nTrailing blank lines are superfluous.\nHowever the last line should end with a new line.\n\n## Example\n```python\nspam(1)\n```\n\nUse instead:\n```python\nspam(1)\\n\n```\n",
+    "explanation": "## What it does\nChecks for files missing a new line at the end of the file.\n\n## Why is this bad?\nTrailing blank lines in a file are superfluous.\n\nHowever, the last line of the file should end with a newline.\n\n## Example\n```python\nspam(1)\n```\n\nUse instead:\n```python\nspam(1)\\n\n```\n",
     "preview": false
   },
   {
@@ -6169,6 +6194,19 @@
     "fix": "Fix is always available.",
     "explanation": "## What it does\nChecks for superfluous whitespace in blank lines.\n\n## Why is this bad?\nAccording to [PEP 8], \"avoid trailing whitespace anywhere. Because it’s usually\ninvisible, it can be confusing\"\n\n## Example\n```python\nclass Foo(object):\\n    \\n    bang = 12\n```\n\nUse instead:\n```python\nclass Foo(object):\\n\\n    bang = 12\n```\n\n[PEP 8]: https://peps.python.org/pep-0008/#other-recommendations\n",
     "preview": false
+  },
+  {
+    "name": "too-many-newlines-at-end-of-file",
+    "code": "W391",
+    "linter": "pycodestyle",
+    "summary": "Too many newlines at end of file",
+    "message_formats": [
+      "Too many newlines at end of file",
+      "Extra newline at end of file"
+    ],
+    "fix": "Fix is always available.",
+    "explanation": "## What it does\nChecks for files with multiple trailing blank lines.\n\n## Why is this bad?\nTrailing blank lines in a file are superfluous.\n\nHowever, the last line of the file should end with a newline.\n\n## Example\n```python\nspam(1)\\n\\n\\n\n```\n\nUse instead:\n```python\nspam(1)\\n\n```\n",
+    "preview": true
   },
   {
     "name": "doc-line-too-long",
@@ -6263,7 +6301,7 @@
       "Missing docstring in magic method"
     ],
     "fix": "Fix is not available.",
-    "explanation": "## What it does\nChecks for undocumented magic method definitions.\n\n## Why is this bad?\nMagic methods (methods with names that start and end with double\nunderscores) are used to implement operator overloading and other special\nbehavior. Such methods should should be documented via docstrings to\noutline their behavior.\n\nGenerally, magic method docstrings should describe the method's behavior,\narguments, side effects, exceptions, return values, and any other\ninformation that may be relevant to the user.\n\nIf the codebase adheres to a standard format for method docstrings, follow\nthat format for consistency.\n\n## Example\n```python\nclass Cat(Animal):\n    def __str__(self) -> str:\n        return f\"Cat: {self.name}\"\n\n\ncat = Cat(\"Dusty\")\nprint(cat)  # \"Cat: Dusty\"\n```\n\nUse instead:\n```python\nclass Cat(Animal):\n    def __str__(self) -> str:\n        \"\"\"Return a string representation of the cat.\"\"\"\n        return f\"Cat: {self.name}\"\n\n\ncat = Cat(\"Dusty\")\nprint(cat)  # \"Cat: Dusty\"\n```\n\n## References\n- [PEP 257 – Docstring Conventions](https://peps.python.org/pep-0257/)\n- [PEP 287 – reStructuredText Docstring Format](https://peps.python.org/pep-0287/)\n- [NumPy Style Guide](https://numpydoc.readthedocs.io/en/latest/format.html)\n- [Google Style Python Docstrings](https://google.github.io/styleguide/pyguide.html#s3.8-comments-and-docstrings)\n",
+    "explanation": "## What it does\nChecks for undocumented magic method definitions.\n\n## Why is this bad?\nMagic methods (methods with names that start and end with double\nunderscores) are used to implement operator overloading and other special\nbehavior. Such methods should be documented via docstrings to\noutline their behavior.\n\nGenerally, magic method docstrings should describe the method's behavior,\narguments, side effects, exceptions, return values, and any other\ninformation that may be relevant to the user.\n\nIf the codebase adheres to a standard format for method docstrings, follow\nthat format for consistency.\n\n## Example\n```python\nclass Cat(Animal):\n    def __str__(self) -> str:\n        return f\"Cat: {self.name}\"\n\n\ncat = Cat(\"Dusty\")\nprint(cat)  # \"Cat: Dusty\"\n```\n\nUse instead:\n```python\nclass Cat(Animal):\n    def __str__(self) -> str:\n        \"\"\"Return a string representation of the cat.\"\"\"\n        return f\"Cat: {self.name}\"\n\n\ncat = Cat(\"Dusty\")\nprint(cat)  # \"Cat: Dusty\"\n```\n\n## References\n- [PEP 257 – Docstring Conventions](https://peps.python.org/pep-0257/)\n- [PEP 287 – reStructuredText Docstring Format](https://peps.python.org/pep-0287/)\n- [NumPy Style Guide](https://numpydoc.readthedocs.io/en/latest/format.html)\n- [Google Style Python Docstrings](https://google.github.io/styleguide/pyguide.html#s3.8-comments-and-docstrings)\n",
     "preview": false
   },
   {
@@ -6347,7 +6385,7 @@
       "1 blank line required after class docstring"
     ],
     "fix": "Fix is always available.",
-    "explanation": "## What it does\nChecks for class methods that are not separated from the class's docstring\nby a blank line.\n\n## Why is this bad?\n[PEP 257] recommends the use of a blank line to separate a class's\ndocstring its methods.\n\nThis rule may not apply to all projects; its applicability is a matter of\nconvention. By default, this rule is enabled when using the `google`\nconvention, and disabled when using the `numpy` and `pep257` conventions.\n\n## Example\n```python\nclass PhotoMetadata:\n    \"\"\"Metadata about a photo.\"\"\"\n    def __init__(self, file: Path):\n        ...\n```\n\nUse instead:\n```python\nclass PhotoMetadata:\n    \"\"\"Metadata about a photo.\"\"\"\n\n    def __init__(self, file: Path):\n        ...\n```\n\n## Options\n- `lint.pydocstyle.convention`\n\n## References\n- [PEP 257 – Docstring Conventions](https://peps.python.org/pep-0257/)\n- [NumPy Style Guide](https://numpydoc.readthedocs.io/en/latest/format.html)\n- [Google Python Style Guide - Docstrings](https://google.github.io/styleguide/pyguide.html#38-comments-and-docstrings)\n\n[PEP 257]: https://peps.python.org/pep-0257/\n",
+    "explanation": "## What it does\nChecks for class methods that are not separated from the class's docstring\nby a blank line.\n\n## Why is this bad?\n[PEP 257] recommends the use of a blank line to separate a class's\ndocstring from its methods.\n\nThis rule may not apply to all projects; its applicability is a matter of\nconvention. By default, this rule is enabled when using the `google`\nconvention, and disabled when using the `numpy` and `pep257` conventions.\n\n## Example\n```python\nclass PhotoMetadata:\n    \"\"\"Metadata about a photo.\"\"\"\n    def __init__(self, file: Path):\n        ...\n```\n\nUse instead:\n```python\nclass PhotoMetadata:\n    \"\"\"Metadata about a photo.\"\"\"\n\n    def __init__(self, file: Path):\n        ...\n```\n\n## Options\n- `lint.pydocstyle.convention`\n\n## References\n- [PEP 257 – Docstring Conventions](https://peps.python.org/pep-0257/)\n- [NumPy Style Guide](https://numpydoc.readthedocs.io/en/latest/format.html)\n- [Google Python Style Guide - Docstrings](https://google.github.io/styleguide/pyguide.html#38-comments-and-docstrings)\n\n[PEP 257]: https://peps.python.org/pep-0257/\n",
     "preview": false
   },
   {
@@ -6756,11 +6794,11 @@
     "summary": "`{name}` imported but unused; consider using `importlib.util.find_spec` to test for availability",
     "message_formats": [
       "`{name}` imported but unused; consider using `importlib.util.find_spec` to test for availability",
-      "`{name}` imported but unused; consider adding to `__all__` or using a redundant alias",
+      "`{name}` imported but unused; consider removing, adding to `__all__`, or using a redundant alias",
       "`{name}` imported but unused"
     ],
     "fix": "Fix is sometimes available.",
-    "explanation": "## What it does\nChecks for unused imports.\n\n## Why is this bad?\nUnused imports add a performance overhead at runtime, and risk creating\nimport cycles. They also increase the cognitive load of reading the code.\n\nIf an import statement is used to check for the availability or existence\nof a module, consider using `importlib.util.find_spec` instead.\n\nIf an import statement is used to re-export a symbol as part of a module's\npublic interface, consider using a \"redundant\" import alias, which\ninstructs Ruff (and other tools) to respect the re-export, and avoid\nmarking it as unused, as in:\n\n```python\nfrom module import member as member\n```\n\n## Example\n```python\nimport numpy as np  # unused import\n\n\ndef area(radius):\n    return 3.14 * radius**2\n```\n\nUse instead:\n```python\ndef area(radius):\n    return 3.14 * radius**2\n```\n\nTo check the availability of a module, use `importlib.util.find_spec`:\n```python\nfrom importlib.util import find_spec\n\nif find_spec(\"numpy\") is not None:\n    print(\"numpy is installed\")\nelse:\n    print(\"numpy is not installed\")\n```\n\n## Options\n- `lint.ignore-init-module-imports`\n\n## References\n- [Python documentation: `import`](https://docs.python.org/3/reference/simple_stmts.html#the-import-statement)\n- [Python documentation: `importlib.util.find_spec`](https://docs.python.org/3/library/importlib.html#importlib.util.find_spec)\n- [Typing documentation: interface conventions](https://typing.readthedocs.io/en/latest/source/libraries.html#library-interface-public-and-private-symbols)\n",
+    "explanation": "## What it does\nChecks for unused imports.\n\n## Why is this bad?\nUnused imports add a performance overhead at runtime, and risk creating\nimport cycles. They also increase the cognitive load of reading the code.\n\nIf an import statement is used to check for the availability or existence\nof a module, consider using `importlib.util.find_spec` instead.\n\nIf an import statement is used to re-export a symbol as part of a module's\npublic interface, consider using a \"redundant\" import alias, which\ninstructs Ruff (and other tools) to respect the re-export, and avoid\nmarking it as unused, as in:\n\n```python\nfrom module import member as member\n```\n\n## Fix safety\n\nWhen `ignore_init_module_imports` is disabled, fixes can remove for unused imports in `__init__` files.\nThese fixes are considered unsafe because they can change the public interface.\n\n## Example\n```python\nimport numpy as np  # unused import\n\n\ndef area(radius):\n    return 3.14 * radius**2\n```\n\nUse instead:\n```python\ndef area(radius):\n    return 3.14 * radius**2\n```\n\nTo check the availability of a module, use `importlib.util.find_spec`:\n```python\nfrom importlib.util import find_spec\n\nif find_spec(\"numpy\") is not None:\n    print(\"numpy is installed\")\nelse:\n    print(\"numpy is not installed\")\n```\n\n## Options\n- `lint.ignore-init-module-imports`\n\n## References\n- [Python documentation: `import`](https://docs.python.org/3/reference/simple_stmts.html#the-import-statement)\n- [Python documentation: `importlib.util.find_spec`](https://docs.python.org/3/library/importlib.html#importlib.util.find_spec)\n- [Typing documentation: interface conventions](https://typing.readthedocs.io/en/latest/source/libraries.html#library-interface-public-and-private-symbols)\n",
     "preview": false
   },
   {
@@ -7425,7 +7463,7 @@
       "`{existing}` can be simplified to `{replacement}` as an empty string is falsey"
     ],
     "fix": "Fix is not available.",
-    "explanation": "## What it does\nChecks for comparisons to empty strings.\n\n## Why is this bad?\nAn empty string is falsy, so it is unnecessary to compare it to `\"\"`. If\nthe value can be something else Python considers falsy, such as `None` or\n`0` or another empty container, then the code is not equivalent.\n\n## Known problems\nHigh false positive rate, as the check is context-insensitive and does not\nconsider the type of the variable being compared ([#4282]).\n\n## Example\n```python\nx: str = ...\n\nif x == \"\":\n    print(\"x is empty\")\n```\n\nUse instead:\n```python\nx: str = ...\n\nif not x:\n    print(\"x is empty\")\n```\n\n## References\n- [Python documentation: Truth Value Testing](https://docs.python.org/3/library/stdtypes.html#truth-value-testing)\n\n[#4282]: https://github.com/astral-sh/ruff/issues/4282\n",
+    "explanation": "## What it does\nChecks for comparisons to empty strings.\n\n## Why is this bad?\nAn empty string is falsy, so it is unnecessary to compare it to `\"\"`. If\nthe value can be something else Python considers falsy, such as `None`,\n`0`, or another empty container, then the code is not equivalent.\n\n## Known problems\nHigh false positive rate, as the check is context-insensitive and does not\nconsider the type of the variable being compared ([#4282]).\n\n## Example\n```python\nx: str = ...\n\nif x == \"\":\n    print(\"x is empty\")\n```\n\nUse instead:\n```python\nx: str = ...\n\nif not x:\n    print(\"x is empty\")\n```\n\n## References\n- [Python documentation: Truth Value Testing](https://docs.python.org/3/library/stdtypes.html#truth-value-testing)\n\n[#4282]: https://github.com/astral-sh/ruff/issues/4282\n",
     "preview": true
   },
   {
@@ -7588,6 +7626,18 @@
     "preview": false
   },
   {
+    "name": "invalid-bool-return-type",
+    "code": "PLE0304",
+    "linter": "Pylint",
+    "summary": "`__bool__` does not return `bool`",
+    "message_formats": [
+      "`__bool__` does not return `bool`"
+    ],
+    "fix": "Fix is not available.",
+    "explanation": "## What it does\nChecks for `__bool__` implementations that return a type other than `bool`.\n\n## Why is this bad?\nThe `__bool__` method should return a `bool` object. Returning a different\ntype may cause unexpected behavior.\n\n## Example\n```python\nclass Foo:\n    def __bool__(self):\n        return 2\n```\n\nUse instead:\n```python\nclass Foo:\n    def __bool__(self):\n        return True\n```\n\n## References\n- [Python documentation: The `__bool__` method](https://docs.python.org/3/reference/datamodel.html#object.__bool__)\n",
+    "preview": true
+  },
+  {
     "name": "invalid-str-return-type",
     "code": "PLE0307",
     "linter": "Pylint",
@@ -7596,7 +7646,7 @@
       "`__str__` does not return `str`"
     ],
     "fix": "Fix is not available.",
-    "explanation": "## What it does\nChecks for `__str__` implementations that return a type other than `str`.\n\n## Why is this bad?\nThe `__str__` method should return a `str` object. Returning a different\ntype may cause unexpected behavior.\n",
+    "explanation": "## What it does\nChecks for `__str__` implementations that return a type other than `str`.\n\n## Why is this bad?\nThe `__str__` method should return a `str` object. Returning a different\ntype may cause unexpected behavior.\n\n## Example\n```python\nclass Foo:\n    def __str__(self):\n        return True\n```\n\nUse instead:\n```python\nclass Foo:\n    def __str__(self):\n        return \"Foo\"\n```\n\n## References\n- [Python documentation: The `__str__` method](https://docs.python.org/3/reference/datamodel.html#object.__str__)\n",
     "preview": false
   },
   {
@@ -8055,7 +8105,7 @@
       "Redefining argument with the local name `{name}`"
     ],
     "fix": "Fix is not available.",
-    "explanation": "## What it does\nChecks for variables defined in `for`, `try`, `with` statements\nthat redefine function parameters.\n\n## Why is this bad?\nRedefined variable can cause unexpected behavior because of overridden function parameter.\nIf nested functions are declared, inner function's body can override outer function's parameter.\n\n## Example\n```python\ndef show(host_id=10.11):\n    for host_id, host in [[12.13, \"Venus\"], [14.15, \"Mars\"]]:\n        print(host_id, host)\n```\n\nUse instead:\n```python\ndef show(host_id=10.11):\n    for inner_host_id, host in [[12.13, \"Venus\"], [14.15, \"Mars\"]]:\n        print(host_id, inner_host_id, host)\n```\n## References\n- [Pylint documentation](https://pylint.readthedocs.io/en/latest/user_guide/messages/refactor/redefined-argument-from-local.html)\n",
+    "explanation": "## What it does\nChecks for variables defined in `for`, `try`, `with` statements\nthat redefine function parameters.\n\n## Why is this bad?\nRedefined variables can cause unexpected behavior because of overridden function parameters.\nIf nested functions are declared, an inner function's body can override an outer function's parameters.\n\n## Example\n```python\ndef show(host_id=10.11):\n    for host_id, host in [[12.13, \"Venus\"], [14.15, \"Mars\"]]:\n        print(host_id, host)\n```\n\nUse instead:\n```python\ndef show(host_id=10.11):\n    for inner_host_id, host in [[12.13, \"Venus\"], [14.15, \"Mars\"]]:\n        print(host_id, inner_host_id, host)\n```\n## References\n- [Pylint documentation](https://pylint.readthedocs.io/en/latest/user_guide/messages/refactor/redefined-argument-from-local.html)\n",
     "preview": true
   },
   {
@@ -8228,6 +8278,18 @@
     "preview": false
   },
   {
+    "name": "redeclared-assigned-name",
+    "code": "PLW0128",
+    "linter": "Pylint",
+    "summary": "Redeclared variable `{name}` in assignment",
+    "message_formats": [
+      "Redeclared variable `{name}` in assignment"
+    ],
+    "fix": "Fix is not available.",
+    "explanation": "## What it does\nChecks for declared assignments to the same variable multiple times\nin the same assignment.\n\n## Why is this bad?\nAssigning a variable multiple times in the same assignment is redundant,\nas the final assignment to the variable is what the value will be.\n\n## Example\n```python\na, b, a = (1, 2, 3)\nprint(a)  # 3\n```\n\nUse instead:\n```python\n# this is assuming you want to assign 3 to `a`\n_, b, a = (1, 2, 3)\nprint(a)  # 3\n```\n\n",
+    "preview": true
+  },
+  {
     "name": "assert-on-string-literal",
     "code": "PLW0129",
     "linter": "Pylint",
@@ -8262,7 +8324,7 @@
       "Missing `raise` statement on exception"
     ],
     "fix": "Fix is sometimes available.",
-    "explanation": "## What it does\nChecks for an exception that is not raised.\n\n## Why is this bad?\nIt's unnecessary to create an exception without raising it. For example,\n`ValueError(\"...\")` on its own will have no effect (unlike\n`raise ValueError(\"...\")`) and is likely a mistake.\n\n## Example\n```python\nValueError(\"...\")\n```\n\nUse instead:\n```python\nraise ValueError(\"...\")\n```\n\n## Fix safety\nThis rule's fix is marked as unsafe, as converting a useless exception\nstatement to a `raise` statement will change the program's behavior.\n",
+    "explanation": "## What it does\nChecks for an exception that is not raised.\n\n## Why is this bad?\nIt's unnecessary to create an exception without raising it. For example,\n`ValueError(\"...\")` on its own will have no effect (unlike\n`raise ValueError(\"...\")`) and is likely a mistake.\n\n## Known problems\nThis rule only detects built-in exceptions, like `ValueError`, and does\nnot catch user-defined exceptions.\n\n## Example\n```python\nValueError(\"...\")\n```\n\nUse instead:\n```python\nraise ValueError(\"...\")\n```\n\n## Fix safety\nThis rule's fix is marked as unsafe, as converting a useless exception\nstatement to a `raise` statement will change the program's behavior.\n",
     "preview": true
   },
   {
@@ -8433,7 +8495,7 @@
       "{outer_kind} variable `{name}` overwritten by {inner_kind} target"
     ],
     "fix": "Fix is not available.",
-    "explanation": "## What it does\nChecks for variables defined in `for` loops and `with` statements that\nget overwritten within the body, for example by another `for` loop or\n`with` statement or by direct assignment.\n\n## Why is this bad?\nRedefinition of a loop variable inside the loop's body causes its value\nto differ from the original loop iteration for the remainder of the\nblock, in a way that will likely cause bugs.\n\nIn Python, unlike many other languages, `for` loops and `with`\nstatements don't define their own scopes. Therefore, a nested loop that\nuses the same target variable name as an outer loop will reuse the same\nactual variable, and the value from the last iteration will \"leak out\"\ninto the remainder of the enclosing loop.\n\nWhile this mistake is easy to spot in small examples, it can be hidden\nin larger blocks of code where the definition and redefinition of the\nvariable may not be visible at the same time.\n\n## Example\n```python\nfor i in range(10):\n    i = 9\n    print(i)  # prints 9 every iteration\n\nfor i in range(10):\n    for i in range(10):  # original value overwritten\n        pass\n    print(i)  # also prints 9 every iteration\n\nwith path1.open() as f:\n    with path2.open() as f:\n        f = path2.open()\n    print(f.readline())  # prints a line from path2\n```\n",
+    "explanation": "## What it does\nChecks for variables defined in `for` loops and `with` statements that\nget overwritten within the body, for example by another `for` loop or\n`with` statement or by direct assignment.\n\n## Why is this bad?\nRedefinition of a loop variable inside the loop's body causes its value\nto differ from the original loop iteration for the remainder of the\nblock, in a way that will likely cause bugs.\n\nIn Python, unlike many other languages, `for` loops and `with`\nstatements don't define their own scopes. Therefore, a nested loop that\nuses the same target variable name as an outer loop will reuse the same\nactual variable, and the value from the last iteration will \"leak out\"\ninto the remainder of the enclosing loop.\n\nWhile this mistake is easy to spot in small examples, it can be hidden\nin larger blocks of code, where the definition and redefinition of the\nvariable may not be visible at the same time.\n\n## Example\n```python\nfor i in range(10):\n    i = 9\n    print(i)  # prints 9 every iteration\n\nfor i in range(10):\n    for i in range(10):  # original value overwritten\n        pass\n    print(i)  # also prints 9 every iteration\n\nwith path1.open() as f:\n    with path2.open() as f:\n        f = path2.open()\n    print(f.readline())  # prints a line from path2\n```\n",
     "preview": false
   },
   {
@@ -9274,7 +9336,7 @@
       "Do not use mutable default values for dataclass attributes"
     ],
     "fix": "Fix is not available.",
-    "explanation": "## What it does\nChecks for mutable default values in dataclass attributes.\n\n## Why is this bad?\nMutable default values share state across all instances of the dataclass.\nThis can lead to bugs when the attributes are changed in one instance, as\nthose changes will unexpectedly affect all other instances.\n\nInstead of sharing mutable defaults, use the `field(default_factory=...)`\npattern.\n\nIf the default value is intended to be mutable, it should be annotated with\n`typing.ClassVar`.\n\n## Examples\n```python\nfrom dataclasses import dataclass\n\n\n@dataclass\nclass A:\n    mutable_default: list[int] = []\n```\n\nUse instead:\n```python\nfrom dataclasses import dataclass, field\n\n\n@dataclass\nclass A:\n    mutable_default: list[int] = field(default_factory=list)\n```\n\nOr:\n```python\nfrom dataclasses import dataclass, field\nfrom typing import ClassVar\n\n\n@dataclass\nclass A:\n    mutable_default: ClassVar[list[int]] = []\n```\n",
+    "explanation": "## What it does\nChecks for mutable default values in dataclass attributes.\n\n## Why is this bad?\nMutable default values share state across all instances of the dataclass.\nThis can lead to bugs when the attributes are changed in one instance, as\nthose changes will unexpectedly affect all other instances.\n\nInstead of sharing mutable defaults, use the `field(default_factory=...)`\npattern.\n\nIf the default value is intended to be mutable, it must be annotated with\n`typing.ClassVar`; otherwise, a `ValueError` will be raised.\n\n## Examples\n```python\nfrom dataclasses import dataclass\n\n\n@dataclass\nclass A:\n    # A list without a `default_factory` or `ClassVar` annotation\n    # will raise a `ValueError`.\n    mutable_default: list[int] = []\n```\n\nUse instead:\n```python\nfrom dataclasses import dataclass, field\n\n\n@dataclass\nclass A:\n    mutable_default: list[int] = field(default_factory=list)\n```\n\nOr:\n```python\nfrom dataclasses import dataclass\nfrom typing import ClassVar\n\n\n@dataclass\nclass A:\n    mutable_default: ClassVar[list[int]] = []\n```\n",
     "preview": false
   },
   {
@@ -9347,7 +9409,7 @@
       "Prefer `next({iterable})` over single element slice"
     ],
     "fix": "Fix is always available.",
-    "explanation": "## What it does\nChecks the following constructs, all of which can be replaced by\n`next(iter(...))`:\n\n- `list(...)[0]`\n- `tuple(...)[0]`\n- `list(i for i in ...)[0]`\n- `[i for i in ...][0]`\n- `list(...).pop(0)`\n\n## Why is this bad?\nCalling e.g. `list(...)` will create a new list of the entire collection,\nwhich can be very expensive for large collections. If you only need the\nfirst element of the collection, you can use `next(...)` or\n`next(iter(...)` to lazily fetch the first element. The same is true for\nthe other constructs.\n\n## Example\n```python\nhead = list(x)[0]\nhead = [x * x for x in range(10)][0]\n```\n\nUse instead:\n```python\nhead = next(iter(x))\nhead = next(x * x for x in range(10))\n```\n\n## Fix safety\nThis rule's fix is marked as unsafe, as migrating from (e.g.) `list(...)[0]`\nto `next(iter(...))` can change the behavior of your program in two ways:\n\n1. First, all above mentioned constructs will eagerly evaluate the entire\n   collection, while `next(iter(...))` will only evaluate the first\n   element. As such, any side effects that occur during iteration will be\n   delayed.\n2. Second, accessing members of a collection via square bracket notation\n   `[0]` of the `pop()` function will raise `IndexError` if the collection\n   is empty, while `next(iter(...))` will raise `StopIteration`.\n\n## References\n- [Iterators and Iterables in Python: Run Efficient Iterations](https://realpython.com/python-iterators-iterables/#when-to-use-an-iterator-in-python)\n",
+    "explanation": "## What it does\nChecks the following constructs, all of which can be replaced by\n`next(iter(...))`:\n\n- `list(...)[0]`\n- `tuple(...)[0]`\n- `list(i for i in ...)[0]`\n- `[i for i in ...][0]`\n- `list(...).pop(0)`\n\n## Why is this bad?\nCalling e.g. `list(...)` will create a new list of the entire collection,\nwhich can be very expensive for large collections. If you only need the\nfirst element of the collection, you can use `next(...)` or\n`next(iter(...)` to lazily fetch the first element. The same is true for\nthe other constructs.\n\n## Example\n```python\nhead = list(x)[0]\nhead = [x * x for x in range(10)][0]\n```\n\nUse instead:\n```python\nhead = next(iter(x))\nhead = next(x * x for x in range(10))\n```\n\n## Fix safety\nThis rule's fix is marked as unsafe, as migrating from (e.g.) `list(...)[0]`\nto `next(iter(...))` can change the behavior of your program in two ways:\n\n1. First, all above-mentioned constructs will eagerly evaluate the entire\n   collection, while `next(iter(...))` will only evaluate the first\n   element. As such, any side effects that occur during iteration will be\n   delayed.\n2. Second, accessing members of a collection via square bracket notation\n   `[0]` of the `pop()` function will raise `IndexError` if the collection\n   is empty, while `next(iter(...))` will raise `StopIteration`.\n\n## References\n- [Iterators and Iterables in Python: Run Efficient Iterations](https://realpython.com/python-iterators-iterables/#when-to-use-an-iterator-in-python)\n",
     "preview": false
   },
   {
