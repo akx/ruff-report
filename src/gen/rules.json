@@ -116,7 +116,7 @@
       "`sys.version[0]` referenced (python10), use `sys.version_info`"
     ],
     "fix": "Fix is not available.",
-    "explanation": "## What it does\nChecks for uses of `sys.version[0]`.\n\n## Why is this bad?\nIf the current major or minor version consists of multiple digits,\n`sys.version[0]` will select the first digit of the major version number\nonly (e.g., `\"3.10\"` would evaluate to `\"1\"`). This is likely unintended,\nand can lead to subtle bugs if the version string is used to test against a\nmajor version number.\n\nInstead, use `sys.version_info.major` to access the current major version\nnumber.\n\n## Example\n```python\nimport sys\n\nsys.version[0]  # If using Python 10, this evaluates to \"1\".\n```\n\nUse instead:\n```python\nimport sys\n\nf\"{sys.version_info.major}\"  # If using Python 10, this evaluates to \"10\".\n```\n\n## References\n- [Python documentation: `sys.version`](https://docs.python.org/3/library/sys.html#sys.version)\n- [Python documentation: `sys.version_info`](https://docs.python.org/3/library/sys.html#sys.version_info)\n",
+    "explanation": "## What it does\nChecks for uses of `sys.version[0]`.\n\n## Why is this bad?\nIf the current major or minor version consists of multiple digits,\n`sys.version[0]` will select the first digit of the major version number\nonly (e.g., `\"10.2\"` would evaluate to `\"1\"`). This is likely unintended,\nand can lead to subtle bugs if the version string is used to test against a\nmajor version number.\n\nInstead, use `sys.version_info.major` to access the current major version\nnumber.\n\n## Example\n```python\nimport sys\n\nsys.version[0]  # If using Python 10, this evaluates to \"1\".\n```\n\nUse instead:\n```python\nimport sys\n\nf\"{sys.version_info.major}\"  # If using Python 10, this evaluates to \"10\".\n```\n\n## References\n- [Python documentation: `sys.version`](https://docs.python.org/3/library/sys.html#sys.version)\n- [Python documentation: `sys.version_info`](https://docs.python.org/3/library/sys.html#sys.version_info)\n",
     "preview": false
   },
   {
@@ -310,6 +310,18 @@
     "fix": "Fix is not available.",
     "explanation": "## What it does\nChecks that async functions do not contain calls to blocking synchronous\nprocess calls via the `os` module.\n\n## Why is this bad?\nBlocking an async function via a blocking call will block the entire\nevent loop, preventing it from executing other tasks while waiting for the\ncall to complete, negating the benefits of asynchronous programming.\n\nInstead of making a blocking call, use an equivalent asynchronous library\nor function.\n\n## Example\n```python\nasync def foo():\n    os.popen()\n```\n\nUse instead:\n```python\ndef foo():\n    os.popen()\n```\n",
     "preview": false
+  },
+  {
+    "name": "sleep-forever-call",
+    "code": "ASYNC116",
+    "linter": "flake8-async",
+    "summary": "`trio.sleep()` with >24 hour interval should usually be `trio.sleep_forever()`",
+    "message_formats": [
+      "`trio.sleep()` with >24 hour interval should usually be `trio.sleep_forever()`"
+    ],
+    "fix": "Fix is sometimes available.",
+    "explanation": "## What it does\nChecks for uses of `trio.sleep()` with an interval greater than 24 hours.\n\n## Why is this bad?\n`trio.sleep()` with an interval greater than 24 hours is usually intended\nto sleep indefinitely. Instead of using a large interval,\n`trio.sleep_forever()` better conveys the intent.\n\n\n## Example\n```python\nimport trio\n\n\nasync def func():\n    await trio.sleep(86401)\n```\n\nUse instead:\n```python\nimport trio\n\n\nasync def func():\n    await trio.sleep_forever()\n```\n",
+    "preview": true
   },
   {
     "name": "assert",
@@ -1450,7 +1462,7 @@
       "Use of `functools.lru_cache` or `functools.cache` on methods can lead to memory leaks"
     ],
     "fix": "Fix is not available.",
-    "explanation": "## What it does\nChecks for uses of the `functools.lru_cache` and `functools.cache`\ndecorators on methods.\n\n## Why is this bad?\nUsing the `functools.lru_cache` and `functools.cache` decorators on methods\ncan lead to memory leaks, as the global cache will retain a reference to\nthe instance, preventing it from being garbage collected.\n\nInstead, refactor the method to depend only on its arguments and not on the\ninstance of the class, or use the `@lru_cache` decorator on a function\noutside of the class.\n\n## Example\n```python\nfrom functools import lru_cache\n\n\ndef square(x: int) -> int:\n    return x * x\n\n\nclass Number:\n    value: int\n\n    @lru_cache\n    def squared(self):\n        return square(self.value)\n```\n\nUse instead:\n```python\nfrom functools import lru_cache\n\n\n@lru_cache\ndef square(x: int) -> int:\n    return x * x\n\n\nclass Number:\n    value: int\n\n    def squared(self):\n        return square(self.value)\n```\n\n## References\n- [Python documentation: `functools.lru_cache`](https://docs.python.org/3/library/functools.html#functools.lru_cache)\n- [Python documentation: `functools.cache`](https://docs.python.org/3/library/functools.html#functools.cache)\n- [don't lru_cache methods!](https://www.youtube.com/watch?v=sVjtp6tGo0g)\n",
+    "explanation": "## What it does\nChecks for uses of the `functools.lru_cache` and `functools.cache`\ndecorators on methods.\n\n## Why is this bad?\nUsing the `functools.lru_cache` and `functools.cache` decorators on methods\ncan lead to memory leaks, as the global cache will retain a reference to\nthe instance, preventing it from being garbage collected.\n\nInstead, refactor the method to depend only on its arguments and not on the\ninstance of the class, or use the `@lru_cache` decorator on a function\noutside of the class.\n\nThis rule ignores instance methods on enumeration classes, as enum members\nare singletons.\n\n## Example\n```python\nfrom functools import lru_cache\n\n\ndef square(x: int) -> int:\n    return x * x\n\n\nclass Number:\n    value: int\n\n    @lru_cache\n    def squared(self):\n        return square(self.value)\n```\n\nUse instead:\n```python\nfrom functools import lru_cache\n\n\n@lru_cache\ndef square(x: int) -> int:\n    return x * x\n\n\nclass Number:\n    value: int\n\n    def squared(self):\n        return square(self.value)\n```\n\n## References\n- [Python documentation: `functools.lru_cache`](https://docs.python.org/3/library/functools.html#functools.lru_cache)\n- [Python documentation: `functools.cache`](https://docs.python.org/3/library/functools.html#functools.cache)\n- [don't lru_cache methods!](https://www.youtube.com/watch?v=sVjtp6tGo0g)\n",
     "preview": false
   },
   {
@@ -1510,7 +1522,7 @@
       "`{name}` is an abstract base class, but it has no abstract methods"
     ],
     "fix": "Fix is not available.",
-    "explanation": "## What it does\nChecks for abstract classes without abstract methods.\n\n## Why is this bad?\nAbstract base classes are used to define interfaces. If they have no abstract\nmethods, they are not useful.\n\nIf the class is not meant to be used as an interface, it should not be an\nabstract base class. Remove the `ABC` base class from the class definition,\nor add an abstract method to the class.\n\n## Example\n```python\nfrom abc import ABC\n\n\nclass Foo(ABC):\n    def method(self):\n        bar()\n```\n\nUse instead:\n```python\nfrom abc import ABC, abstractmethod\n\n\nclass Foo(ABC):\n    @abstractmethod\n    def method(self):\n        bar()\n```\n\n## References\n- [Python documentation: `abc`](https://docs.python.org/3/library/abc.html)\n",
+    "explanation": "## What it does\nChecks for abstract classes without abstract methods.\n\n## Why is this bad?\nAbstract base classes are used to define interfaces. If an abstract base\nclass has no abstract methods, you may have forgotten to add an abstract\nmethod to the class or omitted an `@abstractmethod` decorator.\n\nIf the class is _not_ meant to be used as an interface, consider removing\nthe `ABC` base class from the class definition.\n\n## Example\n```python\nfrom abc import ABC\n\n\nclass Foo(ABC):\n    def method(self):\n        bar()\n```\n\nUse instead:\n```python\nfrom abc import ABC, abstractmethod\n\n\nclass Foo(ABC):\n    @abstractmethod\n    def method(self):\n        bar()\n```\n\n## References\n- [Python documentation: `abc`](https://docs.python.org/3/library/abc.html)\n",
     "preview": false
   },
   {
@@ -1546,7 +1558,7 @@
       "`{name}` is an empty method in an abstract base class, but has no abstract decorator"
     ],
     "fix": "Fix is not available.",
-    "explanation": "## What it does\nChecks for empty methods in abstract base classes without an abstract\ndecorator.\n\n## Why is this bad?\nEmpty methods in abstract base classes without an abstract decorator are\nindicative of unfinished code or a mistake.\n\nInstead, add an abstract method decorated to indicate that it is abstract,\nor implement the method.\n\n## Example\n```python\nfrom abc import ABC\n\n\nclass Foo(ABC):\n    def method(self):\n        ...\n```\n\nUse instead:\n```python\nfrom abc import ABC, abstractmethod\n\n\nclass Foo(ABC):\n    @abstractmethod\n    def method(self):\n        ...\n```\n\n## References\n- [Python documentation: abc](https://docs.python.org/3/library/abc.html)\n",
+    "explanation": "## What it does\nChecks for empty methods in abstract base classes without an abstract\ndecorator.\n\n## Why is this bad?\nEmpty methods in abstract base classes without an abstract decorator may be\nbe indicative of a mistake. If the method is meant to be abstract, add an\n`@abstractmethod` decorator to the method.\n\n## Example\n```python\nfrom abc import ABC\n\n\nclass Foo(ABC):\n    def method(self):\n        ...\n```\n\nUse instead:\n```python\nfrom abc import ABC, abstractmethod\n\n\nclass Foo(ABC):\n    @abstractmethod\n    def method(self):\n        ...\n```\n\n## References\n- [Python documentation: abc](https://docs.python.org/3/library/abc.html)\n",
     "preview": false
   },
   {
@@ -1647,6 +1659,18 @@
     "preview": false
   },
   {
+    "name": "return-in-generator",
+    "code": "B901",
+    "linter": "flake8-bugbear",
+    "summary": "Using `yield` and `return {{value}}` in a generator function can lead to confusing behavior",
+    "message_formats": [
+      "Using `yield` and `return {{value}}` in a generator function can lead to confusing behavior"
+    ],
+    "fix": "Fix is not available.",
+    "explanation": "## What it does\nChecks for `return {value}` statements in functions that also contain `yield`\nor `yield from` statements.\n\n## Why is this bad?\nUsing `return {value}` in a generator function was syntactically invalid in\nPython 2. In Python 3 `return {value}` _can_ be used in a generator; however,\nthe combination of `yield` and `return` can lead to confusing behavior, as\nthe `return` statement will cause the generator to raise `StopIteration`\nwith the value provided, rather than returning the value to the caller.\n\nFor example, given:\n```python\nfrom collections.abc import Iterable\nfrom pathlib import Path\n\n\ndef get_file_paths(file_types: Iterable[str] | None = None) -> Iterable[Path]:\n    dir_path = Path(\".\")\n    if file_types is None:\n        return dir_path.glob(\"*\")\n\n    for file_type in file_types:\n        yield from dir_path.glob(f\"*.{file_type}\")\n```\n\nReaders might assume that `get_file_paths()` would return an iterable of\n`Path` objects in the directory; in reality, though, `list(get_file_paths())`\nevaluates to `[]`, since the `return` statement causes the generator to raise\n`StopIteration` with the value `dir_path.glob(\"*\")`:\n\n```shell\n>>> list(get_file_paths(file_types=[\"cfg\", \"toml\"]))\n[PosixPath('setup.cfg'), PosixPath('pyproject.toml')]\n>>> list(get_file_paths())\n[]\n```\n\nFor intentional uses of `return` in a generator, consider suppressing this\ndiagnostic.\n\n## Example\n```python\nfrom collections.abc import Iterable\nfrom pathlib import Path\n\n\ndef get_file_paths(file_types: Iterable[str] | None = None) -> Iterable[Path]:\n    dir_path = Path(\".\")\n    if file_types is None:\n        return dir_path.glob(\"*\")\n\n    for file_type in file_types:\n        yield from dir_path.glob(f\"*.{file_type}\")\n```\n\nUse instead:\n\n```python\nfrom collections.abc import Iterable\nfrom pathlib import Path\n\n\ndef get_file_paths(file_types: Iterable[str] | None = None) -> Iterable[Path]:\n    dir_path = Path(\".\")\n    if file_types is None:\n        yield from dir_path.glob(\"*\")\n    else:\n        for file_type in file_types:\n            yield from dir_path.glob(f\"*.{file_type}\")\n```\n",
+    "preview": true
+  },
+  {
     "name": "raise-without-from-inside-except",
     "code": "B904",
     "linter": "flake8-bugbear",
@@ -1667,7 +1691,7 @@
       "`zip()` without an explicit `strict=` parameter"
     ],
     "fix": "Fix is always available.",
-    "explanation": "## What it does\nChecks for `zip` calls without an explicit `strict` parameter.\n\n## Why is this bad?\nBy default, if the iterables passed to `zip` are of different lengths, the\nresulting iterator will be silently truncated to the length of the shortest\niterable. This can lead to subtle bugs.\n\nUse the `strict` parameter to raise a `ValueError` if the iterables are of\nnon-uniform length.\n\n## Example\n```python\nzip(a, b)\n```\n\nUse instead:\n```python\nzip(a, b, strict=True)\n```\n\n## Fix safety\nThis rule's fix is marked as unsafe for `zip` calls that contain\n`**kwargs`, as adding a `check` keyword argument to such a call may lead\nto a duplicate keyword argument error.\n\n## References\n- [Python documentation: `zip`](https://docs.python.org/3/library/functions.html#zip)\n",
+    "explanation": "## What it does\nChecks for `zip` calls without an explicit `strict` parameter.\n\n## Why is this bad?\nBy default, if the iterables passed to `zip` are of different lengths, the\nresulting iterator will be silently truncated to the length of the shortest\niterable. This can lead to subtle bugs.\n\nUse the `strict` parameter to raise a `ValueError` if the iterables are of\nnon-uniform length. If the iterables are intentionally different lengths, the\nparameter should be explicitly set to `False`.\n\n## Example\n```python\nzip(a, b)\n```\n\nUse instead:\n```python\nzip(a, b, strict=True)\n```\n\n## Fix safety\nThis rule's fix is marked as unsafe for `zip` calls that contain\n`**kwargs`, as adding a `check` keyword argument to such a call may lead\nto a duplicate keyword argument error.\n\n## References\n- [Python documentation: `zip`](https://docs.python.org/3/library/functions.html#zip)\n",
     "preview": false
   },
   {
@@ -1766,7 +1790,7 @@
       "Unnecessary generator (rewrite as a `list` comprehension)"
     ],
     "fix": "Fix is always available.",
-    "explanation": "## What it does\nChecks for unnecessary generators that can be rewritten as `list`\ncomprehensions (or with `list` directly).\n\n## Why is this bad?\nIt is unnecessary to use `list` around a generator expression, since\nthere are equivalent comprehensions for these types. Using a\ncomprehension is clearer and more idiomatic.\n\nFurther, if the comprehension can be removed entirely, as in the case of\n`list(x for x in foo)`, it's better to use `list(foo)` directly, since it's\neven more direct.\n\n## Examples\n```python\nlist(f(x) for x in foo)\nlist(x for x in foo)\n```\n\nUse instead:\n```python\n[f(x) for x in foo]\nlist(foo)\n```\n\n## Fix safety\nThis rule's fix is marked as unsafe, as it may occasionally drop comments\nwhen rewriting the call. In most cases, though, comments will be preserved.\n",
+    "explanation": "## What it does\nChecks for unnecessary generators that can be rewritten as `list`\ncomprehensions (or with `list` directly).\n\n## Why is this bad?\nIt is unnecessary to use `list` around a generator expression, since\nthere are equivalent comprehensions for these types. Using a\ncomprehension is clearer and more idiomatic.\n\nFurther, if the comprehension can be removed entirely, as in the case of\n`list(x for x in foo)`, it's better to use `list(foo)` directly, since it's\neven more direct.\n\n## Examples\n```python\nlist(f(x) for x in foo)\nlist(x for x in foo)\nlist((x for x in foo))\n```\n\nUse instead:\n```python\n[f(x) for x in foo]\nlist(foo)\nlist(foo)\n```\n\n## Fix safety\nThis rule's fix is marked as unsafe, as it may occasionally drop comments\nwhen rewriting the call. In most cases, though, comments will be preserved.\n",
     "preview": false
   },
   {
@@ -2345,9 +2369,9 @@
     "name": "future-rewritable-type-annotation",
     "code": "FA100",
     "linter": "flake8-future-annotations",
-    "summary": "Missing `from __future__ import annotations`, but uses `{name}`",
+    "summary": "Add `from __future__ import annotations` to simplify `{name}`",
     "message_formats": [
-      "Missing `from __future__ import annotations`, but uses `{name}`"
+      "Add `from __future__ import annotations` to simplify `{name}`"
     ],
     "fix": "Fix is not available.",
     "explanation": "## What it does\nChecks for missing `from __future__ import annotations` imports upon\ndetecting type annotations that can be written more succinctly under\nPEP 563.\n\n## Why is this bad?\nPEP 563 enabled the use of a number of convenient type annotations, such as\n`list[str]` instead of `List[str]`. However, these annotations are only\navailable on Python 3.9 and higher, _unless_ the `from __future__ import annotations`\nimport is present.\n\nSimilarly, PEP 604 enabled the use of the `|` operator for unions, such as\n`str | None` instead of `Optional[str]`. However, these annotations are only\navailable on Python 3.10 and higher, _unless_ the `from __future__ import annotations`\nimport is present.\n\nBy adding the `__future__` import, the pyupgrade rules can automatically\nmigrate existing code to use the new syntax, even for older Python versions.\nThis rule thus pairs well with pyupgrade and with Ruff's pyupgrade rules.\n\nThis rule respects the [`target-version`] setting. For example, if your\nproject targets Python 3.10 and above, adding `from __future__ import annotations`\ndoes not impact your ability to leverage PEP 604-style unions (e.g., to\nconvert `Optional[str]` to `str | None`). As such, this rule will only\nflag such usages if your project targets Python 3.9 or below.\n\n## Example\n```python\nfrom typing import List, Dict, Optional\n\n\ndef func(obj: Dict[str, Optional[int]]) -> None:\n    ...\n```\n\nUse instead:\n```python\nfrom __future__ import annotations\n\nfrom typing import List, Dict, Optional\n\n\ndef func(obj: Dict[str, Optional[int]]) -> None:\n    ...\n```\n\nAfter running the additional pyupgrade rules:\n```python\nfrom __future__ import annotations\n\n\ndef func(obj: dict[str, int | None]) -> None:\n    ...\n```\n\n## Options\n- `target-version`\n",
@@ -3123,7 +3147,8 @@
       "All keyword-only arguments in `{method_name}` must have a default value",
       "The first argument in `{method_name}` should be annotated with `object` or `type[BaseException] | None`",
       "The second argument in `{method_name}` should be annotated with `object` or `BaseException | None`",
-      "The third argument in `{method_name}` should be annotated with `object` or `types.TracebackType | None`"
+      "The third argument in `{method_name}` should be annotated with `object` or `types.TracebackType | None`",
+      "Annotations for a three-argument `{method_name}` overload (excluding `self`) should either be `None, None, None` or `type[BaseException], BaseException, types.TracebackType`"
     ],
     "fix": "Fix is sometimes available.",
     "explanation": "## What it does\nChecks for incorrect function signatures on `__exit__` and `__aexit__`\nmethods.\n\n## Why is this bad?\nImproperly annotated `__exit__` and `__aexit__` methods can cause\nunexpected behavior when interacting with type checkers.\n\n## Example\n```python\nfrom types import TracebackType\n\n\nclass Foo:\n    def __exit__(\n        self, typ: BaseException, exc: BaseException, tb: TracebackType\n    ) -> None:\n        ...\n```\n\nUse instead:\n```python\nfrom types import TracebackType\n\n\nclass Foo:\n    def __exit__(\n        self,\n        typ: type[BaseException] | None,\n        exc: BaseException | None,\n        tb: TracebackType | None,\n    ) -> None:\n        ...\n```\n",
@@ -3324,6 +3349,18 @@
     "preview": false
   },
   {
+    "name": "byte-string-usage",
+    "code": "PYI057",
+    "linter": "flake8-pyi",
+    "summary": "Do not use `{origin}.ByteString`, which has unclear semantics and is deprecated",
+    "message_formats": [
+      "Do not use `{origin}.ByteString`, which has unclear semantics and is deprecated"
+    ],
+    "fix": "Fix is not available.",
+    "explanation": "## What it does\nChecks for uses of `typing.ByteString` or `collections.abc.ByteString`.\n\n## Why is this bad?\n`ByteString` has been deprecated since Python 3.9 and will be removed in\nPython 3.14. The Python documentation recommends using either\n`collections.abc.Buffer` (or the `typing_extensions` backport\non Python <3.12) or a union like `bytes | bytearray | memoryview` instead.\n\n## Example\n```python\nfrom typing import ByteString\n```\n\nUse instead:\n```python\nfrom collections.abc import Buffer\n```\n\n## References\n- [Python documentation: The `ByteString` type](https://docs.python.org/3/library/typing.html#typing.ByteString)\n",
+    "preview": true
+  },
+  {
     "name": "generator-return-from-iter-method",
     "code": "PYI058",
     "linter": "flake8-pyi",
@@ -3334,6 +3371,66 @@
     "fix": "Fix is sometimes available.",
     "explanation": "## What it does\nChecks for simple `__iter__` methods that return `Generator`, and for\nsimple `__aiter__` methods that return `AsyncGenerator`.\n\n## Why is this bad?\nUsing `(Async)Iterator` for these methods is simpler and more elegant. More\nimportantly, it also reflects the fact that the precise kind of iterator\nreturned from an `__iter__` method is usually an implementation detail that\ncould change at any time. Type annotations help define a contract for a\nfunction; implementation details should not leak into that contract.\n\nFor example:\n```python\nfrom collections.abc import AsyncGenerator, Generator\nfrom typing import Any\n\n\nclass CustomIterator:\n    def __iter__(self) -> Generator:\n        yield from range(42)\n\n\nclass CustomIterator2:\n    def __iter__(self) -> Generator[str, Any, None]:\n        yield from \"abcdefg\"\n```\n\nUse instead:\n```python\nfrom collections.abc import Iterator\n\n\nclass CustomIterator:\n    def __iter__(self) -> Iterator:\n        yield from range(42)\n\n\nclass CustomIterator2:\n    def __iter__(self) -> Iterator[str]:\n        yield from \"abdefg\"\n```\n\n## Fix safety\nThis rule tries hard to avoid false-positive errors, and the rule's fix\nshould always be safe for `.pyi` stub files. However, there is a slightly\nhigher chance that a false positive might be emitted by this rule when\napplied to runtime Python (`.py` files). As such, the fix is marked as\nunsafe for any `__iter__` or `__aiter__` method in a `.py` file that has\nmore than two statements (including docstrings) in its body.\n",
     "preview": false
+  },
+  {
+    "name": "generic-not-last-base-class",
+    "code": "PYI059",
+    "linter": "flake8-pyi",
+    "summary": "`Generic[]` should always be the last base class",
+    "message_formats": [
+      "`Generic[]` should always be the last base class"
+    ],
+    "fix": "Fix is sometimes available.",
+    "explanation": "## What it does\nChecks for classes inheriting from `typing.Generic[]` where `Generic[]` is\nnot the last base class in the bases tuple.\n\n## Why is this bad?\nIf `Generic[]` is not the final class in the bases tuple, unexpected\nbehaviour can occur at runtime (See [this CPython issue][1] for an example).\nThe rule is also applied to stub files, but, unlike at runtime,\nin stubs it is purely enforced for stylistic consistency.\n\nFor example:\n```python\nclass LinkedList(Generic[T], Sized):\n    def push(self, item: T) -> None:\n        self._items.append(item)\n\nclass MyMapping(\n    Generic[K, V],\n    Iterable[Tuple[K, V]],\n    Container[Tuple[K, V]],\n):\n    ...\n```\n\nUse instead:\n```python\nclass LinkedList(Sized, Generic[T]):\n    def push(self, item: T) -> None:\n        self._items.append(item)\n\nclass MyMapping(\n    Iterable[Tuple[K, V]],\n    Container[Tuple[K, V]],\n    Generic[K, V],\n):\n    ...\n```\n## References\n- [`typing.Generic` documentation](https://docs.python.org/3/library/typing.html#typing.Generic)\n\n[1]: https://github.com/python/cpython/issues/106102\n",
+    "preview": true
+  },
+  {
+    "name": "duplicate-literal-member",
+    "code": "PYI062",
+    "linter": "flake8-pyi",
+    "summary": "Duplicate literal member `{}`",
+    "message_formats": [
+      "Duplicate literal member `{}`"
+    ],
+    "fix": "Fix is sometimes available.",
+    "explanation": "## What it does\nChecks for duplicate members in a `typing.Literal[]` slice.\n\n## Why is this bad?\nDuplicate literal members are redundant and should be removed.\n\n## Example\n```python\nfoo: Literal[\"a\", \"b\", \"a\"]\n```\n\nUse instead:\n```python\nfoo: Literal[\"a\", \"b\"]\n```\n\n## References\n- [Python documentation: `typing.Literal`](https://docs.python.org/3/library/typing.html#typing.Literal)\n",
+    "preview": true
+  },
+  {
+    "name": "pre-pep570-positional-argument",
+    "code": "PYI063",
+    "linter": "flake8-pyi",
+    "summary": "Use PEP 570 syntax for positional-only arguments",
+    "message_formats": [
+      "Use PEP 570 syntax for positional-only arguments"
+    ],
+    "fix": "Fix is not available.",
+    "explanation": "## What it does\nChecks for the presence of [PEP 484]-style positional-only arguments.\n\n## Why is this bad?\nHistorically, [PEP 484] recommended prefixing positional-only arguments\nwith a double underscore (`__`). However, [PEP 570] introduced a dedicated\nsyntax for positional-only arguments, which should be preferred.\n\n## Example\n\n```python\ndef foo(__x: int) -> None:\n    ...\n```\n\nUse instead:\n\n```python\ndef foo(x: int, /) -> None:\n    ...\n```\n\n[PEP 484]: https://peps.python.org/pep-0484/#positional-only-arguments\n[PEP 570]: https://peps.python.org/pep-0570\n",
+    "preview": true
+  },
+  {
+    "name": "redundant-final-literal",
+    "code": "PYI064",
+    "linter": "flake8-pyi",
+    "summary": "`Final[Literal[{literal}]]` can be replaced with a bare `Final`",
+    "message_formats": [
+      "`Final[Literal[{literal}]]` can be replaced with a bare `Final`"
+    ],
+    "fix": "Fix is sometimes available.",
+    "explanation": "## What it does\nChecks for redundant `Final[Literal[...]]` annotations.\n\n## Why is this bad?\nA `Final[Literal[...]]` annotation can be replaced with `Final`; the literal\nuse is unnecessary.\n\n## Example\n\n```python\nx: Final[Literal[42]]\ny: Final[Literal[42]] = 42\n```\n\nUse instead:\n```python\nx: Final = 42\ny: Final = 42\n```\n",
+    "preview": true
+  },
+  {
+    "name": "bad-version-info-order",
+    "code": "PYI066",
+    "linter": "flake8-pyi",
+    "summary": "Use `>=` when using `if`-`else` with `sys.version_info` comparisons",
+    "message_formats": [
+      "Use `>=` when using `if`-`else` with `sys.version_info` comparisons"
+    ],
+    "fix": "Fix is not available.",
+    "explanation": "## What it does\nChecks for if-else statements with `sys.version_info` comparisons that use\n`<` comparators.\n\n## Why is this bad?\nAs a convention, branches that correspond to newer Python versions should\ncome first when using `sys.version_info` comparisons. This makes it easier\nto understand the desired behavior, which typically corresponds to the\nlatest Python versions.\n\n## Example\n\n```python\nimport sys\n\nif sys.version_info < (3, 10):\n\n    def read_data(x, *, preserve_order=True):\n        ...\n\nelse:\n\n    def read_data(x):\n        ...\n```\n\nUse instead:\n\n```python\nif sys.version_info >= (3, 10):\n\n    def read_data(x):\n        ...\n\nelse:\n\n    def read_data(x, *, preserve_order=True):\n        ...\n```\n",
+    "preview": true
   },
   {
     "name": "pytest-fixture-incorrect-parentheses-style",
@@ -3483,12 +3580,12 @@
     "name": "pytest-incorrect-pytest-import",
     "code": "PT013",
     "linter": "flake8-pytest-style",
-    "summary": "Found incorrect import of pytest, use simple `import pytest` instead",
+    "summary": "Incorrect import of `pytest`; use `import pytest` instead",
     "message_formats": [
-      "Found incorrect import of pytest, use simple `import pytest` instead"
+      "Incorrect import of `pytest`; use `import pytest` instead"
     ],
     "fix": "Fix is not available.",
-    "explanation": "## What it does\nChecks for incorrect import of pytest.\n\n## Why is this bad?\n`pytest` should be imported as `import pytest` and its members should be accessed in the form of\n`pytest.xxx.yyy` for consistency and to make it easier for linting tools to analyze the code.\n\n## Example\n```python\nimport pytest as pt\nfrom pytest import fixture\n```\n\nUse instead:\n```python\nimport pytest\n```\n",
+    "explanation": "## What it does\nChecks for incorrect import of pytest.\n\n## Why is this bad?\nFor consistency, `pytest` should be imported as `import pytest` and its members should be\naccessed in the form of `pytest.xxx.yyy` for consistency\n\n## Example\n```python\nimport pytest as pt\nfrom pytest import fixture\n```\n\nUse instead:\n```python\nimport pytest\n```\n",
     "preview": false
   },
   {
@@ -3839,7 +3936,7 @@
       "Private member accessed: `{access}`"
     ],
     "fix": "Fix is not available.",
-    "explanation": "## What it does\nChecks for accesses on \"private\" class members.\n\n## Why is this bad?\nIn Python, the convention is such that class members that are prefixed\nwith a single underscore, or prefixed but not suffixed with a double\nunderscore, are considered private and intended for internal use.\n\nUsing such \"private\" members is considered a misuse of the class, as\nthere are no guarantees that the member will be present in future\nversions, that it will have the same type, or that it will have the same\nbehavior. Instead, use the class's public interface.\n\n## Example\n```python\nclass Class:\n    def __init__(self):\n        self._private_member = \"...\"\n\n\nvar = Class()\nprint(var._private_member)\n```\n\nUse instead:\n```python\nclass Class:\n    def __init__(self):\n        self.public_member = \"...\"\n\n\nvar = Class()\nprint(var.public_member)\n```\n\n## Options\n- `lint.flake8-self.ignore-names`\n\n## References\n- [_What is the meaning of single or double underscores before an object name?_](https://stackoverflow.com/questions/1301346/what-is-the-meaning-of-single-and-double-underscore-before-an-object-name)\n",
+    "explanation": "## What it does\nChecks for accesses on \"private\" class members.\n\n## Why is this bad?\nIn Python, the convention is such that class members that are prefixed\nwith a single underscore, or prefixed but not suffixed with a double\nunderscore, are considered private and intended for internal use.\n\nUsing such \"private\" members is considered a misuse of the class, as\nthere are no guarantees that the member will be present in future\nversions, that it will have the same type, or that it will have the same\nbehavior. Instead, use the class's public interface.\n\nThis rule ignores accesses on dunder methods (e.g., `__init__`) and sunder\nmethods (e.g., `_missing_`).\n\n## Example\n```python\nclass Class:\n    def __init__(self):\n        self._private_member = \"...\"\n\n\nvar = Class()\nprint(var._private_member)\n```\n\nUse instead:\n```python\nclass Class:\n    def __init__(self):\n        self.public_member = \"...\"\n\n\nvar = Class()\nprint(var.public_member)\n```\n\n## Options\n- `lint.flake8-self.ignore-names`\n\n## References\n- [_What is the meaning of single or double underscores before an object name?_](https://stackoverflow.com/questions/1301346/what-is-the-meaning-of-single-and-double-underscore-before-an-object-name)\n",
     "preview": false
   },
   {
@@ -4424,7 +4521,7 @@
       "Move application import `{}` into a type-checking block"
     ],
     "fix": "Fix is sometimes available.",
-    "explanation": "## What it does\nChecks for first-party imports that are only used for type annotations, but\naren't defined in a type-checking block.\n\n## Why is this bad?\nUnused imports add a performance overhead at runtime, and risk creating\nimport cycles. If an import is _only_ used in typing-only contexts, it can\ninstead be imported conditionally under an `if TYPE_CHECKING:` block to\nminimize runtime overhead.\n\nIf [`lint.flake8-type-checking.quote-annotations`] is set to `true`,\nannotations will be wrapped in quotes if doing so would enable the\ncorresponding import to be moved into an `if TYPE_CHECKING:` block.\n\nIf a class _requires_ that type annotations be available at runtime (as is\nthe case for Pydantic, SQLAlchemy, and other libraries), consider using\nthe [`lint.flake8-type-checking.runtime-evaluated-base-classes`] and\n[`lint.flake8-type-checking.runtime-evaluated-decorators`] settings to mark them\nas such.\n\n## Example\n```python\nfrom __future__ import annotations\n\nimport local_module\n\n\ndef func(sized: local_module.Container) -> int:\n    return len(sized)\n```\n\nUse instead:\n```python\nfrom __future__ import annotations\n\nfrom typing import TYPE_CHECKING\n\nif TYPE_CHECKING:\n    import local_module\n\n\ndef func(sized: local_module.Container) -> int:\n    return len(sized)\n```\n\n## Options\n- `lint.flake8-type-checking.quote-annotations`\n- `lint.flake8-type-checking.runtime-evaluated-base-classes`\n- `lint.flake8-type-checking.runtime-evaluated-decorators`\n\n## References\n- [PEP 536](https://peps.python.org/pep-0563/#runtime-annotation-resolution-and-type-checking)\n",
+    "explanation": "## What it does\nChecks for first-party imports that are only used for type annotations, but\naren't defined in a type-checking block.\n\n## Why is this bad?\nUnused imports add a performance overhead at runtime, and risk creating\nimport cycles. If an import is _only_ used in typing-only contexts, it can\ninstead be imported conditionally under an `if TYPE_CHECKING:` block to\nminimize runtime overhead.\n\nIf [`lint.flake8-type-checking.quote-annotations`] is set to `true`,\nannotations will be wrapped in quotes if doing so would enable the\ncorresponding import to be moved into an `if TYPE_CHECKING:` block.\n\nIf a class _requires_ that type annotations be available at runtime (as is\nthe case for Pydantic, SQLAlchemy, and other libraries), consider using\nthe [`lint.flake8-type-checking.runtime-evaluated-base-classes`] and\n[`lint.flake8-type-checking.runtime-evaluated-decorators`] settings to mark them\nas such.\n\n## Example\n```python\nfrom __future__ import annotations\n\nimport local_module\n\n\ndef func(sized: local_module.Container) -> int:\n    return len(sized)\n```\n\nUse instead:\n```python\nfrom __future__ import annotations\n\nfrom typing import TYPE_CHECKING\n\nif TYPE_CHECKING:\n    import local_module\n\n\ndef func(sized: local_module.Container) -> int:\n    return len(sized)\n```\n\n## Options\n- `lint.flake8-type-checking.quote-annotations`\n- `lint.flake8-type-checking.runtime-evaluated-base-classes`\n- `lint.flake8-type-checking.runtime-evaluated-decorators`\n- `lint.typing-modules`\n\n## References\n- [PEP 536](https://peps.python.org/pep-0563/#runtime-annotation-resolution-and-type-checking)\n",
     "preview": false
   },
   {
@@ -4436,7 +4533,7 @@
       "Move third-party import `{}` into a type-checking block"
     ],
     "fix": "Fix is sometimes available.",
-    "explanation": "## What it does\nChecks for third-party imports that are only used for type annotations, but\naren't defined in a type-checking block.\n\n## Why is this bad?\nUnused imports add a performance overhead at runtime, and risk creating\nimport cycles. If an import is _only_ used in typing-only contexts, it can\ninstead be imported conditionally under an `if TYPE_CHECKING:` block to\nminimize runtime overhead.\n\nIf [`lint.flake8-type-checking.quote-annotations`] is set to `true`,\nannotations will be wrapped in quotes if doing so would enable the\ncorresponding import to be moved into an `if TYPE_CHECKING:` block.\n\nIf a class _requires_ that type annotations be available at runtime (as is\nthe case for Pydantic, SQLAlchemy, and other libraries), consider using\nthe [`lint.flake8-type-checking.runtime-evaluated-base-classes`] and\n[`lint.flake8-type-checking.runtime-evaluated-decorators`] settings to mark them\nas such.\n\n## Example\n```python\nfrom __future__ import annotations\n\nimport pandas as pd\n\n\ndef func(df: pd.DataFrame) -> int:\n    return len(df)\n```\n\nUse instead:\n```python\nfrom __future__ import annotations\n\nfrom typing import TYPE_CHECKING\n\nif TYPE_CHECKING:\n    import pandas as pd\n\n\ndef func(df: pd.DataFrame) -> int:\n    return len(df)\n```\n\n## Options\n- `lint.flake8-type-checking.quote-annotations`\n- `lint.flake8-type-checking.runtime-evaluated-base-classes`\n- `lint.flake8-type-checking.runtime-evaluated-decorators`\n\n## References\n- [PEP 536](https://peps.python.org/pep-0563/#runtime-annotation-resolution-and-type-checking)\n",
+    "explanation": "## What it does\nChecks for third-party imports that are only used for type annotations, but\naren't defined in a type-checking block.\n\n## Why is this bad?\nUnused imports add a performance overhead at runtime, and risk creating\nimport cycles. If an import is _only_ used in typing-only contexts, it can\ninstead be imported conditionally under an `if TYPE_CHECKING:` block to\nminimize runtime overhead.\n\nIf [`lint.flake8-type-checking.quote-annotations`] is set to `true`,\nannotations will be wrapped in quotes if doing so would enable the\ncorresponding import to be moved into an `if TYPE_CHECKING:` block.\n\nIf a class _requires_ that type annotations be available at runtime (as is\nthe case for Pydantic, SQLAlchemy, and other libraries), consider using\nthe [`lint.flake8-type-checking.runtime-evaluated-base-classes`] and\n[`lint.flake8-type-checking.runtime-evaluated-decorators`] settings to mark them\nas such.\n\n## Example\n```python\nfrom __future__ import annotations\n\nimport pandas as pd\n\n\ndef func(df: pd.DataFrame) -> int:\n    return len(df)\n```\n\nUse instead:\n```python\nfrom __future__ import annotations\n\nfrom typing import TYPE_CHECKING\n\nif TYPE_CHECKING:\n    import pandas as pd\n\n\ndef func(df: pd.DataFrame) -> int:\n    return len(df)\n```\n\n## Options\n- `lint.flake8-type-checking.quote-annotations`\n- `lint.flake8-type-checking.runtime-evaluated-base-classes`\n- `lint.flake8-type-checking.runtime-evaluated-decorators`\n- `lint.typing-modules`\n\n## References\n- [PEP 536](https://peps.python.org/pep-0563/#runtime-annotation-resolution-and-type-checking)\n",
     "preview": false
   },
   {
@@ -4448,7 +4545,7 @@
       "Move standard library import `{}` into a type-checking block"
     ],
     "fix": "Fix is sometimes available.",
-    "explanation": "## What it does\nChecks for standard library imports that are only used for type\nannotations, but aren't defined in a type-checking block.\n\n## Why is this bad?\nUnused imports add a performance overhead at runtime, and risk creating\nimport cycles. If an import is _only_ used in typing-only contexts, it can\ninstead be imported conditionally under an `if TYPE_CHECKING:` block to\nminimize runtime overhead.\n\nIf [`lint.flake8-type-checking.quote-annotations`] is set to `true`,\nannotations will be wrapped in quotes if doing so would enable the\ncorresponding import to be moved into an `if TYPE_CHECKING:` block.\n\nIf a class _requires_ that type annotations be available at runtime (as is\nthe case for Pydantic, SQLAlchemy, and other libraries), consider using\nthe [`lint.flake8-type-checking.runtime-evaluated-base-classes`] and\n[`lint.flake8-type-checking.runtime-evaluated-decorators`] settings to mark them\nas such.\n\n## Example\n```python\nfrom __future__ import annotations\n\nfrom pathlib import Path\n\n\ndef func(path: Path) -> str:\n    return str(path)\n```\n\nUse instead:\n```python\nfrom __future__ import annotations\n\nfrom typing import TYPE_CHECKING\n\nif TYPE_CHECKING:\n    from pathlib import Path\n\n\ndef func(path: Path) -> str:\n    return str(path)\n```\n\n## Options\n- `lint.flake8-type-checking.quote-annotations`\n- `lint.flake8-type-checking.runtime-evaluated-base-classes`\n- `lint.flake8-type-checking.runtime-evaluated-decorators`\n\n## References\n- [PEP 536](https://peps.python.org/pep-0563/#runtime-annotation-resolution-and-type-checking)\n",
+    "explanation": "## What it does\nChecks for standard library imports that are only used for type\nannotations, but aren't defined in a type-checking block.\n\n## Why is this bad?\nUnused imports add a performance overhead at runtime, and risk creating\nimport cycles. If an import is _only_ used in typing-only contexts, it can\ninstead be imported conditionally under an `if TYPE_CHECKING:` block to\nminimize runtime overhead.\n\nIf [`lint.flake8-type-checking.quote-annotations`] is set to `true`,\nannotations will be wrapped in quotes if doing so would enable the\ncorresponding import to be moved into an `if TYPE_CHECKING:` block.\n\nIf a class _requires_ that type annotations be available at runtime (as is\nthe case for Pydantic, SQLAlchemy, and other libraries), consider using\nthe [`lint.flake8-type-checking.runtime-evaluated-base-classes`] and\n[`lint.flake8-type-checking.runtime-evaluated-decorators`] settings to mark them\nas such.\n\n## Example\n```python\nfrom __future__ import annotations\n\nfrom pathlib import Path\n\n\ndef func(path: Path) -> str:\n    return str(path)\n```\n\nUse instead:\n```python\nfrom __future__ import annotations\n\nfrom typing import TYPE_CHECKING\n\nif TYPE_CHECKING:\n    from pathlib import Path\n\n\ndef func(path: Path) -> str:\n    return str(path)\n```\n\n## Options\n- `lint.flake8-type-checking.quote-annotations`\n- `lint.flake8-type-checking.runtime-evaluated-base-classes`\n- `lint.flake8-type-checking.runtime-evaluated-decorators`\n- `lint.typing-modules`\n\n## References\n- [PEP 536](https://peps.python.org/pep-0563/#runtime-annotation-resolution-and-type-checking)\n",
     "preview": false
   },
   {
@@ -4991,7 +5088,7 @@
       "Type alias `np.{type_name}` is deprecated, replace with builtin type"
     ],
     "fix": "Fix is sometimes available.",
-    "explanation": "## What it does\nChecks for deprecated NumPy type aliases.\n\n## Why is this bad?\nNumPy's `np.int` has long been an alias of the builtin `int`. The same\ngoes for `np.float`, `np.bool`, and others. These aliases exist\nprimarily for historic reasons, and have been a cause of\nfrequent confusion for newcomers.\n\nThese aliases were deprecated in 1.20, and removed in 1.24.\n\n## Examples\n```python\nimport numpy as np\n\nnp.bool\n```\n\nUse instead:\n```python\nbool\n```\n",
+    "explanation": "## What it does\nChecks for deprecated NumPy type aliases.\n\n## Why is this bad?\nNumPy's `np.int` has long been an alias of the builtin `int`; the same\nis true of `np.float` and others. These aliases exist primarily\nfor historic reasons, and have been a cause of frequent confusion\nfor newcomers.\n\nThese aliases were deprecated in 1.20, and removed in 1.24.\nNote, however, that `np.bool` and `np.long` were reintroduced in 2.0 with\ndifferent semantics, and are thus omitted from this rule.\n\n## Examples\n```python\nimport numpy as np\n\nnp.int\n```\n\nUse instead:\n```python\nint\n```\n",
     "preview": false
   },
   {
@@ -5421,7 +5518,8 @@
     "linter": "Perflint",
     "summary": "Use a list comprehension to create a transformed list",
     "message_formats": [
-      "Use a list comprehension to create a transformed list"
+      "Use a list comprehension to create a transformed list",
+      "Use an async list comprehension to create a transformed list"
     ],
     "fix": "Fix is not available.",
     "explanation": "## What it does\nChecks for `for` loops that can be replaced by a list comprehension.\n\n## Why is this bad?\nWhen creating a transformed list from an existing list using a for-loop,\nprefer a list comprehension. List comprehensions are more readable and\nmore performant.\n\nUsing the below as an example, the list comprehension is ~10% faster on\nPython 3.11, and ~25% faster on Python 3.10.\n\nNote that, as with all `perflint` rules, this is only intended as a\nmicro-optimization, and will have a negligible impact on performance in\nmost cases.\n\n## Example\n```python\noriginal = list(range(10000))\nfiltered = []\nfor i in original:\n    if i % 2:\n        filtered.append(i)\n```\n\nUse instead:\n```python\noriginal = list(range(10000))\nfiltered = [x for x in original if x % 2]\n```\n\nIf you're appending to an existing list, use the `extend` method instead:\n```python\noriginal = list(range(10000))\nfiltered.extend(x for x in original if x % 2)\n```\n",
@@ -5467,12 +5565,12 @@
     "name": "indentation-with-invalid-multiple",
     "code": "E111",
     "linter": "pycodestyle",
-    "summary": "Indentation is not a multiple of {indent_size}",
+    "summary": "Indentation is not a multiple of {indent_width}",
     "message_formats": [
-      "Indentation is not a multiple of {indent_size}"
+      "Indentation is not a multiple of {indent_width}"
     ],
     "fix": "Fix is not available.",
-    "explanation": "## What it does\nChecks for indentation with a non-multiple of 4 spaces.\n\n## Why is this bad?\nAccording to [PEP 8], 4 spaces per indentation level should be preferred.\n\n## Example\n```python\nif True:\n   a = 1\n```\n\nUse instead:\n```python\nif True:\n    a = 1\n```\n\n\n## Formatter compatibility\nWe recommend against using this rule alongside the [formatter]. The\nformatter enforces consistent indentation, making the rule redundant.\n\nThe rule is also incompatible with the [formatter] when using\n`indent-width` with a value other than `4`.\n\n[PEP 8]: https://peps.python.org/pep-0008/#indentation\n[formatter]:https://docs.astral.sh/ruff/formatter/\n",
+    "explanation": "## What it does\nChecks for indentation with a non-multiple of 4 spaces.\n\n## Why is this bad?\nAccording to [PEP 8], 4 spaces per indentation level should be preferred.\n\n## Example\n```python\nif True:\n   a = 1\n```\n\nUse instead:\n```python\nif True:\n    a = 1\n```\n\n\n## Formatter compatibility\nWe recommend against using this rule alongside the [formatter]. The\nformatter enforces consistent indentation, making the rule redundant.\n\nThe rule is also incompatible with the [formatter] when using\n`indent-width` with a value other than `4`.\n\n## Options\n- `indent-width`\n\n[PEP 8]: https://peps.python.org/pep-0008/#indentation\n[formatter]:https://docs.astral.sh/ruff/formatter/\n",
     "preview": true
   },
   {
@@ -5503,12 +5601,12 @@
     "name": "indentation-with-invalid-multiple-comment",
     "code": "E114",
     "linter": "pycodestyle",
-    "summary": "Indentation is not a multiple of {indent_size} (comment)",
+    "summary": "Indentation is not a multiple of {indent_width} (comment)",
     "message_formats": [
-      "Indentation is not a multiple of {indent_size} (comment)"
+      "Indentation is not a multiple of {indent_width} (comment)"
     ],
     "fix": "Fix is not available.",
-    "explanation": "## What it does\nChecks for indentation of comments with a non-multiple of 4 spaces.\n\n## Why is this bad?\nAccording to [PEP 8], 4 spaces per indentation level should be preferred.\n\n## Example\n```python\nif True:\n   # a = 1\n```\n\nUse instead:\n```python\nif True:\n    # a = 1\n```\n\n## Formatter compatibility\nWe recommend against using this rule alongside the [formatter]. The\nformatter enforces consistent indentation, making the rule redundant.\n\nThe rule is also incompatible with the [formatter] when using\n`indent-width` with a value other than `4`.\n\n[PEP 8]: https://peps.python.org/pep-0008/#indentation\n[formatter]:https://docs.astral.sh/ruff/formatter/\n",
+    "explanation": "## What it does\nChecks for indentation of comments with a non-multiple of 4 spaces.\n\n## Why is this bad?\nAccording to [PEP 8], 4 spaces per indentation level should be preferred.\n\n## Example\n```python\nif True:\n   # a = 1\n```\n\nUse instead:\n```python\nif True:\n    # a = 1\n```\n\n## Formatter compatibility\nWe recommend against using this rule alongside the [formatter]. The\nformatter enforces consistent indentation, making the rule redundant.\n\nThe rule is also incompatible with the [formatter] when using\n`indent-width` with a value other than `4`.\n\n## Options\n- `indent-width`\n\n[PEP 8]: https://peps.python.org/pep-0008/#indentation\n[formatter]:https://docs.astral.sh/ruff/formatter/\n",
     "preview": true
   },
   {
@@ -6054,7 +6152,7 @@
       "Test for membership should be `not in`"
     ],
     "fix": "Fix is always available.",
-    "explanation": "## What it does\nChecks for negative comparison using `not {foo} in {bar}`.\n\n## Why is this bad?\nNegative comparison should be done using `not in`.\n\n## Example\n```python\nZ = not X in Y\nif not X.B in Y:\n    pass\n```\n\nUse instead:\n```python\nZ = X not in Y\nif X.B not in Y:\n    pass\n```\n",
+    "explanation": "## What it does\nChecks for membership tests using `not {element} in {collection}`.\n\n## Why is this bad?\nTesting membership with `{element} not in {collection}` is more readable.\n\n## Example\n```python\nZ = not X in Y\nif not X.B in Y:\n    pass\n```\n\nUse instead:\n```python\nZ = X not in Y\nif X.B not in Y:\n    pass\n```\n",
     "preview": false
   },
   {
@@ -6066,7 +6164,7 @@
       "Test for object identity should be `is not`"
     ],
     "fix": "Fix is always available.",
-    "explanation": "## What it does\nChecks for negative comparison using `not {foo} is {bar}`.\n\n## Why is this bad?\nNegative comparison should be done using `is not`.\n\n## Example\n```python\nif not X is Y:\n    pass\nZ = not X.B is Y\n```\n\nUse instead:\n```python\nif X is not Y:\n    pass\nZ = X.B is not Y\n```\n",
+    "explanation": "## What it does\nChecks for identity comparisons using `not {foo} is {bar}`.\n\n## Why is this bad?\nAccording to [PEP8], testing for an object's identity with `is not` is more\nreadable.\n\n## Example\n```python\nif not X is Y:\n    pass\nZ = not X.B is Y\n```\n\nUse instead:\n```python\nif X is not Y:\n    pass\nZ = X.B is not Y\n```\n\n[PEP8]: https://peps.python.org/pep-0008/#programming-recommendations\n",
     "preview": false
   },
   {
@@ -6175,7 +6273,7 @@
       "Indentation contains tabs"
     ],
     "fix": "Fix is not available.",
-    "explanation": "## What it does\nChecks for indentation that uses tabs.\n\n## Why is this bad?\nAccording to [PEP 8], spaces are preferred over tabs (unless used to remain\nconsistent with code that is already indented with tabs).\n\n## Example\n```python\nif True:\n\ta = 1\n```\n\nUse instead:\n```python\nif True:\n    a = 1\n```\n\n## Formatter compatibility\nWe recommend against using this rule alongside the [formatter]. The\nformatter enforces consistent indentation, making the rule redundant.\n\nThe rule is also incompatible with the [formatter] when using\n`format.indent-style=\"tab\"`.\n\n[PEP 8]: https://peps.python.org/pep-0008/#tabs-or-spaces\n[formatter]: https://docs.astral.sh/ruff/formatter\n",
+    "explanation": "## What it does\nChecks for indentation that uses tabs.\n\n## Why is this bad?\nAccording to [PEP 8], spaces are preferred over tabs (unless used to remain\nconsistent with code that is already indented with tabs).\n\n## Formatter compatibility\nWe recommend against using this rule alongside the [formatter]. The\nformatter enforces consistent indentation, making the rule redundant.\n\nThe rule is also incompatible with the [formatter] when using\n`format.indent-style=\"tab\"`.\n\n[PEP 8]: https://peps.python.org/pep-0008/#tabs-or-spaces\n[formatter]: https://docs.astral.sh/ruff/formatter\n",
     "preview": false
   },
   {
@@ -6817,7 +6915,7 @@
       "`{name}` imported but unused"
     ],
     "fix": "Fix is sometimes available.",
-    "explanation": "## What it does\nChecks for unused imports.\n\n## Why is this bad?\nUnused imports add a performance overhead at runtime, and risk creating\nimport cycles. They also increase the cognitive load of reading the code.\n\nIf an import statement is used to check for the availability or existence\nof a module, consider using `importlib.util.find_spec` instead.\n\nIf an import statement is used to re-export a symbol as part of a module's\npublic interface, consider using a \"redundant\" import alias, which\ninstructs Ruff (and other tools) to respect the re-export, and avoid\nmarking it as unused, as in:\n\n```python\nfrom module import member as member\n```\n\n## Fix safety\n\nWhen `ignore_init_module_imports` is disabled, fixes can remove for unused imports in `__init__` files.\nThese fixes are considered unsafe because they can change the public interface.\n\n## Example\n```python\nimport numpy as np  # unused import\n\n\ndef area(radius):\n    return 3.14 * radius**2\n```\n\nUse instead:\n```python\ndef area(radius):\n    return 3.14 * radius**2\n```\n\nTo check the availability of a module, use `importlib.util.find_spec`:\n```python\nfrom importlib.util import find_spec\n\nif find_spec(\"numpy\") is not None:\n    print(\"numpy is installed\")\nelse:\n    print(\"numpy is not installed\")\n```\n\n## Options\n- `lint.ignore-init-module-imports`\n\n## References\n- [Python documentation: `import`](https://docs.python.org/3/reference/simple_stmts.html#the-import-statement)\n- [Python documentation: `importlib.util.find_spec`](https://docs.python.org/3/library/importlib.html#importlib.util.find_spec)\n- [Typing documentation: interface conventions](https://typing.readthedocs.io/en/latest/source/libraries.html#library-interface-public-and-private-symbols)\n",
+    "explanation": "## What it does\nChecks for unused imports.\n\n## Why is this bad?\nUnused imports add a performance overhead at runtime, and risk creating\nimport cycles. They also increase the cognitive load of reading the code.\n\nIf an import statement is used to check for the availability or existence\nof a module, consider using `importlib.util.find_spec` instead.\n\nIf an import statement is used to re-export a symbol as part of a module's\npublic interface, consider using a \"redundant\" import alias, which\ninstructs Ruff (and other tools) to respect the re-export, and avoid\nmarking it as unused, as in:\n\n```python\nfrom module import member as member\n```\n\nAlternatively, you can use `__all__` to declare a symbol as part of the module's\ninterface, as in:\n\n```python\n# __init__.py\nimport some_module\n\n__all__ = [\"some_module\"]\n```\n\n## Fix safety\n\nFixes to remove unused imports are safe, except in `__init__.py` files.\n\nApplying fixes to `__init__.py` files is currently in preview. The fix offered depends on the\ntype of the unused import. Ruff will suggest a safe fix to export first-party imports with\neither a redundant alias or, if already present in the file, an `__all__` entry. If multiple\n`__all__` declarations are present, Ruff will not offer a fix. Ruff will suggest an unsafe fix\nto remove third-party and standard library imports -- the fix is unsafe because the module's\ninterface changes.\n\n## Example\n\n```python\nimport numpy as np  # unused import\n\n\ndef area(radius):\n    return 3.14 * radius**2\n```\n\nUse instead:\n\n```python\ndef area(radius):\n    return 3.14 * radius**2\n```\n\nTo check the availability of a module, use `importlib.util.find_spec`:\n\n```python\nfrom importlib.util import find_spec\n\nif find_spec(\"numpy\") is not None:\n    print(\"numpy is installed\")\nelse:\n    print(\"numpy is not installed\")\n```\n\n## Options\n- `lint.ignore-init-module-imports`\n\n## References\n- [Python documentation: `import`](https://docs.python.org/3/reference/simple_stmts.html#the-import-statement)\n- [Python documentation: `importlib.util.find_spec`](https://docs.python.org/3/library/importlib.html#importlib.util.find_spec)\n- [Typing documentation: interface conventions](https://typing.readthedocs.io/en/latest/source/libraries.html#library-interface-public-and-private-symbols)\n",
     "preview": false
   },
   {
@@ -7069,7 +7167,7 @@
       "f-string without any placeholders"
     ],
     "fix": "Fix is always available.",
-    "explanation": "## What it does\nChecks for f-strings that do not contain any placeholder expressions.\n\n## Why is this bad?\nf-strings are a convenient way to format strings, but they are not\nnecessary if there are no placeholder expressions to format. In this\ncase, a regular string should be used instead, as an f-string without\nplaceholders can be confusing for readers, who may expect such a\nplaceholder to be present.\n\nAn f-string without any placeholders could also indicate that the\nauthor forgot to add a placeholder expression.\n\n## Example\n```python\nf\"Hello, world!\"\n```\n\nUse instead:\n```python\n\"Hello, world!\"\n```\n\n## References\n- [PEP 498](https://www.python.org/dev/peps/pep-0498/)\n",
+    "explanation": "## What it does\nChecks for f-strings that do not contain any placeholder expressions.\n\n## Why is this bad?\nf-strings are a convenient way to format strings, but they are not\nnecessary if there are no placeholder expressions to format. In this\ncase, a regular string should be used instead, as an f-string without\nplaceholders can be confusing for readers, who may expect such a\nplaceholder to be present.\n\nAn f-string without any placeholders could also indicate that the\nauthor forgot to add a placeholder expression.\n\n## Example\n```python\nf\"Hello, world!\"\n```\n\nUse instead:\n```python\n\"Hello, world!\"\n```\n\n**Note:** to maintain compatibility with PyFlakes, this rule only flags\nf-strings that are part of an implicit concatenation if _none_ of the\nf-string segments contain placeholder expressions.\n\nFor example:\n\n```python\n# Will not be flagged.\n(\n    f\"Hello,\"\n    f\" {name}!\"\n)\n\n# Will be flagged.\n(\n    f\"Hello,\"\n    f\" World!\"\n)\n```\n\nSee [#10885](https://github.com/astral-sh/ruff/issues/10885) for more.\n\n## References\n- [PEP 498](https://www.python.org/dev/peps/pep-0498/)\n",
     "preview": false
   },
   {
@@ -7156,7 +7254,7 @@
       "Use of `>>` is invalid with `print` function"
     ],
     "fix": "Fix is not available.",
-    "explanation": "## What it does\nChecks for `print` statements that use the `>>` syntax.\n\n## Why is this bad?\nIn Python 2, the `print` statement can be used with the `>>` syntax to\nprint to a file-like object. This `print >> sys.stderr` syntax is\ndeprecated in Python 3.\n\nInstead, use the `file` keyword argument to the `print` function, the\n`sys.stderr.write` function, or the `logging` module.\n\n## Example\n```python\nfrom __future__ import print_function\nimport sys\n\nprint >> sys.stderr, \"Hello, world!\"\n```\n\nUse instead:\n```python\nprint(\"Hello, world!\", file=sys.stderr)\n```\n\nOr:\n```python\nimport sys\n\nsys.stderr.write(\"Hello, world!\\n\")\n```\n\nOr:\n```python\nimport logging\n\nlogging.error(\"Hello, world!\")\n```\n\n## References\n- [Python documentation: `print`](https://docs.python.org/3/library/functions.html#print)\n",
+    "explanation": "## What it does\nChecks for `print` statements that use the `>>` syntax.\n\n## Why is this bad?\nIn Python 2, the `print` statement can be used with the `>>` syntax to\nprint to a file-like object. This `print >> sys.stderr` syntax no\nlonger exists in Python 3, where `print` is only a function, not a\nstatement.\n\nInstead, use the `file` keyword argument to the `print` function, the\n`sys.stderr.write` function, or the `logging` module.\n\n## Example\n```python\nfrom __future__ import print_function\nimport sys\n\nprint >> sys.stderr, \"Hello, world!\"\n```\n\nUse instead:\n```python\nprint(\"Hello, world!\", file=sys.stderr)\n```\n\nOr:\n```python\nimport sys\n\nsys.stderr.write(\"Hello, world!\\n\")\n```\n\nOr:\n```python\nimport logging\n\nlogging.error(\"Hello, world!\")\n```\n\n## References\n- [Python documentation: `print`](https://docs.python.org/3/library/functions.html#print)\n",
     "preview": false
   },
   {
@@ -7276,7 +7374,7 @@
       "Undefined name `{name}` in `__all__`"
     ],
     "fix": "Fix is not available.",
-    "explanation": "## What it does\nChecks for undefined names in `__all__`.\n\n## Why is this bad?\nIn Python, the `__all__` variable is used to define the names that are\nexported when a module is imported as a wildcard (e.g.,\n`from foo import *`). The names in `__all__` must be defined in the module,\nbut are included as strings.\n\nIncluding an undefined name in `__all__` is likely to raise `NameError` at\nruntime, when the module is imported.\n\n## Example\n```python\nfrom foo import bar\n\n\n__all__ = [\"bar\", \"baz\"]  # undefined name `baz` in `__all__`\n```\n\nUse instead:\n```python\nfrom foo import bar, baz\n\n\n__all__ = [\"bar\", \"baz\"]\n```\n\n## References\n- [Python documentation: `__all__`](https://docs.python.org/3/tutorial/modules.html#importing-from-a-package)\n",
+    "explanation": "## What it does\nChecks for undefined names in `__all__`.\n\n## Why is this bad?\nIn Python, the `__all__` variable is used to define the names that are\nexported when a module is imported as a wildcard (e.g.,\n`from foo import *`). The names in `__all__` must be defined in the module,\nbut are included as strings.\n\nIncluding an undefined name in `__all__` is likely to raise `NameError` at\nruntime, when the module is imported.\n\nIn [preview], this rule will flag undefined names in `__init__.py` file,\neven if those names implicitly refer to other modules in the package. Users\nthat rely on implicit exports should disable this rule in `__init__.py`\nfiles via [`lint.per-file-ignores`].\n\n## Example\n```python\nfrom foo import bar\n\n\n__all__ = [\"bar\", \"baz\"]  # undefined name `baz` in `__all__`\n```\n\nUse instead:\n```python\nfrom foo import bar, baz\n\n\n__all__ = [\"bar\", \"baz\"]\n```\n\n## References\n- [Python documentation: `__all__`](https://docs.python.org/3/tutorial/modules.html#importing-from-a-package)\n\n[preview]: https://docs.astral.sh/ruff/preview/\n",
     "preview": false
   },
   {
@@ -7370,11 +7468,12 @@
     "summary": "Use specific rule codes when using `noqa`",
     "message_formats": [
       "Use specific rule codes when using `noqa`",
+      "Use specific rule codes when using `ruff: noqa`",
       "Use a colon when specifying `noqa` rule codes",
       "Do not add spaces between `noqa` and its colon"
     ],
     "fix": "Fix is sometimes available.",
-    "explanation": "## What it does\nCheck for `noqa` annotations that suppress all diagnostics, as opposed to\ntargeting specific diagnostics.\n\n## Why is this bad?\nSuppressing all diagnostics can hide issues in the code.\n\nBlanket `noqa` annotations are also more difficult to interpret and\nmaintain, as the annotation does not clarify which diagnostics are intended\nto be suppressed.\n\n## Example\n```python\nfrom .base import *  # noqa\n```\n\nUse instead:\n```python\nfrom .base import *  # noqa: F403\n```\n\n## Fix safety\nThis rule will attempt to fix blanket `noqa` annotations that appear to\nbe unintentional. For example, given `# noqa F401`, the rule will suggest\ninserting a colon, as in `# noqa: F401`.\n\nWhile modifying `noqa` comments is generally safe, doing so may introduce\nadditional diagnostics.\n\n## References\n- [Ruff documentation](https://docs.astral.sh/ruff/configuration/#error-suppression)\n",
+    "explanation": "## What it does\nCheck for `noqa` annotations that suppress all diagnostics, as opposed to\ntargeting specific diagnostics.\n\n## Why is this bad?\nSuppressing all diagnostics can hide issues in the code.\n\nBlanket `noqa` annotations are also more difficult to interpret and\nmaintain, as the annotation does not clarify which diagnostics are intended\nto be suppressed.\n\nIn [preview], this rule also checks for blanket file-level annotations (e.g.,\n`# ruff: noqa`, as opposed to `# ruff: noqa: F401`).\n\n## Example\n```python\nfrom .base import *  # noqa\n```\n\nUse instead:\n```python\nfrom .base import *  # noqa: F403\n```\n\n## Fix safety\nThis rule will attempt to fix blanket `noqa` annotations that appear to\nbe unintentional. For example, given `# noqa F401`, the rule will suggest\ninserting a colon, as in `# noqa: F401`.\n\nWhile modifying `noqa` comments is generally safe, doing so may introduce\nadditional diagnostics.\n\n## References\n- [Ruff documentation](https://docs.astral.sh/ruff/configuration/#error-suppression)\n\n[preview]: https://docs.astral.sh/ruff/preview/\n",
     "preview": false
   },
   {
@@ -7438,6 +7537,18 @@
     "fix": "Fix is not available.",
     "explanation": "## What it does\nChecks for single strings assigned to `__slots__`.\n\n## Why is this bad?\nIn Python, the `__slots__` attribute allows you to explicitly define the\nattributes (instance variables) that a class can have. By default, Python\nuses a dictionary to store an object's attributes, which incurs some memory\noverhead. However, when `__slots__` is defined, Python uses a more compact\ninternal structure to store the object's attributes, resulting in memory\nsavings.\n\nAny string iterable may be assigned to `__slots__` (most commonly, a\n`tuple` of strings). If a string is assigned to `__slots__`, it is\ninterpreted as a single attribute name, rather than an iterable of attribute\nnames. This can cause confusion, as users that iterate over the `__slots__`\nvalue may expect to iterate over a sequence of attributes, but would instead\niterate over the characters of the string.\n\nTo use a single string attribute in `__slots__`, wrap the string in an\niterable container type, like a `tuple`.\n\n## Example\n```python\nclass Person:\n    __slots__: str = \"name\"\n\n    def __init__(self, name: str) -> None:\n        self.name = name\n```\n\nUse instead:\n```python\nclass Person:\n    __slots__: tuple[str, ...] = (\"name\",)\n\n    def __init__(self, name: str) -> None:\n        self.name = name\n```\n\n## References\n- [Python documentation: `__slots__`](https://docs.python.org/3/reference/datamodel.html#slots)\n",
     "preview": false
+  },
+  {
+    "name": "dict-index-missing-items",
+    "code": "PLC0206",
+    "linter": "Pylint",
+    "summary": "Extracting value from dictionary without calling `.items()`",
+    "message_formats": [
+      "Extracting value from dictionary without calling `.items()`"
+    ],
+    "fix": "Fix is not available.",
+    "explanation": "## What it does\nChecks for dictionary iterations that extract the dictionary value\nvia explicit indexing, instead of using `.items()`.\n\n## Why is this bad?\nIterating over a dictionary with `.items()` is semantically clearer\nand more efficient than extracting the value with the key.\n\n## Example\n```python\nORCHESTRA = {\n    \"violin\": \"strings\",\n    \"oboe\": \"woodwind\",\n    \"tuba\": \"brass\",\n    \"gong\": \"percussion\",\n}\n\nfor instrument in ORCHESTRA:\n    print(f\"{instrument}: {ORCHESTRA[instrument]}\")\n```\n\nUse instead:\n```python\nORCHESTRA = {\n    \"violin\": \"strings\",\n    \"oboe\": \"woodwind\",\n    \"tuba\": \"brass\",\n    \"gong\": \"percussion\",\n}\n\nfor instrument, section in ORCHESTRA.items():\n    print(f\"{instrument}: {section}\")\n```\n",
+    "preview": true
   },
   {
     "name": "iteration-over-set",
@@ -7667,7 +7778,7 @@
       "`__len__` does not return a non-negative integer"
     ],
     "fix": "Fix is not available.",
-    "explanation": "## What it does\nChecks for `__len__` implementations that return values other than a non-negative\n`integer`.\n\n## Why is this bad?\nThe `__len__` method should return a non-negative `integer`. Returning a different\nvalue may cause unexpected behavior.\n\nNote: `bool` is a subclass of `int`, so it's technically valid for `__len__` to\nreturn `True` or `False`. However, for consistency with other rules, Ruff will\nstill raise when `__len__` returns a `bool`.\n\n## Example\n```python\nclass Foo:\n    def __len__(self):\n        return \"2\"\n```\n\nUse instead:\n```python\nclass Foo:\n    def __len__(self):\n        return 2\n```\n\n\n## References\n- [Python documentation: The `__len__` method](https://docs.python.org/3/reference/datamodel.html#object.__len__)\n",
+    "explanation": "## What it does\nChecks for `__len__` implementations that return values other than a non-negative\ninteger.\n\n## Why is this bad?\nThe `__len__` method should return a non-negative integer. Returning a different\nvalue may cause unexpected behavior.\n\nNote: `bool` is a subclass of `int`, so it's technically valid for `__len__` to\nreturn `True` or `False`. However, for consistency with other rules, Ruff will\nstill raise when `__len__` returns a `bool`.\n\n## Example\n```python\nclass Foo:\n    def __len__(self):\n        return \"2\"\n```\n\nUse instead:\n```python\nclass Foo:\n    def __len__(self):\n        return 2\n```\n\n\n## References\n- [Python documentation: The `__len__` method](https://docs.python.org/3/reference/datamodel.html#object.__len__)\n",
     "preview": true
   },
   {
@@ -7691,7 +7802,7 @@
       "`__index__` does not return an integer"
     ],
     "fix": "Fix is not available.",
-    "explanation": "## What it does\nChecks for `__index__` implementations that return a type other than `integer`.\n\n## Why is this bad?\nThe `__index__` method should return an `integer`. Returning a different\ntype may cause unexpected behavior.\n\nNote: `bool` is a subclass of `int`, so it's technically valid for `__index__` to\nreturn `True` or `False`. However, a DeprecationWarning (`DeprecationWarning:\n__index__ returned non-int (type bool)`) for such cases was already introduced,\nthus this is a conscious difference between the original pylint rule and the\ncurrent ruff implementation.\n\n## Example\n```python\nclass Foo:\n    def __index__(self):\n        return \"2\"\n```\n\nUse instead:\n```python\nclass Foo:\n    def __index__(self):\n        return 2\n```\n\n\n## References\n- [Python documentation: The `__index__` method](https://docs.python.org/3/reference/datamodel.html#object.__index__)\n",
+    "explanation": "## What it does\nChecks for `__index__` implementations that return a value other than an integer.\n\n## Why is this bad?\nThe `__index__` method should return an integer. Returning a different\ntype may cause unexpected behavior.\n\nNote: `bool` is a subclass of `int`, so it's technically valid for `__index__` to\nreturn `True` or `False`. However, a DeprecationWarning (`DeprecationWarning:\n__index__ returned non-int (type bool)`) for such cases was already introduced,\nthus this is a conscious difference between the original pylint rule and the\ncurrent ruff implementation.\n\n## Example\n```python\nclass Foo:\n    def __index__(self):\n        return \"2\"\n```\n\nUse instead:\n```python\nclass Foo:\n    def __index__(self):\n        return 2\n```\n\n\n## References\n- [Python documentation: The `__index__` method](https://docs.python.org/3/reference/datamodel.html#object.__index__)\n",
     "preview": true
   },
   {
@@ -7727,7 +7838,7 @@
       "`__hash__` does not return an integer"
     ],
     "fix": "Fix is not available.",
-    "explanation": "## What it does\nChecks for `__hash__` implementations that return a type other than `integer`.\n\n## Why is this bad?\nThe `__hash__` method should return an `integer`. Returning a different\ntype may cause unexpected behavior.\n\nNote: `bool` is a subclass of `int`, so it's technically valid for `__hash__` to\nreturn `True` or `False`. However, for consistency with other rules, Ruff will\nstill raise when `__hash__` returns a `bool`.\n\n## Example\n```python\nclass Foo:\n    def __hash__(self):\n        return \"2\"\n```\n\nUse instead:\n```python\nclass Foo:\n    def __hash__(self):\n        return 2\n```\n\n\n## References\n- [Python documentation: The `__hash__` method](https://docs.python.org/3/reference/datamodel.html#object.__hash__)\n",
+    "explanation": "## What it does\nChecks for `__hash__` implementations that return a value other than an integer.\n\n## Why is this bad?\nThe `__hash__` method should return an integer. Returning a different\ntype may cause unexpected behavior.\n\nNote: `bool` is a subclass of `int`, so it's technically valid for `__hash__` to\nreturn `True` or `False`. However, for consistency with other rules, Ruff will\nstill raise when `__hash__` returns a `bool`.\n\n## Example\n```python\nclass Foo:\n    def __hash__(self):\n        return \"2\"\n```\n\nUse instead:\n```python\nclass Foo:\n    def __hash__(self):\n        return 2\n```\n\n\n## References\n- [Python documentation: The `__hash__` method](https://docs.python.org/3/reference/datamodel.html#object.__hash__)\n",
     "preview": true
   },
   {
@@ -8089,7 +8200,7 @@
       "Too many public methods ({methods} > {max_methods})"
     ],
     "fix": "Fix is not available.",
-    "explanation": "## What it does\nChecks for classes with too many public methods\n\nBy default, this rule allows up to 20 public methods, as configured by\nthe [`lint.pylint.max-public-methods`] option.\n\n## Why is this bad?\nClasses with many public methods are harder to understand\nand maintain.\n\nInstead, consider refactoring the class into separate classes.\n\n## Example\nAssuming that `pylint.max-public-settings` is set to 5:\n```python\nclass Linter:\n    def __init__(self):\n        pass\n\n    def pylint(self):\n        pass\n\n    def pylint_settings(self):\n        pass\n\n    def flake8(self):\n        pass\n\n    def flake8_settings(self):\n        pass\n\n    def pydocstyle(self):\n        pass\n\n    def pydocstyle_settings(self):\n        pass\n```\n\nUse instead:\n```python\nclass Linter:\n    def __init__(self):\n        self.pylint = Pylint()\n        self.flake8 = Flake8()\n        self.pydocstyle = Pydocstyle()\n\n    def lint(self):\n        pass\n\n\nclass Pylint:\n    def lint(self):\n        pass\n\n    def settings(self):\n        pass\n\n\nclass Flake8:\n    def lint(self):\n        pass\n\n    def settings(self):\n        pass\n\n\nclass Pydocstyle:\n    def lint(self):\n        pass\n\n    def settings(self):\n        pass\n```\n\n## Options\n- `lint.pylint.max-public-methods`\n",
+    "explanation": "## What it does\nChecks for classes with too many public methods\n\nBy default, this rule allows up to 20 public methods, as configured by\nthe [`lint.pylint.max-public-methods`] option.\n\n## Why is this bad?\nClasses with many public methods are harder to understand\nand maintain.\n\nInstead, consider refactoring the class into separate classes.\n\n## Example\nAssuming that `lint.pylint.max-public-methods` is set to 5:\n```python\nclass Linter:\n    def __init__(self):\n        pass\n\n    def pylint(self):\n        pass\n\n    def pylint_settings(self):\n        pass\n\n    def flake8(self):\n        pass\n\n    def flake8_settings(self):\n        pass\n\n    def pydocstyle(self):\n        pass\n\n    def pydocstyle_settings(self):\n        pass\n```\n\nUse instead:\n```python\nclass Linter:\n    def __init__(self):\n        self.pylint = Pylint()\n        self.flake8 = Flake8()\n        self.pydocstyle = Pydocstyle()\n\n    def lint(self):\n        pass\n\n\nclass Pylint:\n    def lint(self):\n        pass\n\n    def settings(self):\n        pass\n\n\nclass Flake8:\n    def lint(self):\n        pass\n\n    def settings(self):\n        pass\n\n\nclass Pydocstyle:\n    def lint(self):\n        pass\n\n    def settings(self):\n        pass\n```\n\n## Options\n- `lint.pylint.max-public-methods`\n",
     "preview": true
   },
   {
@@ -8113,7 +8224,7 @@
       "Too many branches ({branches} > {max_branches})"
     ],
     "fix": "Fix is not available.",
-    "explanation": "## What it does\nChecks for functions or methods with too many branches.\n\nBy default, this rule allows up to 12 branches. This can be configured\nusing the [`lint.pylint.max-branches`] option.\n\n## Why is this bad?\nFunctions or methods with many branches are harder to understand\nand maintain than functions or methods with fewer branches.\n\n## Example\n```python\ndef capital(country):\n    if country == \"Australia\":\n        return \"Canberra\"\n    elif country == \"Brazil\":\n        return \"Brasilia\"\n    elif country == \"Canada\":\n        return \"Ottawa\"\n    elif country == \"England\":\n        return \"London\"\n    elif country == \"France\":\n        return \"Paris\"\n    elif country == \"Germany\":\n        return \"Berlin\"\n    elif country == \"Poland\":\n        return \"Warsaw\"\n    elif country == \"Romania\":\n        return \"Bucharest\"\n    elif country == \"Spain\":\n        return \"Madrid\"\n    elif country == \"Thailand\":\n        return \"Bangkok\"\n    elif country == \"Turkey\":\n        return \"Ankara\"\n    elif country == \"United States\":\n        return \"Washington\"\n    else:\n        return \"Unknown\"  # 13th branch\n```\n\nUse instead:\n```python\ndef capital(country):\n    capitals = {\n        \"Australia\": \"Canberra\",\n        \"Brazil\": \"Brasilia\",\n        \"Canada\": \"Ottawa\",\n        \"England\": \"London\",\n        \"France\": \"Paris\",\n        \"Germany\": \"Berlin\",\n        \"Poland\": \"Warsaw\",\n        \"Romania\": \"Bucharest\",\n        \"Spain\": \"Madrid\",\n        \"Thailand\": \"Bangkok\",\n        \"Turkey\": \"Ankara\",\n        \"United States\": \"Washington\",\n    }\n    city = capitals.get(country, \"Unknown\")\n    return city\n```\n\n## Options\n- `lint.pylint.max-branches`\n",
+    "explanation": "## What it does\nChecks for functions or methods with too many branches, including (nested)\n`if`, `elif`, and `else` branches, `for` loops, `try`-`except` clauses, and\n`match` and `case` statements.\n\nBy default, this rule allows up to 12 branches. This can be configured\nusing the [`lint.pylint.max-branches`] option.\n\n## Why is this bad?\nFunctions or methods with many branches are harder to understand\nand maintain than functions or methods with fewer branches.\n\n## Example\nGiven:\n```python\ndef capital(country):\n    if country == \"Australia\":\n        return \"Canberra\"\n    elif country == \"Brazil\":\n        return \"Brasilia\"\n    elif country == \"Canada\":\n        return \"Ottawa\"\n    elif country == \"England\":\n        return \"London\"\n    elif country == \"France\":\n        return \"Paris\"\n    elif country == \"Germany\":\n        return \"Berlin\"\n    elif country == \"Poland\":\n        return \"Warsaw\"\n    elif country == \"Romania\":\n        return \"Bucharest\"\n    elif country == \"Spain\":\n        return \"Madrid\"\n    elif country == \"Thailand\":\n        return \"Bangkok\"\n    elif country == \"Turkey\":\n        return \"Ankara\"\n    elif country == \"United States\":\n        return \"Washington\"\n    else:\n        return \"Unknown\"  # 13th branch\n```\n\nUse instead:\n```python\ndef capital(country):\n    capitals = {\n        \"Australia\": \"Canberra\",\n        \"Brazil\": \"Brasilia\",\n        \"Canada\": \"Ottawa\",\n        \"England\": \"London\",\n        \"France\": \"Paris\",\n        \"Germany\": \"Berlin\",\n        \"Poland\": \"Warsaw\",\n        \"Romania\": \"Bucharest\",\n        \"Spain\": \"Madrid\",\n        \"Thailand\": \"Bangkok\",\n        \"Turkey\": \"Ankara\",\n        \"United States\": \"Washington\",\n    }\n    city = capitals.get(country, \"Unknown\")\n    return city\n```\n\nGiven:\n```python\ndef grades_to_average_number(grades):\n    numbers = []\n    for grade in grades:  # 1st branch\n        if len(grade) not in {1, 2}:\n            raise ValueError(f\"Invalid grade: {grade}\")\n\n        if len(grade) == 2 and grade[1] not in {\"+\", \"-\"}:\n            raise ValueError(f\"Invalid grade: {grade}\")\n\n        letter = grade[0]\n\n        if letter in {\"F\", \"E\"}:\n            number = 0.0\n        elif letter == \"D\":\n            number = 1.0\n        elif letter == \"C\":\n            number = 2.0\n        elif letter == \"B\":\n            number = 3.0\n        elif letter == \"A\":\n            number = 4.0\n        else:\n            raise ValueError(f\"Invalid grade: {grade}\")\n\n        modifier = 0.0\n        if letter != \"F\" and grade[-1] == \"+\":\n            modifier = 0.3\n        elif letter != \"F\" and grade[-1] == \"-\":\n            modifier = -0.3\n\n        numbers.append(max(0.0, min(number + modifier, 4.0)))\n\n    try:\n        return sum(numbers) / len(numbers)\n    except ZeroDivisionError:  # 13th branch\n        return 0\n```\n\nUse instead:\n```python\ndef grades_to_average_number(grades):\n    grade_values = {\"F\": 0.0, \"E\": 0.0, \"D\": 1.0, \"C\": 2.0, \"B\": 3.0, \"A\": 4.0}\n    modifier_values = {\"+\": 0.3, \"-\": -0.3}\n\n    numbers = []\n    for grade in grades:\n        if len(grade) not in {1, 2}:\n            raise ValueError(f\"Invalid grade: {grade}\")\n\n        letter = grade[0]\n        if letter not in grade_values:\n            raise ValueError(f\"Invalid grade: {grade}\")\n        number = grade_values[letter]\n\n        if len(grade) == 2 and grade[1] not in modifier_values:\n            raise ValueError(f\"Invalid grade: {grade}\")\n        modifier = modifier_values.get(grade[-1], 0.0)\n\n        if letter == \"F\":\n            numbers.append(0.0)\n        else:\n            numbers.append(max(0.0, min(number + modifier, 4.0)))\n\n    try:\n        return sum(numbers) / len(numbers)\n    except ZeroDivisionError:\n        return 0\n```\n\n## Options\n- `lint.pylint.max-branches`\n",
     "preview": false
   },
   {
@@ -8186,7 +8297,7 @@
       "Merge `isinstance` calls"
     ],
     "fix": "Fix is always available.",
-    "explanation": "## What it does\nChecks for repeated `isinstance` calls on the same object.\n\n## Why is this bad?\nRepeated `isinstance` calls on the same object can be merged into a\nsingle call.\n\n## Example\n```python\ndef is_number(x):\n    return isinstance(x, int) or isinstance(x, float) or isinstance(x, complex)\n```\n\nUse instead:\n```python\ndef is_number(x):\n    return isinstance(x, (int, float, complex))\n```\n\nOr, for Python 3.10 and later:\n\n```python\ndef is_number(x):\n    return isinstance(x, int | float | complex)\n```\n\n## Options\n- `target-version`\n\n## References\n- [Python documentation: `isinstance`](https://docs.python.org/3/library/functions.html#isinstance)\n",
+    "explanation": "## What it does\nChecks for repeated `isinstance` calls on the same object.\n\n## Why is this bad?\nRepeated `isinstance` calls on the same object can be merged into a\nsingle call.\n\n## Fix safety\nThis rule's fix is marked as unsafe on Python 3.10 and later, as combining\nmultiple `isinstance` calls with a binary operator (`|`) will fail at\nruntime if any of the operands are themselves tuples.\n\nFor example, given `TYPES = (dict, list)`, then\n`isinstance(None, TYPES | set | float)` will raise a `TypeError` at runtime,\nwhile `isinstance(None, set | float)` will not.\n\n## Example\n```python\ndef is_number(x):\n    return isinstance(x, int) or isinstance(x, float) or isinstance(x, complex)\n```\n\nUse instead:\n```python\ndef is_number(x):\n    return isinstance(x, (int, float, complex))\n```\n\nOr, for Python 3.10 and later:\n\n```python\ndef is_number(x):\n    return isinstance(x, int | float | complex)\n```\n\n## Options\n- `target-version`\n\n## References\n- [Python documentation: `isinstance`](https://docs.python.org/3/library/functions.html#isinstance)\n",
     "preview": false
   },
   {
@@ -9038,7 +9149,7 @@
       "Use format specifiers instead of percent format"
     ],
     "fix": "Fix is sometimes available.",
-    "explanation": "## What it does\nChecks for `printf`-style string formatting.\n\n## Why is this bad?\n`printf`-style string formatting has a number of quirks, and leads to less\nreadable code than using `str.format` calls or f-strings. In general, prefer\nthe newer `str.format` and f-strings constructs over `printf`-style string\nformatting.\n\n## Known problems\nThis rule is unable to detect cases in which the format string contains\na single, generic format specifier (e.g. `%s`), and the right-hand side\nis an ambiguous expression.\n\nFor example, given:\n```python\n\"%s\" % value\n```\n\n`value` could be a single-element tuple, _or_ it could be a single value.\nBoth of these would resolve to the same formatted string when using\n`printf`-style formatting, but _not_ when using f-strings:\n\n```python\nvalue = 1\nprint(\"%s\" % value)  # \"1\"\nprint(\"{}\".format(value))  # \"1\"\n\nvalue = (1,)\nprint(\"%s\" % value)  # \"1\"\nprint(\"{}\".format(value))  # \"(1,)\"\n```\n\n## Example\n```python\n\"%s, %s\" % (\"Hello\", \"World\")  # \"Hello, World\"\n```\n\nUse instead:\n```python\n\"{}, {}\".format(\"Hello\", \"World\")  # \"Hello, World\"\n```\n\n## References\n- [Python documentation: `printf`-style String Formatting](https://docs.python.org/3/library/stdtypes.html#old-string-formatting)\n- [Python documentation: `str.format`](https://docs.python.org/3/library/stdtypes.html#str.format)\n",
+    "explanation": "## What it does\nChecks for `printf`-style string formatting, and offers to replace it with\n`str.format` calls.\n\n## Why is this bad?\n`printf`-style string formatting has a number of quirks, and leads to less\nreadable code than using `str.format` calls or f-strings. In general, prefer\nthe newer `str.format` and f-strings constructs over `printf`-style string\nformatting.\n\n## Example\n```python\n\"%s, %s\" % (\"Hello\", \"World\")  # \"Hello, World\"\n```\n\nUse instead:\n```python\n\"{}, {}\".format(\"Hello\", \"World\")  # \"Hello, World\"\n```\n\n## Fix safety\nIn cases where the format string contains a single generic format specifier\n(e.g. `%s`), and the right-hand side is an ambiguous expression,\nwe cannot offer a safe fix.\n\nFor example, given:\n```python\n\"%s\" % val\n```\n\n`val` could be a single-element tuple, _or_ a single value (not\ncontained in a tuple). Both of these would resolve to the same\nformatted string when using `printf`-style formatting, but\nresolve differently when using f-strings:\n\n```python\nval = 1\nprint(\"%s\" % val)  # \"1\"\nprint(\"{}\".format(val))  # \"1\"\n\nval = (1,)\nprint(\"%s\" % val)  # \"1\"\nprint(\"{}\".format(val))  # \"(1,)\"\n```\n\n## References\n- [Python documentation: `printf`-style String Formatting](https://docs.python.org/3/library/stdtypes.html#old-string-formatting)\n- [Python documentation: `str.format`](https://docs.python.org/3/library/stdtypes.html#str.format)\n",
     "preview": false
   },
   {
@@ -9112,7 +9223,7 @@
       "Remove quotes from type annotation"
     ],
     "fix": "Fix is always available.",
-    "explanation": "## What it does\nChecks for the presence of unnecessary quotes in type annotations.\n\n## Why is this bad?\nIn Python, type annotations can be quoted to avoid forward references.\nHowever, if `from __future__ import annotations` is present, Python\nwill always evaluate type annotations in a deferred manner, making\nthe quotes unnecessary.\n\n## Example\n```python\nfrom __future__ import annotations\n\n\ndef foo(bar: \"Bar\") -> \"Bar\":\n    ...\n```\n\nUse instead:\n```python\nfrom __future__ import annotations\n\n\ndef foo(bar: Bar) -> Bar:\n    ...\n```\n\n## References\n- [PEP 563](https://peps.python.org/pep-0563/)\n- [Python documentation: `__future__`](https://docs.python.org/3/library/__future__.html#module-__future__)\n",
+    "explanation": "## What it does\nChecks for the presence of unnecessary quotes in type annotations.\n\n## Why is this bad?\nIn Python, type annotations can be quoted to avoid forward references.\n\nHowever, if `from __future__ import annotations` is present, Python\nwill always evaluate type annotations in a deferred manner, making\nthe quotes unnecessary.\n\nSimilarly, if the annotation is located in a typing-only context and\nwon't be evaluated by Python at runtime, the quotes will also be\nconsidered unnecessary. For example, Python does not evaluate type\nannotations on assignments in function bodies.\n\n## Example\nGiven:\n```python\nfrom __future__ import annotations\n\n\ndef foo(bar: \"Bar\") -> \"Bar\":\n    ...\n```\n\nUse instead:\n```python\nfrom __future__ import annotations\n\n\ndef foo(bar: Bar) -> Bar:\n    ...\n```\n\nGiven:\n```python\ndef foo() -> None:\n    bar: \"Bar\"\n```\n\nUse instead:\n```python\ndef foo() -> None:\n    bar: Bar\n```\n\n## References\n- [PEP 563](https://peps.python.org/pep-0563/)\n- [Python documentation: `__future__`](https://docs.python.org/3/library/__future__.html#module-__future__)\n",
     "preview": false
   },
   {
@@ -9143,12 +9254,12 @@
     "name": "non-pep695-type-alias",
     "code": "UP040",
     "linter": "pyupgrade",
-    "summary": "Type alias `{name}` uses `TypeAlias` annotation instead of the `type` keyword",
+    "summary": "Type alias `{name}` uses {type_alias_method} instead of the `type` keyword",
     "message_formats": [
-      "Type alias `{name}` uses `TypeAlias` annotation instead of the `type` keyword"
+      "Type alias `{name}` uses {type_alias_method} instead of the `type` keyword"
     ],
     "fix": "Fix is always available.",
-    "explanation": "## What it does\nChecks for use of `TypeAlias` annotation for declaring type aliases.\n\n## Why is this bad?\nThe `type` keyword was introduced in Python 3.12 by [PEP 695] for defining\ntype aliases. The `type` keyword is easier to read and provides cleaner\nsupport for generics.\n\n## Known problems\n[PEP 695] uses inferred variance for type parameters, instead of the\n`covariant` and `contravariant` keywords used by `TypeParam` variables. As\nsuch, rewriting a `TypeParam` variable to a `type` alias may change its\nvariance.\n\nUnlike `TypeParam` variables, [PEP 695]-style `type` aliases cannot be used\nat runtime. For example, calling `isinstance` on a `type` alias will throw\na `TypeError`. As such, rewriting a `TypeParam` via the `type` keyword will\ncause issues for parameters that are used for such runtime checks.\n\n## Example\n```python\nListOfInt: TypeAlias = list[int]\n```\n\nUse instead:\n```python\ntype ListOfInt = list[int]\n```\n\n[PEP 695]: https://peps.python.org/pep-0695/\n",
+    "explanation": "## What it does\nChecks for use of `TypeAlias` annotations and `TypeAliasType` assignments\nfor declaring type aliases.\n\n## Why is this bad?\nThe `type` keyword was introduced in Python 3.12 by [PEP 695] for defining\ntype aliases. The `type` keyword is easier to read and provides cleaner\nsupport for generics.\n\n## Known problems\n[PEP 695] uses inferred variance for type parameters, instead of the\n`covariant` and `contravariant` keywords used by `TypeParam` variables. As\nsuch, rewriting a `TypeParam` variable to a `type` alias may change its\nvariance.\n\nUnlike `TypeParam` variables, [PEP 695]-style `type` aliases cannot be used\nat runtime. For example, calling `isinstance` on a `type` alias will throw\na `TypeError`. As such, rewriting a `TypeParam` via the `type` keyword will\ncause issues for parameters that are used for such runtime checks.\n\n## Example\n```python\nListOfInt: TypeAlias = list[int]\nPositiveInt = TypeAliasType(\"PositiveInt\", Annotated[int, Gt(0)])\n```\n\nUse instead:\n```python\ntype ListOfInt = list[int]\ntype PositiveInt = Annotated[int, Gt(0)]\n```\n\n[PEP 695]: https://peps.python.org/pep-0695/\n",
     "preview": false
   },
   {
@@ -9238,6 +9349,19 @@
     "preview": true
   },
   {
+    "name": "f-string-number-format",
+    "code": "FURB116",
+    "linter": "refurb",
+    "summary": "Replace `{function_name}` call with `{display}`",
+    "message_formats": [
+      "Replace `{function_name}` call with `{display}`",
+      "Replace `{function_name}` call with f-string"
+    ],
+    "fix": "Fix is sometimes available.",
+    "explanation": "## What it does\nChecks for uses of `bin(...)[2:]` (or `hex`, or `oct`) to convert\nan integer into a string.\n\n## Why is this bad?\nWhen converting an integer to a baseless binary, hexadecimal, or octal\nstring, using f-strings is more concise and readable than using the\n`bin`, `hex`, or `oct` functions followed by a slice.\n\n## Example\n```python\nprint(bin(1337)[2:])\n```\n\nUse instead:\n```python\nprint(f\"{1337:b}\")\n```\n",
+    "preview": true
+  },
+  {
     "name": "reimplemented-operator",
     "code": "FURB118",
     "linter": "refurb",
@@ -9247,7 +9371,7 @@
       "Use `operator.{operator}` instead of defining a lambda"
     ],
     "fix": "Fix is sometimes available.",
-    "explanation": "## What it does\nChecks for lambda expressions and function definitions that can be replaced\nwith a function from the `operator` module.\n\n## Why is this bad?\nThe `operator` module provides functions that implement the same functionality\nas the corresponding operators. For example, `operator.add` is equivalent to\n`lambda x, y: x + y`. Using the functions from the `operator` module is more\nconcise and communicates the intent of the code more clearly.\n\n## Example\n```python\nimport functools\n\nnums = [1, 2, 3]\nsum = functools.reduce(lambda x, y: x + y, nums)\n```\n\nUse instead:\n```python\nimport functools\nimport operator\n\nnums = [1, 2, 3]\nsum = functools.reduce(operator.add, nums)\n```\n\n## References\n",
+    "explanation": "## What it does\nChecks for lambda expressions and function definitions that can be replaced\nwith a function from the `operator` module.\n\n## Why is this bad?\nThe `operator` module provides functions that implement the same functionality\nas the corresponding operators. For example, `operator.add` is equivalent to\n`lambda x, y: x + y`. Using the functions from the `operator` module is more\nconcise and communicates the intent of the code more clearly.\n\n## Example\n```python\nimport functools\n\nnums = [1, 2, 3]\ntotal = functools.reduce(lambda x, y: x + y, nums)\n```\n\nUse instead:\n```python\nimport functools\nimport operator\n\nnums = [1, 2, 3]\ntotal = functools.reduce(operator.add, nums)\n```\n",
     "preview": true
   },
   {
@@ -9359,6 +9483,18 @@
     ],
     "fix": "Fix is sometimes available.",
     "explanation": "## What it does\nChecks for literals that are similar to constants in `math` module.\n\n## Why is this bad?\nHard-coding mathematical constants like π increases code duplication,\nreduces readability, and may lead to a lack of precision.\n\n## Example\n```python\nA = 3.141592 * r**2\n```\n\nUse instead:\n```python\nA = math.pi * r**2\n```\n\n## References\n- [Python documentation: `math` constants](https://docs.python.org/3/library/math.html#constants)\n",
+    "preview": true
+  },
+  {
+    "name": "repeated-global",
+    "code": "FURB154",
+    "linter": "refurb",
+    "summary": "Use of repeated consecutive `{}`",
+    "message_formats": [
+      "Use of repeated consecutive `{}`"
+    ],
+    "fix": "Fix is always available.",
+    "explanation": "## What it does\nChecks for consecutive `global` (or `nonlocal`) statements.\n\n## Why is this bad?\nThe `global` and `nonlocal` keywords accepts multiple comma-separated names.\nInstead of using multiple `global` (or `nonlocal`) statements for separate\nvariables, you can use a single statement to declare multiple variables at\nonce.\n\n## Example\n```python\ndef func():\n    global x\n    global y\n\n    print(x, y)\n```\n\nUse instead:\n```python\ndef func():\n    global x, y\n\n    print(x, y)\n```\n\n## References\n- [Python documentation: the `global` statement](https://docs.python.org/3/reference/simple_stmts.html#the-global-statement)\n- [Python documentation: the `nonlocal` statement](https://docs.python.org/3/reference/simple_stmts.html#the-nonlocal-statement)\n",
     "preview": true
   },
   {
@@ -9515,6 +9651,19 @@
     ],
     "fix": "Fix is always available.",
     "explanation": "## What it does\nChecks for list reversals that can be performed in-place in lieu of\ncreating a new list.\n\n## Why is this bad?\nWhen reversing a list, it's more efficient to use the in-place method\n`.reverse()` instead of creating a new list, if the original list is\nno longer needed.\n\n## Example\n```python\nl = [1, 2, 3]\nl = reversed(l)\n\nl = [1, 2, 3]\nl = list(reversed(l))\n\nl = [1, 2, 3]\nl = l[::-1]\n```\n\nUse instead:\n```python\nl = [1, 2, 3]\nl.reverse()\n```\n\n## References\n- [Python documentation: More on Lists](https://docs.python.org/3/tutorial/datastructures.html#more-on-lists)\n",
+    "preview": true
+  },
+  {
+    "name": "sorted-min-max",
+    "code": "FURB192",
+    "linter": "refurb",
+    "summary": "Prefer `min` over `sorted()` to compute the minimum value in a sequence",
+    "message_formats": [
+      "Prefer `min` over `sorted()` to compute the minimum value in a sequence",
+      "Prefer `max` over `sorted()` to compute the maximum value in a sequence"
+    ],
+    "fix": "Fix is sometimes available.",
+    "explanation": "## What it does\nChecks for uses of `sorted()` to retrieve the minimum or maximum value in\na sequence.\n\n## Why is this bad?\nUsing `sorted()` to compute the minimum or maximum value in a sequence is\ninefficient and less readable than using `min()` or `max()` directly.\n\n## Example\n```python\nnums = [3, 1, 4, 1, 5]\nlowest = sorted(nums)[0]\nhighest = sorted(nums)[-1]\nhighest = sorted(nums, reverse=True)[0]\n```\n\nUse instead:\n```python\nnums = [3, 1, 4, 1, 5]\nlowest = min(nums)\nhighest = max(nums)\n```\n\n## Fix safety\nIn some cases, migrating to `min` or `max` can lead to a change in behavior,\nnotably when breaking ties.\n\nAs an example, `sorted(data, key=itemgetter(0), reverse=True)[0]` will return\nthe _last_ \"minimum\" element in the list, if there are multiple elements with\nthe same key. However, `min(data, key=itemgetter(0))` will return the _first_\n\"minimum\" element in the list in the same scenario.\n\nAS such, this rule's fix is marked as unsafe when the `reverse` keyword is used.\n\n## References\n- [Python documentation: `min`](https://docs.python.org/3/library/functions.html#min)\n- [Python documentation: `max`](https://docs.python.org/3/library/functions.html#max)\n",
     "preview": true
   },
   {
@@ -9858,6 +10007,18 @@
     "fix": "Fix is always available.",
     "explanation": "## What it does\nChecks for `noqa` directives that are no longer applicable.\n\n## Why is this bad?\nA `noqa` directive that no longer matches any diagnostic violations is\nlikely included by mistake, and should be removed to avoid confusion.\n\n## Example\n```python\nimport foo  # noqa: F401\n\n\ndef bar():\n    foo.bar()\n```\n\nUse instead:\n```python\nimport foo\n\n\ndef bar():\n    foo.bar()\n```\n\n## Options\n- `lint.external`\n\n## References\n- [Ruff error suppression](https://docs.astral.sh/ruff/linter/#error-suppression)\n",
     "preview": false
+  },
+  {
+    "name": "redirected-noqa",
+    "code": "RUF101",
+    "linter": "Ruff-specific rules",
+    "summary": "`{original}` is a redirect to `{target}`",
+    "message_formats": [
+      "`{original}` is a redirect to `{target}`"
+    ],
+    "fix": "Fix is always available.",
+    "explanation": "## What it does\nChecks for `noqa` directives that use redirected rule codes.\n\n## Why is this bad?\nWhen a rule code has been redirected, the implication is that the rule has\nbeen deprecated in favor of another rule or code. To keep the codebase\nconsistent and up-to-date, prefer the canonical rule code over the deprecated\ncode.\n\n## Example\n```python\nx = eval(command)  # noqa: PGH001\n```\n\nUse instead:\n```python\nx = eval(command)  # noqa: S307\n```\n",
+    "preview": true
   },
   {
     "name": "invalid-pyproject-toml",
