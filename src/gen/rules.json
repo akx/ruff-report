@@ -276,39 +276,63 @@
     "preview": false
   },
   {
-    "name": "blocking-http-call-in-async-function",
+    "name": "trio-timeout-without-await",
     "code": "ASYNC100",
     "linter": "flake8-async",
-    "summary": "Async functions should not call blocking HTTP methods",
+    "summary": "A `with {method_name}(...):` context does not contain any `await` statements. This makes it pointless, as the timeout can only be triggered by a checkpoint.",
     "message_formats": [
-      "Async functions should not call blocking HTTP methods"
+      "A `with {method_name}(...):` context does not contain any `await` statements. This makes it pointless, as the timeout can only be triggered by a checkpoint."
     ],
     "fix": "Fix is not available.",
-    "explanation": "## What it does\nChecks that async functions do not contain blocking HTTP calls.\n\n## Why is this bad?\nBlocking an async function via a blocking HTTP call will block the entire\nevent loop, preventing it from executing other tasks while waiting for the\nHTTP response, negating the benefits of asynchronous programming.\n\nInstead of making a blocking HTTP call, use an asynchronous HTTP client\nlibrary such as `aiohttp` or `httpx`.\n\n## Example\n```python\nasync def fetch():\n    urllib.request.urlopen(\"https://example.com/foo/bar\").read()\n```\n\nUse instead:\n```python\nasync def fetch():\n    async with aiohttp.ClientSession() as session:\n        async with session.get(\"https://example.com/foo/bar\") as resp:\n            ...\n```\n",
+    "explanation": "## What it does\nChecks for trio functions that should contain await but don't.\n\n## Why is this bad?\nSome trio context managers, such as `trio.fail_after` and\n`trio.move_on_after`, have no effect unless they contain an `await`\nstatement. The use of such functions without an `await` statement is\nlikely a mistake.\n\n## Example\n```python\nasync def func():\n    with trio.move_on_after(2):\n        do_something()\n```\n\nUse instead:\n```python\nasync def func():\n    with trio.move_on_after(2):\n        do_something()\n        await awaitable()\n```\n",
     "preview": false
   },
   {
-    "name": "open-sleep-or-subprocess-in-async-function",
-    "code": "ASYNC101",
+    "name": "trio-sync-call",
+    "code": "ASYNC105",
     "linter": "flake8-async",
-    "summary": "Async functions should not call `open`, `time.sleep`, or `subprocess` methods",
+    "summary": "Call to `{method_name}` is not immediately awaited",
     "message_formats": [
-      "Async functions should not call `open`, `time.sleep`, or `subprocess` methods"
+      "Call to `{method_name}` is not immediately awaited"
     ],
-    "fix": "Fix is not available.",
-    "explanation": "## What it does\nChecks that async functions do not contain calls to `open`, `time.sleep`,\nor `subprocess` methods.\n\n## Why is this bad?\nBlocking an async function via a blocking call will block the entire\nevent loop, preventing it from executing other tasks while waiting for the\ncall to complete, negating the benefits of asynchronous programming.\n\nInstead of making a blocking call, use an equivalent asynchronous library\nor function.\n\n## Example\n```python\nasync def foo():\n    time.sleep(1000)\n```\n\nUse instead:\n```python\nasync def foo():\n    await asyncio.sleep(1000)\n```\n",
+    "fix": "Fix is sometimes available.",
+    "explanation": "## What it does\nChecks for calls to trio functions that are not immediately awaited.\n\n## Why is this bad?\nMany of the functions exposed by trio are asynchronous, and must be awaited\nto take effect. Calling a trio function without an `await` can lead to\n`RuntimeWarning` diagnostics and unexpected behaviour.\n\n## Example\n```python\nasync def double_sleep(x):\n    trio.sleep(2 * x)\n```\n\nUse instead:\n```python\nasync def double_sleep(x):\n    await trio.sleep(2 * x)\n```\n\n## Fix safety\nThis rule's fix is marked as unsafe, as adding an `await` to a function\ncall changes its semantics and runtime behavior.\n",
     "preview": false
   },
   {
-    "name": "blocking-os-call-in-async-function",
-    "code": "ASYNC102",
+    "name": "trio-async-function-with-timeout",
+    "code": "ASYNC109",
     "linter": "flake8-async",
-    "summary": "Async functions should not call synchronous `os` methods",
+    "summary": "Prefer `trio.fail_after` and `trio.move_on_after` over manual `async` timeout behavior",
     "message_formats": [
-      "Async functions should not call synchronous `os` methods"
+      "Prefer `trio.fail_after` and `trio.move_on_after` over manual `async` timeout behavior"
     ],
     "fix": "Fix is not available.",
-    "explanation": "## What it does\nChecks that async functions do not contain calls to blocking synchronous\nprocess calls via the `os` module.\n\n## Why is this bad?\nBlocking an async function via a blocking call will block the entire\nevent loop, preventing it from executing other tasks while waiting for the\ncall to complete, negating the benefits of asynchronous programming.\n\nInstead of making a blocking call, use an equivalent asynchronous library\nor function.\n\n## Example\n```python\nasync def foo():\n    os.popen()\n```\n\nUse instead:\n```python\ndef foo():\n    os.popen()\n```\n",
+    "explanation": "## What it does\nChecks for `async` functions with a `timeout` argument.\n\n## Why is this bad?\nRather than implementing asynchronous timeout behavior manually, prefer\ntrio's built-in timeout functionality, available as `trio.fail_after`,\n`trio.move_on_after`, `trio.fail_at`, and `trio.move_on_at`.\n\n## Known problems\nTo avoid false positives, this rule is only enabled if `trio` is imported\nin the module.\n\n## Example\n```python\nasync def func():\n    await long_running_task(timeout=2)\n```\n\nUse instead:\n```python\nasync def func():\n    with trio.fail_after(2):\n        await long_running_task()\n```\n",
+    "preview": false
+  },
+  {
+    "name": "trio-unneeded-sleep",
+    "code": "ASYNC110",
+    "linter": "flake8-async",
+    "summary": "Use `trio.Event` instead of awaiting `trio.sleep` in a `while` loop",
+    "message_formats": [
+      "Use `trio.Event` instead of awaiting `trio.sleep` in a `while` loop"
+    ],
+    "fix": "Fix is not available.",
+    "explanation": "## What it does\nChecks for the use of `trio.sleep` in a `while` loop.\n\n## Why is this bad?\nInstead of sleeping in a `while` loop, and waiting for a condition\nto become true, it's preferable to `wait()` on a `trio.Event`.\n\n## Example\n```python\nDONE = False\n\n\nasync def func():\n    while not DONE:\n        await trio.sleep(1)\n```\n\nUse instead:\n```python\nDONE = trio.Event()\n\n\nasync def func():\n    await DONE.wait()\n```\n",
+    "preview": false
+  },
+  {
+    "name": "trio-zero-sleep-call",
+    "code": "ASYNC115",
+    "linter": "flake8-async",
+    "summary": "Use `trio.lowlevel.checkpoint()` instead of `trio.sleep(0)`",
+    "message_formats": [
+      "Use `trio.lowlevel.checkpoint()` instead of `trio.sleep(0)`"
+    ],
+    "fix": "Fix is always available.",
+    "explanation": "## What it does\nChecks for uses of `trio.sleep(0)`.\n\n## Why is this bad?\n`trio.sleep(0)` is equivalent to calling `trio.lowlevel.checkpoint()`.\nHowever, the latter better conveys the intent of the code.\n\n## Example\n```python\nimport trio\n\n\nasync def func():\n    await trio.sleep(0)\n```\n\nUse instead:\n```python\nimport trio\n\n\nasync def func():\n    await trio.lowlevel.checkpoint()\n```\n",
     "preview": false
   },
   {
@@ -322,6 +346,78 @@
     "fix": "Fix is sometimes available.",
     "explanation": "## What it does\nChecks for uses of `trio.sleep()` with an interval greater than 24 hours.\n\n## Why is this bad?\n`trio.sleep()` with an interval greater than 24 hours is usually intended\nto sleep indefinitely. Instead of using a large interval,\n`trio.sleep_forever()` better conveys the intent.\n\n\n## Example\n```python\nimport trio\n\n\nasync def func():\n    await trio.sleep(86401)\n```\n\nUse instead:\n```python\nimport trio\n\n\nasync def func():\n    await trio.sleep_forever()\n```\n",
     "preview": true
+  },
+  {
+    "name": "blocking-http-call-in-async-function",
+    "code": "ASYNC210",
+    "linter": "flake8-async",
+    "summary": "Async functions should not call blocking HTTP methods",
+    "message_formats": [
+      "Async functions should not call blocking HTTP methods"
+    ],
+    "fix": "Fix is not available.",
+    "explanation": "## What it does\nChecks that async functions do not contain blocking HTTP calls.\n\n## Why is this bad?\nBlocking an async function via a blocking HTTP call will block the entire\nevent loop, preventing it from executing other tasks while waiting for the\nHTTP response, negating the benefits of asynchronous programming.\n\nInstead of making a blocking HTTP call, use an asynchronous HTTP client\nlibrary such as `aiohttp` or `httpx`.\n\n## Example\n```python\nasync def fetch():\n    urllib.request.urlopen(\"https://example.com/foo/bar\").read()\n```\n\nUse instead:\n```python\nasync def fetch():\n    async with aiohttp.ClientSession() as session:\n        async with session.get(\"https://example.com/foo/bar\") as resp:\n            ...\n```\n",
+    "preview": false
+  },
+  {
+    "name": "create-subprocess-in-async-function",
+    "code": "ASYNC220",
+    "linter": "flake8-async",
+    "summary": "Async functions should not create subprocesses with blocking methods",
+    "message_formats": [
+      "Async functions should not create subprocesses with blocking methods"
+    ],
+    "fix": "Fix is not available.",
+    "explanation": "## What it does\nChecks that async functions do not create subprocesses with blocking methods.\n\n## Why is this bad?\nBlocking an async function via a blocking call will block the entire\nevent loop, preventing it from executing other tasks while waiting for the\ncall to complete, negating the benefits of asynchronous programming.\n\nInstead of making a blocking call, use an equivalent asynchronous library\nor function.\n\n## Example\n```python\nasync def foo():\n    os.popen(cmd)\n```\n\nUse instead:\n```python\nasync def foo():\n    asyncio.create_subprocess_shell(cmd)\n```\n",
+    "preview": false
+  },
+  {
+    "name": "run-process-in-async-function",
+    "code": "ASYNC221",
+    "linter": "flake8-async",
+    "summary": "Async functions should not run processes with blocking methods",
+    "message_formats": [
+      "Async functions should not run processes with blocking methods"
+    ],
+    "fix": "Fix is not available.",
+    "explanation": "## What it does\nChecks that async functions do not run processes with blocking methods.\n\n## Why is this bad?\nBlocking an async function via a blocking call will block the entire\nevent loop, preventing it from executing other tasks while waiting for the\ncall to complete, negating the benefits of asynchronous programming.\n\nInstead of making a blocking call, use an equivalent asynchronous library\nor function.\n\n## Example\n```python\nasync def foo():\n    subprocess.run(cmd)\n```\n\nUse instead:\n```python\nasync def foo():\n    asyncio.create_subprocess_shell(cmd)\n```\n",
+    "preview": false
+  },
+  {
+    "name": "wait-for-process-in-async-function",
+    "code": "ASYNC222",
+    "linter": "flake8-async",
+    "summary": "Async functions should not wait on processes with blocking methods",
+    "message_formats": [
+      "Async functions should not wait on processes with blocking methods"
+    ],
+    "fix": "Fix is not available.",
+    "explanation": "## What it does\nChecks that async functions do not wait on processes with blocking methods.\n\n## Why is this bad?\nBlocking an async function via a blocking call will block the entire\nevent loop, preventing it from executing other tasks while waiting for the\ncall to complete, negating the benefits of asynchronous programming.\n\nInstead of making a blocking call, use an equivalent asynchronous library\nor function.\n\n## Example\n```python\nasync def foo():\n    os.waitpid(0)\n```\n\nUse instead:\n```python\ndef wait_for_process():\n    os.waitpid(0)\n\n\nasync def foo():\n    await asyncio.loop.run_in_executor(None, wait_for_process)\n```\n",
+    "preview": false
+  },
+  {
+    "name": "blocking-open-call-in-async-function",
+    "code": "ASYNC230",
+    "linter": "flake8-async",
+    "summary": "Async functions should not open files with blocking methods like `open`",
+    "message_formats": [
+      "Async functions should not open files with blocking methods like `open`"
+    ],
+    "fix": "Fix is not available.",
+    "explanation": "## What it does\nChecks that async functions do not open files with blocking methods like `open`.\n\n## Why is this bad?\nBlocking an async function via a blocking call will block the entire\nevent loop, preventing it from executing other tasks while waiting for the\ncall to complete, negating the benefits of asynchronous programming.\n\nInstead of making a blocking call, use an equivalent asynchronous library\nor function.\n\n## Example\n```python\nasync def foo():\n    with open(\"bar.txt\") as f:\n        contents = f.read()\n```\n\nUse instead:\n```python\nimport anyio\n\n\nasync def foo():\n    async with await anyio.open_file(\"bar.txt\") as f:\n        contents = await f.read()\n```\n",
+    "preview": false
+  },
+  {
+    "name": "blocking-sleep-in-async-function",
+    "code": "ASYNC251",
+    "linter": "flake8-async",
+    "summary": "Async functions should not call `time.sleep`",
+    "message_formats": [
+      "Async functions should not call `time.sleep`"
+    ],
+    "fix": "Fix is not available.",
+    "explanation": "## What it does\nChecks that async functions do not call `time.sleep`.\n\n## Why is this bad?\nBlocking an async function via a `time.sleep` call will block the entire\nevent loop, preventing it from executing other tasks while waiting for the\n`time.sleep`, negating the benefits of asynchronous programming.\n\nInstead of `time.sleep`, use `asyncio.sleep`.\n\n## Example\n```python\nasync def fetch():\n    time.sleep(1)\n```\n\nUse instead:\n```python\nasync def fetch():\n    await asyncio.sleep(1)\n```\n",
+    "preview": false
   },
   {
     "name": "assert",
@@ -1144,8 +1240,8 @@
       "Use of Django `extra` can lead to SQL injection vulnerabilities"
     ],
     "fix": "Fix is not available.",
-    "explanation": "## What it does\nChecks for uses of Django's `extra` function.\n\n## Why is this bad?\nDjango's `extra` function can be used to execute arbitrary SQL queries,\nwhich can in turn lead to SQL injection vulnerabilities.\n\n## Example\n```python\nfrom django.contrib.auth.models import User\n\nUser.objects.all().extra(select={\"test\": \"%secure\" % \"nos\"})\n```\n\n## References\n- [Django documentation: SQL injection protection](https://docs.djangoproject.com/en/dev/topics/security/#sql-injection-protection)\n- [Common Weakness Enumeration: CWE-89](https://cwe.mitre.org/data/definitions/89.html)\n",
-    "preview": true
+    "explanation": "## What it does\nChecks for uses of Django's `extra` function where one or more arguments\npassed are not literal expressions.\n\n## Why is this bad?\nDjango's `extra` function can be used to execute arbitrary SQL queries,\nwhich can in turn lead to SQL injection vulnerabilities.\n\n## Example\n```python\nfrom django.contrib.auth.models import User\n\n# String interpolation creates a security loophole that could be used\n# for SQL injection:\nUser.objects.all().extra(select={\"test\": \"%secure\" % \"nos\"})\n```\n\n## Use instead:\n```python\nfrom django.contrib.auth.models import User\n\n# SQL injection is impossible if all arguments are literal expressions:\nUser.objects.all().extra(select={\"test\": \"secure\"})\n```\n\n## References\n- [Django documentation: SQL injection protection](https://docs.djangoproject.com/en/dev/topics/security/#sql-injection-protection)\n- [Common Weakness Enumeration: CWE-89](https://cwe.mitre.org/data/definitions/89.html)\n",
+    "preview": false
   },
   {
     "name": "django-raw-sql",
@@ -2009,7 +2105,7 @@
       "Missing copyright notice at top of file"
     ],
     "fix": "Fix is not available.",
-    "explanation": "## What it does\nChecks for the absence of copyright notices within Python files.\n\n## Why is this bad?\nIn some codebases, it's common to have a license header at the top of every\nfile. This rule ensures that the license header is present.\n",
+    "explanation": "## What it does\nChecks for the absence of copyright notices within Python files.\n\nNote that this check only searches within the first 4096 bytes of the file.\n\n## Why is this bad?\nIn some codebases, it's common to have a license header at the top of every\nfile. This rule ensures that the license header is present.\n",
     "preview": true
   },
   {
@@ -2374,7 +2470,7 @@
       "Add `from __future__ import annotations` to simplify `{name}`"
     ],
     "fix": "Fix is not available.",
-    "explanation": "## What it does\nChecks for missing `from __future__ import annotations` imports upon\ndetecting type annotations that can be written more succinctly under\nPEP 563.\n\n## Why is this bad?\nPEP 563 enabled the use of a number of convenient type annotations, such as\n`list[str]` instead of `List[str]`. However, these annotations are only\navailable on Python 3.9 and higher, _unless_ the `from __future__ import annotations`\nimport is present.\n\nSimilarly, PEP 604 enabled the use of the `|` operator for unions, such as\n`str | None` instead of `Optional[str]`. However, these annotations are only\navailable on Python 3.10 and higher, _unless_ the `from __future__ import annotations`\nimport is present.\n\nBy adding the `__future__` import, the pyupgrade rules can automatically\nmigrate existing code to use the new syntax, even for older Python versions.\nThis rule thus pairs well with pyupgrade and with Ruff's pyupgrade rules.\n\nThis rule respects the [`target-version`] setting. For example, if your\nproject targets Python 3.10 and above, adding `from __future__ import annotations`\ndoes not impact your ability to leverage PEP 604-style unions (e.g., to\nconvert `Optional[str]` to `str | None`). As such, this rule will only\nflag such usages if your project targets Python 3.9 or below.\n\n## Example\n```python\nfrom typing import List, Dict, Optional\n\n\ndef func(obj: Dict[str, Optional[int]]) -> None:\n    ...\n```\n\nUse instead:\n```python\nfrom __future__ import annotations\n\nfrom typing import List, Dict, Optional\n\n\ndef func(obj: Dict[str, Optional[int]]) -> None:\n    ...\n```\n\nAfter running the additional pyupgrade rules:\n```python\nfrom __future__ import annotations\n\n\ndef func(obj: dict[str, int | None]) -> None:\n    ...\n```\n\n## Options\n- `target-version`\n",
+    "explanation": "## What it does\nChecks for missing `from __future__ import annotations` imports upon\ndetecting type annotations that can be written more succinctly under\nPEP 563.\n\n## Why is this bad?\nPEP 585 enabled the use of a number of convenient type annotations, such as\n`list[str]` instead of `List[str]`. However, these annotations are only\navailable on Python 3.9 and higher, _unless_ the `from __future__ import annotations`\nimport is present.\n\nSimilarly, PEP 604 enabled the use of the `|` operator for unions, such as\n`str | None` instead of `Optional[str]`. However, these annotations are only\navailable on Python 3.10 and higher, _unless_ the `from __future__ import annotations`\nimport is present.\n\nBy adding the `__future__` import, the pyupgrade rules can automatically\nmigrate existing code to use the new syntax, even for older Python versions.\nThis rule thus pairs well with pyupgrade and with Ruff's pyupgrade rules.\n\nThis rule respects the [`target-version`] setting. For example, if your\nproject targets Python 3.10 and above, adding `from __future__ import annotations`\ndoes not impact your ability to leverage PEP 604-style unions (e.g., to\nconvert `Optional[str]` to `str | None`). As such, this rule will only\nflag such usages if your project targets Python 3.9 or below.\n\n## Example\n```python\nfrom typing import List, Dict, Optional\n\n\ndef func(obj: Dict[str, Optional[int]]) -> None:\n    ...\n```\n\nUse instead:\n```python\nfrom __future__ import annotations\n\nfrom typing import List, Dict, Optional\n\n\ndef func(obj: Dict[str, Optional[int]]) -> None:\n    ...\n```\n\nAfter running the additional pyupgrade rules:\n```python\nfrom __future__ import annotations\n\n\ndef func(obj: dict[str, int | None]) -> None:\n    ...\n```\n\n## Options\n- `target-version`\n",
     "preview": false
   },
   {
@@ -3975,7 +4071,7 @@
       "Return the condition directly"
     ],
     "fix": "Fix is sometimes available.",
-    "explanation": "## What it does\nChecks for `if` statements that can be replaced with `bool`.\n\n## Why is this bad?\n`if` statements that return `True` for a truthy condition and `False` for\na falsey condition can be replaced with boolean casts.\n\n## Example\n```python\nif x > 0:\n    return True\nelse:\n    return False\n```\n\nUse instead:\n```python\nreturn x > 0\n```\n\nIn [preview], this rule will also flag implicit `else` cases, as in:\n```python\nif x > 0:\n    return True\nreturn False\n```\n\n## References\n- [Python documentation: Truth Value Testing](https://docs.python.org/3/library/stdtypes.html#truth-value-testing)\n\n[preview]: https://docs.astral.sh/ruff/preview/\n",
+    "explanation": "## What it does\nChecks for `if` statements that can be replaced with `bool`.\n\n## Why is this bad?\n`if` statements that return `True` for a truthy condition and `False` for\na falsey condition can be replaced with boolean casts.\n\n## Example\nGiven:\n```python\nif x > 0:\n    return True\nelse:\n    return False\n```\n\nUse instead:\n```python\nreturn x > 0\n```\n\nOr, given:\n```python\nif x > 0:\n    return True\nreturn False\n```\n\nUse instead:\n```python\nreturn x > 0\n```\n\n## References\n- [Python documentation: Truth Value Testing](https://docs.python.org/3/library/stdtypes.html#truth-value-testing)\n",
     "preview": false
   },
   {
@@ -4248,10 +4344,9 @@
     "name": "yoda-conditions",
     "code": "SIM300",
     "linter": "flake8-simplify",
-    "summary": "Yoda conditions are discouraged, use `{suggestion}` instead",
+    "summary": "Yoda condition detected",
     "message_formats": [
-      "Yoda conditions are discouraged, use `{suggestion}` instead",
-      "Yoda conditions are discouraged"
+      "Yoda condition detected"
     ],
     "fix": "Fix is sometimes available.",
     "explanation": "## What it does\nChecks for conditions that position a constant on the left-hand side of the\ncomparison operator, rather than the right-hand side.\n\n## Why is this bad?\nThese conditions (sometimes referred to as \"Yoda conditions\") are less\nreadable than conditions that place the variable on the left-hand side of\nthe comparison operator.\n\nIn some languages, Yoda conditions are used to prevent accidental\nassignment in conditions (i.e., accidental uses of the `=` operator,\ninstead of the `==` operator). However, Python does not allow assignments\nin conditions unless using the `:=` operator, so Yoda conditions provide\nno benefit in this regard.\n\n## Example\n```python\nif \"Foo\" == foo:\n    ...\n```\n\nUse instead:\n```python\nif foo == \"Foo\":\n    ...\n```\n\n## References\n- [Python documentation: Comparisons](https://docs.python.org/3/reference/expressions.html#comparisons)\n- [Python documentation: Assignment statements](https://docs.python.org/3/reference/simple_stmts.html#assignment-statements)\n",
@@ -4450,66 +4545,6 @@
     ],
     "fix": "Fix is not available.",
     "explanation": "## What it does\nChecks that the colon after a \"TODO\" tag is followed by a space.\n\n## Why is this bad?\n\"TODO\" tags are typically followed by a parenthesized author name, a colon,\na space, and a description of the issue, in that order.\n\nDeviating from this pattern can lead to inconsistent and non-idiomatic\ncomments.\n\n## Example\n```python\n# TODO(charlie):fix this\n```\n\nUse instead:\n```python\n# TODO(charlie): fix this\n```\n",
-    "preview": false
-  },
-  {
-    "name": "trio-timeout-without-await",
-    "code": "TRIO100",
-    "linter": "flake8-trio",
-    "summary": "A `with {method_name}(...):` context does not contain any `await` statements. This makes it pointless, as the timeout can only be triggered by a checkpoint.",
-    "message_formats": [
-      "A `with {method_name}(...):` context does not contain any `await` statements. This makes it pointless, as the timeout can only be triggered by a checkpoint."
-    ],
-    "fix": "Fix is not available.",
-    "explanation": "## What it does\nChecks for trio functions that should contain await but don't.\n\n## Why is this bad?\nSome trio context managers, such as `trio.fail_after` and\n`trio.move_on_after`, have no effect unless they contain an `await`\nstatement. The use of such functions without an `await` statement is\nlikely a mistake.\n\n## Example\n```python\nasync def func():\n    with trio.move_on_after(2):\n        do_something()\n```\n\nUse instead:\n```python\nasync def func():\n    with trio.move_on_after(2):\n        do_something()\n        await awaitable()\n```\n",
-    "preview": false
-  },
-  {
-    "name": "trio-sync-call",
-    "code": "TRIO105",
-    "linter": "flake8-trio",
-    "summary": "Call to `{method_name}` is not immediately awaited",
-    "message_formats": [
-      "Call to `{method_name}` is not immediately awaited"
-    ],
-    "fix": "Fix is sometimes available.",
-    "explanation": "## What it does\nChecks for calls to trio functions that are not immediately awaited.\n\n## Why is this bad?\nMany of the functions exposed by trio are asynchronous, and must be awaited\nto take effect. Calling a trio function without an `await` can lead to\n`RuntimeWarning` diagnostics and unexpected behaviour.\n\n## Example\n```python\nasync def double_sleep(x):\n    trio.sleep(2 * x)\n```\n\nUse instead:\n```python\nasync def double_sleep(x):\n    await trio.sleep(2 * x)\n```\n\n## Fix safety\nThis rule's fix is marked as unsafe, as adding an `await` to a function\ncall changes its semantics and runtime behavior.\n",
-    "preview": false
-  },
-  {
-    "name": "trio-async-function-with-timeout",
-    "code": "TRIO109",
-    "linter": "flake8-trio",
-    "summary": "Prefer `trio.fail_after` and `trio.move_on_after` over manual `async` timeout behavior",
-    "message_formats": [
-      "Prefer `trio.fail_after` and `trio.move_on_after` over manual `async` timeout behavior"
-    ],
-    "fix": "Fix is not available.",
-    "explanation": "## What it does\nChecks for `async` functions with a `timeout` argument.\n\n## Why is this bad?\nRather than implementing asynchronous timeout behavior manually, prefer\ntrio's built-in timeout functionality, available as `trio.fail_after`,\n`trio.move_on_after`, `trio.fail_at`, and `trio.move_on_at`.\n\n## Known problems\nTo avoid false positives, this rule is only enabled if `trio` is imported\nin the module.\n\n## Example\n```python\nasync def func():\n    await long_running_task(timeout=2)\n```\n\nUse instead:\n```python\nasync def func():\n    with trio.fail_after(2):\n        await long_running_task()\n```\n",
-    "preview": false
-  },
-  {
-    "name": "trio-unneeded-sleep",
-    "code": "TRIO110",
-    "linter": "flake8-trio",
-    "summary": "Use `trio.Event` instead of awaiting `trio.sleep` in a `while` loop",
-    "message_formats": [
-      "Use `trio.Event` instead of awaiting `trio.sleep` in a `while` loop"
-    ],
-    "fix": "Fix is not available.",
-    "explanation": "## What it does\nChecks for the use of `trio.sleep` in a `while` loop.\n\n## Why is this bad?\nInstead of sleeping in a `while` loop, and waiting for a condition\nto become true, it's preferable to `wait()` on a `trio.Event`.\n\n## Example\n```python\nDONE = False\n\n\nasync def func():\n    while not DONE:\n        await trio.sleep(1)\n```\n\nUse instead:\n```python\nDONE = trio.Event()\n\n\nasync def func():\n    await DONE.wait()\n```\n",
-    "preview": false
-  },
-  {
-    "name": "trio-zero-sleep-call",
-    "code": "TRIO115",
-    "linter": "flake8-trio",
-    "summary": "Use `trio.lowlevel.checkpoint()` instead of `trio.sleep(0)`",
-    "message_formats": [
-      "Use `trio.lowlevel.checkpoint()` instead of `trio.sleep(0)`"
-    ],
-    "fix": "Fix is always available.",
-    "explanation": "## What it does\nChecks for uses of `trio.sleep(0)`.\n\n## Why is this bad?\n`trio.sleep(0)` is equivalent to calling `trio.lowlevel.checkpoint()`.\nHowever, the latter better conveys the intent of the code.\n\n## Example\n```python\nimport trio\n\n\nasync def func():\n    await trio.sleep(0)\n```\n\nUse instead:\n```python\nimport trio\n\n\nasync def func():\n    await trio.lowlevel.checkpoint()\n```\n",
     "preview": false
   },
   {
@@ -5547,7 +5582,7 @@
     ],
     "fix": "Fix is not available.",
     "explanation": "## What it does\nChecks for `for` loops that can be replaced by a dictionary comprehension.\n\n## Why is this bad?\nWhen creating or extending a dictionary in a for-loop, prefer a dictionary\ncomprehension. Comprehensions are more readable and more performant.\n\nFor example, when comparing `{x: x for x in list(range(1000))}` to the `for`\nloop version, the comprehension is ~10% faster on Python 3.11.\n\nNote that, as with all `perflint` rules, this is only intended as a\nmicro-optimization, and will have a negligible impact on performance in\nmost cases.\n\n## Example\n```python\npairs = ((\"a\", 1), (\"b\", 2))\nresult = {}\nfor x, y in pairs:\n    if y % 2:\n        result[x] = y\n```\n\nUse instead:\n```python\npairs = ((\"a\", 1), (\"b\", 2))\nresult = {x: y for x, y in pairs if y % 2}\n```\n\nIf you're appending to an existing dictionary, use the `update` method instead:\n```python\npairs = ((\"a\", 1), (\"b\", 2))\nresult.update({x: y for x, y in pairs if y % 2})\n```\n",
-    "preview": true
+    "preview": false
   },
   {
     "name": "mixed-spaces-and-tabs",
@@ -6052,7 +6087,7 @@
       "Module level import not at top of file"
     ],
     "fix": "Fix is not available.",
-    "explanation": "## What it does\nChecks for imports that are not at the top of the file. For Jupyter notebooks, this\nchecks for imports that are not at the top of the cell.\n\n## Why is this bad?\nAccording to [PEP 8], \"imports are always put at the top of the file, just after any\nmodule comments and docstrings, and before module globals and constants.\"\n\nThis rule makes an exception for `sys.path` modifications,  allowing for\n`sys.path.insert`, `sys.path.append`, and similar modifications between import\nstatements.\n\nIn [preview], this rule also allows `os.environ` modifications between import\nstatements.\n\n## Example\n```python\n\"One string\"\n\"Two string\"\na = 1\nimport os\nfrom sys import x\n```\n\nUse instead:\n```python\nimport os\nfrom sys import x\n\n\"One string\"\n\"Two string\"\na = 1\n```\n\n[PEP 8]: https://peps.python.org/pep-0008/#imports\n[preview]: https://docs.astral.sh/ruff/preview/\n",
+    "explanation": "## What it does\nChecks for imports that are not at the top of the file. For Jupyter notebooks, this\nchecks for imports that are not at the top of the cell.\n\n## Why is this bad?\nAccording to [PEP 8], \"imports are always put at the top of the file, just after any\nmodule comments and docstrings, and before module globals and constants.\"\n\nThis rule makes an exception for both `sys.path` modifications (allowing for\n`sys.path.insert`, `sys.path.append`, etc.) and `os.environ` modifications\nbetween imports.\n\n## Example\n```python\n\"One string\"\n\"Two string\"\na = 1\nimport os\nfrom sys import x\n```\n\nUse instead:\n```python\nimport os\nfrom sys import x\n\n\"One string\"\n\"Two string\"\na = 1\n```\n\n[PEP 8]: https://peps.python.org/pep-0008/#imports\n",
     "preview": false
   },
   {
@@ -6125,7 +6160,7 @@
       "Comparison to `None` should be `cond is not None`"
     ],
     "fix": "Fix is always available.",
-    "explanation": "## What it does\nChecks for comparisons to `None` which are not using the `is` operator.\n\n## Why is this bad?\nAccording to [PEP 8], \"Comparisons to singletons like None should always be done with\nis or is not, never the equality operators.\"\n\n## Example\n```python\nif arg != None:\n    pass\nif None == arg:\n    pass\n```\n\nUse instead:\n```python\nif arg is not None:\n    pass\n```\n\n[PEP 8]: https://peps.python.org/pep-0008/#programming-recommendations\n",
+    "explanation": "## What it does\nChecks for comparisons to `None` which are not using the `is` operator.\n\n## Why is this bad?\nAccording to [PEP 8], \"Comparisons to singletons like None should always be done with\n`is` or `is not`, never the equality operators.\"\n\n## Example\n```python\nif arg != None:\n    pass\nif None == arg:\n    pass\n```\n\nUse instead:\n```python\nif arg is not None:\n    pass\n```\n\n## Fix safety\n\nThis rule's fix is marked as unsafe, as it may alter runtime behavior when\nused with libraries that override the `==`/`__eq__` or `!=`/`__ne__` operators.\nIn these cases, `is`/`is not` may not be equivalent to `==`/`!=`. For more\ninformation, see [this issue].\n\n[PEP 8]: https://peps.python.org/pep-0008/#programming-recommendations\n[this issue]: https://github.com/astral-sh/ruff/issues/4560\n",
     "preview": false
   },
   {
@@ -6140,7 +6175,7 @@
       "Avoid inequality comparisons to `False`; use `if {cond}:` for truth checks"
     ],
     "fix": "Fix is always available.",
-    "explanation": "## What it does\nChecks for equality comparisons to boolean literals.\n\n## Why is this bad?\n[PEP 8] recommends against using the equality operators `==` and `!=` to\ncompare values to `True` or `False`.\n\nInstead, use `if cond:` or `if not cond:` to check for truth values.\n\nIf you intend to check if a value is the boolean literal `True` or `False`,\nconsider using `is` or `is not` to check for identity instead.\n\n## Example\n```python\nif foo == True:\n    ...\n\nif bar == False:\n    ...\n```\n\nUse instead:\n```python\nif foo:\n    ...\n\nif not bar:\n    ...\n```\n\n[PEP 8]: https://peps.python.org/pep-0008/#programming-recommendations\n",
+    "explanation": "## What it does\nChecks for equality comparisons to boolean literals.\n\n## Why is this bad?\n[PEP 8] recommends against using the equality operators `==` and `!=` to\ncompare values to `True` or `False`.\n\nInstead, use `if cond:` or `if not cond:` to check for truth values.\n\nIf you intend to check if a value is the boolean literal `True` or `False`,\nconsider using `is` or `is not` to check for identity instead.\n\n## Example\n```python\nif foo == True:\n    ...\n\nif bar == False:\n    ...\n```\n\nUse instead:\n```python\nif foo:\n    ...\n\nif not bar:\n    ...\n```\n\n## Fix safety\n\nThis rule's fix is marked as unsafe, as it may alter runtime behavior when\nused with libraries that override the `==`/`__eq__` or `!=`/`__ne__` operators.\nIn these cases, `is`/`is not` may not be equivalent to `==`/`!=`. For more\ninformation, see [this issue].\n\n[PEP 8]: https://peps.python.org/pep-0008/#programming-recommendations\n[this issue]: https://github.com/astral-sh/ruff/issues/4560\n",
     "preview": false
   },
   {
@@ -6171,9 +6206,8 @@
     "name": "type-comparison",
     "code": "E721",
     "linter": "pycodestyle",
-    "summary": "Do not compare types, use `isinstance()`",
+    "summary": "Use `is` and `is not` for type comparisons, or `isinstance()` for isinstance checks",
     "message_formats": [
-      "Do not compare types, use `isinstance()`",
       "Use `is` and `is not` for type comparisons, or `isinstance()` for isinstance checks"
     ],
     "fix": "Fix is not available.",
@@ -6261,7 +6295,7 @@
       "SyntaxError: {message}"
     ],
     "fix": "Fix is not available.",
-    "explanation": "## What it does\nChecks for code that contains syntax errors.\n\n## Why is this bad?\nCode with syntax errors cannot be executed. Such errors are likely a\nmistake.\n\n## Example\n```python\nx =\n```\n\nUse instead:\n```python\nx = 1\n```\n\n## References\n- [Python documentation: Syntax Errors](https://docs.python.org/3/tutorial/errors.html#syntax-errors)\n",
+    "explanation": "## Deprecated\nThis rule has been deprecated and will be removed in a future release. Syntax errors will\nalways be shown regardless of whether this rule is selected or not.\n\n## What it does\nChecks for code that contains syntax errors.\n\n## Why is this bad?\nCode with syntax errors cannot be executed. Such errors are likely a\nmistake.\n\n## Example\n```python\nx =\n```\n\nUse instead:\n```python\nx = 1\n```\n\n## References\n- [Python documentation: Syntax Errors](https://docs.python.org/3/tutorial/errors.html#syntax-errors)\n",
     "preview": false
   },
   {
@@ -7242,7 +7276,7 @@
       "Use `!=` to compare constant literals"
     ],
     "fix": "Fix is always available.",
-    "explanation": "## What it does\nChecks for `is` and `is not` comparisons against constant literals, like\nintegers and strings.\n\n## Why is this bad?\nThe `is` and `is not` comparators operate on identity, in that they check\nwhether two objects are the same object. If the objects are not the same\nobject, the comparison will always be `False`. Using `is` and `is not` with\nconstant literals often works \"by accident\", but are not guaranteed to produce\nthe expected result.\n\nAs of Python 3.8, using `is` and `is not` with constant literals will produce\na `SyntaxWarning`.\n\nInstead, use `==` and `!=` to compare constant literals, which will compare\nthe values of the objects instead of their identities.\n\nIn [preview], this rule will also flag `is` and `is not` comparisons against\nnon-constant literals, like lists, sets, and dictionaries. While such\ncomparisons will not raise a `SyntaxWarning`, they are still likely to be\nincorrect, as they will compare the identities of the objects instead of\ntheir values, which will always evaluate to `False`.\n\n## Example\n```python\nx = 200\nif x is 200:\n    print(\"It's 200!\")\n```\n\nUse instead:\n```python\nx = 200\nif x == 200:\n    print(\"It's 200!\")\n```\n\n## References\n- [Python documentation: Identity comparisons](https://docs.python.org/3/reference/expressions.html#is-not)\n- [Python documentation: Value comparisons](https://docs.python.org/3/reference/expressions.html#value-comparisons)\n- [_Why does Python log a SyntaxWarning for ‘is’ with literals?_ by Adam Johnson](https://adamj.eu/tech/2020/01/21/why-does-python-3-8-syntaxwarning-for-is-literal/)\n\n[preview]: https://docs.astral.sh/ruff/preview/\n",
+    "explanation": "## What it does\nChecks for `is` and `is not` comparisons against literals, like integers,\nstrings, or lists.\n\n## Why is this bad?\nThe `is` and `is not` comparators operate on identity, in that they check\nwhether two objects are the same object. If the objects are not the same\nobject, the comparison will always be `False`. Using `is` and `is not` with\nconstant literals often works \"by accident\", but are not guaranteed to produce\nthe expected result.\n\nAs of Python 3.8, using `is` and `is not` with constant literals will produce\na `SyntaxWarning`.\n\nThis rule will also flag `is` and `is not` comparisons against non-constant\nliterals, like lists, sets, and dictionaries. While such comparisons will\nnot raise a `SyntaxWarning`, they are still likely to be incorrect, as they\nwill compare the identities of the objects instead of their values, which\nwill always evaluate to `False`.\n\nInstead, use `==` and `!=` to compare literals, which will compare the\nvalues of the objects instead of their identities.\n\n## Example\n```python\nx = 200\nif x is 200:\n    print(\"It's 200!\")\n```\n\nUse instead:\n```python\nx = 200\nif x == 200:\n    print(\"It's 200!\")\n```\n\n## References\n- [Python documentation: Identity comparisons](https://docs.python.org/3/reference/expressions.html#is-not)\n- [Python documentation: Value comparisons](https://docs.python.org/3/reference/expressions.html#value-comparisons)\n- [_Why does Python log a SyntaxWarning for ‘is’ with literals?_ by Adam Johnson](https://adamj.eu/tech/2020/01/21/why-does-python-3-8-syntaxwarning-for-is-literal/)\n",
     "preview": false
   },
   {
@@ -7602,26 +7636,26 @@
     "name": "non-ascii-name",
     "code": "PLC2401",
     "linter": "Pylint",
-    "summary": "{kind} name `{name}` contains a non-ASCII character, consider renaming it",
+    "summary": "{kind} name `{name}` contains a non-ASCII character",
     "message_formats": [
-      "{kind} name `{name}` contains a non-ASCII character, consider renaming it"
+      "{kind} name `{name}` contains a non-ASCII character"
     ],
     "fix": "Fix is not available.",
     "explanation": "## What it does\nChecks for the use of non-ASCII characters in variable names.\n\n## Why is this bad?\nThe use of non-ASCII characters in variable names can cause confusion\nand compatibility issues (see: [PEP 672]).\n\n## Example\n```python\nápple_count: int\n```\n\nUse instead:\n```python\napple_count: int\n```\n\n[PEP 672]: https://peps.python.org/pep-0672/\n",
-    "preview": true
+    "preview": false
   },
   {
     "name": "non-ascii-import-name",
     "code": "PLC2403",
     "linter": "Pylint",
-    "summary": "Module alias `{name}` contains a non-ASCII character, use an ASCII-only alias",
+    "summary": "Module alias `{name}` contains a non-ASCII character",
     "message_formats": [
-      "Module alias `{name}` contains a non-ASCII character, use an ASCII-only alias",
-      "Module name `{name}` contains a non-ASCII character, use an ASCII-only alias"
+      "Module alias `{name}` contains a non-ASCII character",
+      "Module name `{name}` contains a non-ASCII character"
     ],
     "fix": "Fix is not available.",
     "explanation": "## What it does\nChecks for the use of non-ASCII characters in import statements.\n\n## Why is this bad?\nThe use of non-ASCII characters in import statements can cause confusion\nand compatibility issues (see: [PEP 672]).\n\n## Example\n```python\nimport bár\n```\n\nUse instead:\n```python\nimport bar\n```\n\nIf the module is third-party, use an ASCII-only alias:\n```python\nimport bár as bar\n```\n\n[PEP 672]: https://peps.python.org/pep-0672/\n",
-    "preview": true
+    "preview": false
   },
   {
     "name": "import-private-name",
@@ -7695,7 +7729,7 @@
     ],
     "fix": "Fix is not available.",
     "explanation": "## What it does\nChecks for variables which are both declared as both `nonlocal` and\n`global`.\n\n## Why is this bad?\nA `nonlocal` variable is a variable that is defined in the nearest\nenclosing scope, but not in the global scope, while a `global` variable is\na variable that is defined in the global scope.\n\nDeclaring a variable as both `nonlocal` and `global` is contradictory and\nwill raise a `SyntaxError`.\n\n## Example\n```python\ncounter = 0\n\n\ndef increment():\n    global counter\n    nonlocal counter\n    counter += 1\n```\n\nUse instead:\n```python\ncounter = 0\n\n\ndef increment():\n    global counter\n    counter += 1\n```\n\n## References\n- [Python documentation: The `global` statement](https://docs.python.org/3/reference/simple_stmts.html#the-global-statement)\n- [Python documentation: The `nonlocal` statement](https://docs.python.org/3/reference/simple_stmts.html#nonlocal)\n",
-    "preview": true
+    "preview": false
   },
   {
     "name": "continue-in-finally",
@@ -7869,13 +7903,13 @@
     "name": "potential-index-error",
     "code": "PLE0643",
     "linter": "Pylint",
-    "summary": "Potential IndexError",
+    "summary": "Expression is likely to raise `IndexError`",
     "message_formats": [
-      "Potential IndexError"
+      "Expression is likely to raise `IndexError`"
     ],
     "fix": "Fix is not available.",
     "explanation": "## What it does\nChecks for hard-coded sequence accesses that are known to be out of bounds.\n\n## Why is this bad?\nAttempting to access a sequence with an out-of-bounds index will cause an\n`IndexError` to be raised at runtime. When the sequence and index are\ndefined statically (e.g., subscripts on `list` and `tuple` literals, with\ninteger indexes), such errors can be detected ahead of time.\n\n## Example\n```python\nprint([0, 1, 2][3])\n```\n",
-    "preview": true
+    "preview": false
   },
   {
     "name": "misplaced-bare-raise",
@@ -7887,7 +7921,7 @@
     ],
     "fix": "Fix is not available.",
     "explanation": "## What it does\nChecks for bare `raise` statements outside of exception handlers.\n\n## Why is this bad?\nA bare `raise` statement without an exception object will re-raise the last\nexception that was active in the current scope, and is typically used\nwithin an exception handler to re-raise the caught exception.\n\nIf a bare `raise` is used outside of an exception handler, it will generate\nan error due to the lack of an active exception.\n\nNote that a bare `raise` within a  `finally` block will work in some cases\n(namely, when the exception is raised within the `try` block), but should\nbe avoided as it can lead to confusing behavior.\n\n## Example\n```python\nfrom typing import Any\n\n\ndef is_some(obj: Any) -> bool:\n    if obj is None:\n        raise\n```\n\nUse instead:\n```python\nfrom typing import Any\n\n\ndef is_some(obj: Any) -> bool:\n    if obj is None:\n        raise ValueError(\"`obj` cannot be `None`\")\n```\n",
-    "preview": true
+    "preview": false
   },
   {
     "name": "repeated-keyword-argument",
@@ -7899,7 +7933,7 @@
     ],
     "fix": "Fix is not available.",
     "explanation": "## What it does\nChecks for repeated keyword arguments in function calls.\n\n## Why is this bad?\nPython does not allow repeated keyword arguments in function calls. If a\nfunction is called with the same keyword argument multiple times, the\ninterpreter will raise an exception.\n\n## Example\n```python\nfunc(1, 2, c=3, **{\"c\": 4})\n```\n\n## References\n- [Python documentation: Argument](https://docs.python.org/3/glossary.html#term-argument)\n",
-    "preview": true
+    "preview": false
   },
   {
     "name": "dict-iter-missing-items",
@@ -8284,7 +8318,7 @@
       "Too many positional arguments ({c_pos}/{max_pos})"
     ],
     "fix": "Fix is not available.",
-    "explanation": "## What it does\nChecks for function definitions that include too many positional arguments.\n\nBy default, this rule allows up to five arguments, as configured by the\n[`lint.pylint.max-positional-args`] option.\n\n## Why is this bad?\nFunctions with many arguments are harder to understand, maintain, and call.\nThis is especially true for functions with many positional arguments, as\nproviding arguments positionally is more error-prone and less clear to\nreaders than providing arguments by name.\n\nConsider refactoring functions with many arguments into smaller functions\nwith fewer arguments, using objects to group related arguments, or\nmigrating to keyword-only arguments.\n\n## Example\n```python\ndef plot(x, y, z, color, mark, add_trendline):\n    ...\n\n\nplot(1, 2, 3, \"r\", \"*\", True)\n```\n\nUse instead:\n```python\ndef plot(x, y, z, *, color, mark, add_trendline):\n    ...\n\n\nplot(1, 2, 3, color=\"r\", mark=\"*\", add_trendline=True)\n```\n\n## Options\n- `lint.pylint.max-positional-args`\n",
+    "explanation": "## What it does\nChecks for function definitions that include too many positional arguments.\n\nBy default, this rule allows up to five arguments, as configured by the\n[`lint.pylint.max-positional-args`] option.\n\n## Why is this bad?\nFunctions with many arguments are harder to understand, maintain, and call.\nThis is especially true for functions with many positional arguments, as\nproviding arguments positionally is more error-prone and less clear to\nreaders than providing arguments by name.\n\nConsider refactoring functions with many arguments into smaller functions\nwith fewer arguments, using objects to group related arguments, or migrating to\n[keyword-only arguments](https://docs.python.org/3/tutorial/controlflow.html#special-parameters).\n\n## Example\n```python\ndef plot(x, y, z, color, mark, add_trendline):\n    ...\n\n\nplot(1, 2, 3, \"r\", \"*\", True)\n```\n\nUse instead:\n```python\ndef plot(x, y, z, *, color, mark, add_trendline):\n    ...\n\n\nplot(1, 2, 3, color=\"r\", mark=\"*\", add_trendline=True)\n```\n\n## Options\n- `lint.pylint.max-positional-args`\n",
     "preview": true
   },
   {
@@ -8297,7 +8331,7 @@
       "Merge `isinstance` calls"
     ],
     "fix": "Fix is always available.",
-    "explanation": "## What it does\nChecks for repeated `isinstance` calls on the same object.\n\n## Why is this bad?\nRepeated `isinstance` calls on the same object can be merged into a\nsingle call.\n\n## Fix safety\nThis rule's fix is marked as unsafe on Python 3.10 and later, as combining\nmultiple `isinstance` calls with a binary operator (`|`) will fail at\nruntime if any of the operands are themselves tuples.\n\nFor example, given `TYPES = (dict, list)`, then\n`isinstance(None, TYPES | set | float)` will raise a `TypeError` at runtime,\nwhile `isinstance(None, set | float)` will not.\n\n## Example\n```python\ndef is_number(x):\n    return isinstance(x, int) or isinstance(x, float) or isinstance(x, complex)\n```\n\nUse instead:\n```python\ndef is_number(x):\n    return isinstance(x, (int, float, complex))\n```\n\nOr, for Python 3.10 and later:\n\n```python\ndef is_number(x):\n    return isinstance(x, int | float | complex)\n```\n\n## Options\n- `target-version`\n\n## References\n- [Python documentation: `isinstance`](https://docs.python.org/3/library/functions.html#isinstance)\n",
+    "explanation": "## Removed\nThis rule is identical to [SIM101] which should be used instead.\n\n## What it does\nChecks for repeated `isinstance` calls on the same object.\n\n## Why is this bad?\nRepeated `isinstance` calls on the same object can be merged into a\nsingle call.\n\n## Fix safety\nThis rule's fix is marked as unsafe on Python 3.10 and later, as combining\nmultiple `isinstance` calls with a binary operator (`|`) will fail at\nruntime if any of the operands are themselves tuples.\n\nFor example, given `TYPES = (dict, list)`, then\n`isinstance(None, TYPES | set | float)` will raise a `TypeError` at runtime,\nwhile `isinstance(None, set | float)` will not.\n\n## Example\n```python\ndef is_number(x):\n    return isinstance(x, int) or isinstance(x, float) or isinstance(x, complex)\n```\n\nUse instead:\n```python\ndef is_number(x):\n    return isinstance(x, (int, float, complex))\n```\n\nOr, for Python 3.10 and later:\n\n```python\ndef is_number(x):\n    return isinstance(x, int | float | complex)\n```\n\n## Options\n- `target-version`\n\n## References\n- [Python documentation: `isinstance`](https://docs.python.org/3/library/functions.html#isinstance)\n\n[SIM101]: https://docs.astral.sh/ruff/rules/duplicate-isinstance-call/\n",
     "preview": false
   },
   {
@@ -8322,7 +8356,7 @@
     ],
     "fix": "Fix is not available.",
     "explanation": "## What it does\nChecks for variables defined in `for`, `try`, `with` statements\nthat redefine function parameters.\n\n## Why is this bad?\nRedefined variables can cause unexpected behavior because of overridden function parameters.\nIf nested functions are declared, an inner function's body can override an outer function's parameters.\n\n## Example\n```python\ndef show(host_id=10.11):\n    for host_id, host in [[12.13, \"Venus\"], [14.15, \"Mars\"]]:\n        print(host_id, host)\n```\n\nUse instead:\n```python\ndef show(host_id=10.11):\n    for inner_host_id, host in [[12.13, \"Venus\"], [14.15, \"Mars\"]]:\n        print(host_id, inner_host_id, host)\n```\n## References\n- [Pylint documentation](https://pylint.readthedocs.io/en/latest/user_guide/messages/refactor/redefined-argument-from-local.html)\n",
-    "preview": true
+    "preview": false
   },
   {
     "name": "and-or-ternary",
@@ -8402,13 +8436,13 @@
     "name": "unnecessary-list-index-lookup",
     "code": "PLR1736",
     "linter": "Pylint",
-    "summary": "Unnecessary lookup of list item by index",
+    "summary": "List index lookup in `enumerate()` loop",
     "message_formats": [
-      "Unnecessary lookup of list item by index"
+      "List index lookup in `enumerate()` loop"
     ],
     "fix": "Fix is always available.",
     "explanation": "## What it does\nChecks for index-based list accesses during `enumerate` iterations.\n\n## Why is this bad?\nWhen iterating over a list with `enumerate`, the current item is already\navailable alongside its index. Using the index to look up the item is\nunnecessary.\n\n## Example\n```python\nletters = [\"a\", \"b\", \"c\"]\n\nfor index, letter in enumerate(letters):\n    print(letters[index])\n```\n\nUse instead:\n```python\nletters = [\"a\", \"b\", \"c\"]\n\nfor index, letter in enumerate(letters):\n    print(letter)\n```\n",
-    "preview": true
+    "preview": false
   },
   {
     "name": "magic-value-comparison",
@@ -8432,7 +8466,7 @@
     ],
     "fix": "Fix is always available.",
     "explanation": "## What it does\nChecks for a # symbol appearing on a line not followed by an actual comment.\n\n## Why is this bad?\nEmpty comments don't provide any clarity to the code, and just add clutter.\nEither add a comment or delete the empty comment.\n\n## Example\n```python\nclass Foo:  #\n    pass\n```\n\nUse instead:\n```python\nclass Foo:\n    pass\n```\n\n## References\n- [Pylint documentation](https://pylint.pycqa.org/en/latest/user_guide/messages/refactor/empty-comment.html)\n",
-    "preview": true
+    "preview": false
   },
   {
     "name": "collapsible-else-if",
@@ -8462,9 +8496,9 @@
     "name": "literal-membership",
     "code": "PLR6201",
     "linter": "Pylint",
-    "summary": "Use a `set` literal when testing for membership",
+    "summary": "Use a set literal when testing for membership",
     "message_formats": [
-      "Use a `set` literal when testing for membership"
+      "Use a set literal when testing for membership"
     ],
     "fix": "Fix is always available.",
     "explanation": "## What it does\nChecks for membership tests on `list` and `tuple` literals.\n\n## Why is this bad?\nWhen testing for membership in a static sequence, prefer a `set` literal\nover a `list` or `tuple`, as Python optimizes `set` membership tests.\n\n## Example\n```python\n1 in [1, 2, 3]\n```\n\nUse instead:\n```python\n1 in {1, 2, 3}\n```\n\n## Fix safety\nThis rule's fix is marked as unsafe, as the use of a `set` literal will\nerror at runtime if the sequence contains unhashable elements (like lists\nor dictionaries). While Ruff will attempt to infer the hashability of the\nelements, it may not always be able to do so.\n\n## References\n- [What’s New In Python 3.2](https://docs.python.org/3/whatsnew/3.2.html#optimizations)\n",
@@ -8528,7 +8562,7 @@
     ],
     "fix": "Fix is not available.",
     "explanation": "## What it does\nChecks for declared assignments to the same variable multiple times\nin the same assignment.\n\n## Why is this bad?\nAssigning a variable multiple times in the same assignment is redundant,\nas the final assignment to the variable is what the value will be.\n\n## Example\n```python\na, b, a = (1, 2, 3)\nprint(a)  # 3\n```\n\nUse instead:\n```python\n# this is assuming you want to assign 3 to `a`\n_, b, a = (1, 2, 3)\nprint(a)  # 3\n```\n\n",
-    "preview": true
+    "preview": false
   },
   {
     "name": "assert-on-string-literal",
@@ -8566,7 +8600,7 @@
     ],
     "fix": "Fix is sometimes available.",
     "explanation": "## What it does\nChecks for an exception that is not raised.\n\n## Why is this bad?\nIt's unnecessary to create an exception without raising it. For example,\n`ValueError(\"...\")` on its own will have no effect (unlike\n`raise ValueError(\"...\")`) and is likely a mistake.\n\n## Known problems\nThis rule only detects built-in exceptions, like `ValueError`, and does\nnot catch user-defined exceptions.\n\n## Example\n```python\nValueError(\"...\")\n```\n\nUse instead:\n```python\nraise ValueError(\"...\")\n```\n\n## Fix safety\nThis rule's fix is marked as unsafe, as converting a useless exception\nstatement to a `raise` statement will change the program's behavior.\n",
-    "preview": true
+    "preview": false
   },
   {
     "name": "nan-comparison",
@@ -8602,8 +8636,8 @@
       "`super` call is missing parentheses"
     ],
     "fix": "Fix is always available.",
-    "explanation": "## What it does\nChecks for `super` calls without parentheses.\n\n## Why is this bad?\nWhen `super` is used without parentheses, it is not an actual call, and\nthus has no effect.\n\n## Example\n```python\nclass Animal:\n    @staticmethod\n    def speak():\n        return \"This animal says something.\"\n\n\nclass Dog(Animal):\n    @staticmethod\n    def speak():\n        original_speak = super.speak()\n        return f\"{original_speak} But as a dog, it barks!\"\n```\n\nUse instead:\n```python\nclass Animal:\n    @staticmethod\n    def speak():\n        return \"This animal says something.\"\n\n\nclass Dog(Animal):\n    @staticmethod\n    def speak():\n        original_speak = super().speak()\n        return f\"{original_speak} But as a dog, it barks!\"\n```\n",
-    "preview": true
+    "explanation": "## What it does\nDetects attempts to use `super` without parentheses.\n\n## Why is this bad?\nThe [`super()` callable](https://docs.python.org/3/library/functions.html#super)\ncan be used inside method definitions to create a proxy object that\ndelegates attribute access to a superclass of the current class. Attempting\nto access attributes on `super` itself, however, instead of the object\nreturned by a call to `super()`, will raise `AttributeError`.\n\n## Example\n```python\nclass Animal:\n    @staticmethod\n    def speak():\n        return \"This animal says something.\"\n\n\nclass Dog(Animal):\n    @staticmethod\n    def speak():\n        original_speak = super.speak()  # ERROR: `super.speak()`\n        return f\"{original_speak} But as a dog, it barks!\"\n```\n\nUse instead:\n```python\nclass Animal:\n    @staticmethod\n    def speak():\n        return \"This animal says something.\"\n\n\nclass Dog(Animal):\n    @staticmethod\n    def speak():\n        original_speak = super().speak()  # Correct: `super().speak()`\n        return f\"{original_speak} But as a dog, it barks!\"\n```\n",
+    "preview": false
   },
   {
     "name": "import-self",
@@ -8651,7 +8685,7 @@
     ],
     "fix": "Fix is not available.",
     "explanation": "## What it does\nChecks for uses of the `global` keyword at the module level.\n\n## Why is this bad?\nThe `global` keyword is used within functions to indicate that a name\nrefers to a global variable, rather than a local variable.\n\nAt the module level, all names are global by default, so the `global`\nkeyword is redundant.\n",
-    "preview": true
+    "preview": false
   },
   {
     "name": "self-or-cls-assignment",
@@ -8688,7 +8722,7 @@
     ],
     "fix": "Fix is not available.",
     "explanation": "## What it does\nCheck for an invalid `mode` argument in `open` calls.\n\n## Why is this bad?\nThe `open` function accepts a `mode` argument that specifies how the file\nshould be opened (e.g., read-only, write-only, append-only, etc.).\n\nPython supports a variety of open modes: `r`, `w`, `a`, and `x`, to control\nreading, writing, appending, and creating, respectively, along with\n`b` (binary mode), `+` (read and write), and `U` (universal newlines),\nthe latter of which is only valid alongside `r`. This rule detects both\ninvalid combinations of modes and invalid characters in the mode string\nitself.\n\n## Example\n```python\nwith open(\"file\", \"rwx\") as f:\n    return f.read()\n```\n\nUse instead:\n```python\nwith open(\"file\", \"r\") as f:\n    return f.read()\n```\n\n## References\n- [Python documentation: `open`](https://docs.python.org/3/library/functions.html#open)\n",
-    "preview": true
+    "preview": false
   },
   {
     "name": "invalid-envvar-default",
@@ -8760,8 +8794,8 @@
       "Threading lock directly created in `with` statement has no effect"
     ],
     "fix": "Fix is not available.",
-    "explanation": "## What it does\nChecks for direct uses of lock objects in `with` statements.\n\n## Why is this bad?\nCreating a lock (via `threading.Lock` or similar) in a `with` statement\nhas no effect, as locks are only relevant when shared between threads.\n\nInstead, assign the lock to a variable outside the `with` statement,\nand share that variable between threads.\n\n## Example\n```python\nimport threading\n\ncounter = 0\n\n\ndef increment():\n    global counter\n\n    with threading.Lock():\n        counter += 1\n```\n\nUse instead:\n```python\nimport threading\n\ncounter = 0\nlock = threading.Lock()\n\n\ndef increment():\n    global counter\n\n    with lock:\n        counter += 1\n```\n\n## References\n- [Python documentation: `Lock Objects`](https://docs.python.org/3/library/threading.html#lock-objects)\n",
-    "preview": true
+    "explanation": "## What it does\nChecks for lock objects that are created and immediately discarded in\n`with` statements.\n\n## Why is this bad?\nCreating a lock (via `threading.Lock` or similar) in a `with` statement\nhas no effect, as locks are only relevant when shared between threads.\n\nInstead, assign the lock to a variable outside the `with` statement,\nand share that variable between threads.\n\n## Example\n```python\nimport threading\n\ncounter = 0\n\n\ndef increment():\n    global counter\n\n    with threading.Lock():\n        counter += 1\n```\n\nUse instead:\n```python\nimport threading\n\ncounter = 0\nlock = threading.Lock()\n\n\ndef increment():\n    global counter\n\n    with lock:\n        counter += 1\n```\n\n## References\n- [Python documentation: `Lock Objects`](https://docs.python.org/3/library/threading.html#lock-objects)\n",
+    "preview": false
   },
   {
     "name": "redefined-loop-name",
@@ -9322,7 +9356,7 @@
     ],
     "fix": "Fix is sometimes available.",
     "explanation": "## What it does\nChecks for `print` calls with unnecessary empty strings as positional\narguments and unnecessary `sep` keyword arguments.\n\n## Why is this bad?\nPrefer calling `print` without any positional arguments, which is\nequivalent and more concise.\n\nSimilarly, when printing one or fewer items, the `sep` keyword argument,\n(used to define the string that separates the `print` arguments) can be\nomitted, as it's redundant when there are no items to separate.\n\n## Example\n```python\nprint(\"\")\n```\n\nUse instead:\n```python\nprint()\n```\n\n## References\n- [Python documentation: `print`](https://docs.python.org/3/library/functions.html#print)\n",
-    "preview": true
+    "preview": false
   },
   {
     "name": "if-exp-instead-of-or-operator",
@@ -9384,7 +9418,7 @@
     ],
     "fix": "Fix is always available.",
     "explanation": "## What it does\nChecks for uses of `readlines()` when iterating over a file line-by-line.\n\n## Why is this bad?\nRather than iterating over all lines in a file by calling `readlines()`,\nit's more convenient and performant to iterate over the file object\ndirectly.\n\n## Example\n```python\nwith open(\"file.txt\") as fp:\n    for line in fp.readlines():\n        ...\n```\n\nUse instead:\n```python\nwith open(\"file.txt\") as fp:\n    for line in fp:\n        ...\n```\n\n## References\n- [Python documentation: `io.IOBase.readlines`](https://docs.python.org/3/library/io.html#io.IOBase.readlines)\n",
-    "preview": true
+    "preview": false
   },
   {
     "name": "delete-full-slice",
@@ -9422,7 +9456,7 @@
     ],
     "fix": "Fix is sometimes available.",
     "explanation": "## What it does\nChecks for `if` expressions that can be replaced with `min()` or `max()`\ncalls.\n\n## Why is this bad?\nAn `if` expression that selects the lesser or greater of two\nsub-expressions can be replaced with a `min()` or `max()` call\nrespectively. When possible, prefer `min()` and `max()`, as they're more\nconcise and readable than the equivalent `if` expression.\n\n## Example\n```python\nhighest_score = score1 if score1 > score2 else score2\n```\n\nUse instead:\n```python\nhighest_score = max(score2, score1)\n```\n\n## References\n- [Python documentation: `min`](https://docs.python.org/3.11/library/functions.html#min)\n- [Python documentation: `max`](https://docs.python.org/3.11/library/functions.html#max)\n",
-    "preview": true
+    "preview": false
   },
   {
     "name": "reimplemented-starmap",
@@ -9519,7 +9553,7 @@
     ],
     "fix": "Fix is always available.",
     "explanation": "## What it does\nChecks for uses of `bin(...).count(\"1\")` to perform a population count.\n\n## Why is this bad?\nIn Python 3.10, a `bit_count()` method was added to the `int` class,\nwhich is more concise and efficient than converting to a binary\nrepresentation via `bin(...)`.\n\n## Example\n```python\nx = bin(123).count(\"1\")\ny = bin(0b1111011).count(\"1\")\n```\n\nUse instead:\n```python\nx = (123).bit_count()\ny = 0b1111011.bit_count()\n```\n\n## Options\n- `target-version`\n\n## References\n- [Python documentation:`int.bit_count`](https://docs.python.org/3/library/stdtypes.html#int.bit_count)\n",
-    "preview": true
+    "preview": false
   },
   {
     "name": "redundant-log-base",
@@ -9531,7 +9565,7 @@
     ],
     "fix": "Fix is sometimes available.",
     "explanation": "## What it does\nChecks for `math.log` calls with a redundant base.\n\n## Why is this bad?\nThe default base of `math.log` is `e`, so specifying it explicitly is\nredundant.\n\nInstead of passing 2 or 10 as the base, use `math.log2` or `math.log10`\nrespectively, as these dedicated variants are typically more accurate\nthan `math.log`.\n\n## Example\n```python\nimport math\n\nmath.log(4, math.e)\nmath.log(4, 2)\nmath.log(4, 10)\n```\n\nUse instead:\n```python\nimport math\n\nmath.log(4)\nmath.log2(4)\nmath.log10(4)\n```\n\n## References\n- [Python documentation: `math.log`](https://docs.python.org/3/library/math.html#math.log)\n- [Python documentation: `math.log2`](https://docs.python.org/3/library/math.html#math.log2)\n- [Python documentation: `math.log10`](https://docs.python.org/3/library/math.html#math.log10)\n- [Python documentation: `math.e`](https://docs.python.org/3/library/math.html#math.e)\n",
-    "preview": true
+    "preview": false
   },
   {
     "name": "unnecessary-from-float",
@@ -9561,13 +9595,13 @@
     "name": "regex-flag-alias",
     "code": "FURB167",
     "linter": "refurb",
-    "summary": "Use of regular expression alias `re.{alias}`",
+    "summary": "Use of regular expression alias `re.{}`",
     "message_formats": [
-      "Use of regular expression alias `re.{alias}`"
+      "Use of regular expression alias `re.{}`"
     ],
     "fix": "Fix is always available.",
     "explanation": "## What it does\nChecks for the use of shorthand aliases for regular expression flags\n(e.g., `re.I` instead of `re.IGNORECASE`).\n\n## Why is this bad?\nThe regular expression module provides descriptive names for each flag,\nalong with single-letter aliases. Prefer the descriptive names, as they\nare more readable and self-documenting.\n\n## Example\n```python\nimport re\n\nif re.match(\"^hello\", \"hello world\", re.I):\n    ...\n```\n\nUse instead:\n```python\nimport re\n\nif re.match(\"^hello\", \"hello world\", re.IGNORECASE):\n    ...\n```\n\n",
-    "preview": true
+    "preview": false
   },
   {
     "name": "isinstance-type-none",
@@ -9579,7 +9613,7 @@
     ],
     "fix": "Fix is sometimes available.",
     "explanation": "## What it does\nChecks for uses of `isinstance` that check if an object is of type `None`.\n\n## Why is this bad?\nThere is only ever one instance of `None`, so it is more efficient and\nreadable to use the `is` operator to check if an object is `None`.\n\n## Example\n```python\nisinstance(obj, type(None))\n```\n\nUse instead:\n```python\nobj is None\n```\n\n## References\n- [Python documentation: `isinstance`](https://docs.python.org/3/library/functions.html#isinstance)\n- [Python documentation: `None`](https://docs.python.org/3/library/constants.html#None)\n- [Python documentation: `type`](https://docs.python.org/3/library/functions.html#type)\n- [Python documentation: Identity comparisons](https://docs.python.org/3/reference/expressions.html#is-not)\n",
-    "preview": true
+    "preview": false
   },
   {
     "name": "type-none-comparison",
@@ -9591,7 +9625,7 @@
     ],
     "fix": "Fix is sometimes available.",
     "explanation": "## What it does\nChecks for uses of `type` that compare the type of an object to the type of\n`None`.\n\n## Why is this bad?\nThere is only ever one instance of `None`, so it is more efficient and\nreadable to use the `is` operator to check if an object is `None`.\n\n## Example\n```python\ntype(obj) is type(None)\n```\n\nUse instead:\n```python\nobj is None\n```\n\n## References\n- [Python documentation: `isinstance`](https://docs.python.org/3/library/functions.html#isinstance)\n- [Python documentation: `None`](https://docs.python.org/3/library/constants.html#None)\n- [Python documentation: `type`](https://docs.python.org/3/library/functions.html#type)\n- [Python documentation: Identity comparisons](https://docs.python.org/3/reference/expressions.html#is-not)\n",
-    "preview": true
+    "preview": false
   },
   {
     "name": "single-item-membership-test",
@@ -9615,7 +9649,7 @@
     ],
     "fix": "Fix is not available.",
     "explanation": "## What it does\nChecks for current-directory lookups using `Path().resolve()`.\n\n## Why is this bad?\nWhen looking up the current directory, prefer `Path.cwd()` over\n`Path().resolve()`, as `Path.cwd()` is more explicit in its intent.\n\n## Example\n```python\ncwd = Path().resolve()\n```\n\nUse instead:\n```python\ncwd = Path.cwd()\n```\n\n## References\n- [Python documentation: `Path.cwd`](https://docs.python.org/3/library/pathlib.html#pathlib.Path.cwd)\n",
-    "preview": true
+    "preview": false
   },
   {
     "name": "meta-class-abc-meta",
@@ -9639,7 +9673,7 @@
     ],
     "fix": "Fix is sometimes available.",
     "explanation": "## What it does\nChecks for the use of `.digest().hex()` on a hashlib hash, like `sha512`.\n\n## Why is this bad?\nWhen generating a hex digest from a hash, it's preferable to use the\n`.hexdigest()` method, rather than calling `.digest()` and then `.hex()`,\nas the former is more concise and readable.\n\n## Example\n```python\nfrom hashlib import sha512\n\nhashed = sha512(b\"some data\").digest().hex()\n```\n\nUse instead:\n```python\nfrom hashlib import sha512\n\nhashed = sha512(b\"some data\").hexdigest()\n```\n\n## Fix safety\nThis rule's fix is marked as unsafe, as the target of the `.digest()` call\ncould be a user-defined class that implements a `.hex()` method, rather\nthan a hashlib hash object.\n\n## References\n- [Python documentation: `hashlib`](https://docs.python.org/3/library/hashlib.html)\n",
-    "preview": true
+    "preview": false
   },
   {
     "name": "list-reverse-copy",
@@ -9651,7 +9685,7 @@
     ],
     "fix": "Fix is always available.",
     "explanation": "## What it does\nChecks for list reversals that can be performed in-place in lieu of\ncreating a new list.\n\n## Why is this bad?\nWhen reversing a list, it's more efficient to use the in-place method\n`.reverse()` instead of creating a new list, if the original list is\nno longer needed.\n\n## Example\n```python\nl = [1, 2, 3]\nl = reversed(l)\n\nl = [1, 2, 3]\nl = list(reversed(l))\n\nl = [1, 2, 3]\nl = l[::-1]\n```\n\nUse instead:\n```python\nl = [1, 2, 3]\nl.reverse()\n```\n\n## References\n- [Python documentation: More on Lists](https://docs.python.org/3/tutorial/datastructures.html#more-on-lists)\n",
-    "preview": true
+    "preview": false
   },
   {
     "name": "sorted-min-max",
@@ -9932,7 +9966,7 @@
     ],
     "fix": "Fix is sometimes available.",
     "explanation": "## What it does\nChecks for mutable objects passed as a value argument to `dict.fromkeys`.\n\n## Why is this bad?\nAll values in the dictionary created by the `dict.fromkeys` method\nrefer to the same instance of the provided object. If that object is\nmodified, all values are modified, which can lead to unexpected behavior.\nFor example, if the empty list (`[]`) is provided as the default value,\nall values in the dictionary will use the same list; as such, appending to\nany one entry will append to all entries.\n\nInstead, use a comprehension to generate a dictionary with distinct\ninstances of the default value.\n\n## Example\n```python\ncities = dict.fromkeys([\"UK\", \"Poland\"], [])\ncities[\"UK\"].append(\"London\")\ncities[\"Poland\"].append(\"Poznan\")\nprint(cities)  # {'UK': ['London', 'Poznan'], 'Poland': ['London', 'Poznan']}\n```\n\nUse instead:\n```python\ncities = {country: [] for country in [\"UK\", \"Poland\"]}\ncities[\"UK\"].append(\"London\")\ncities[\"Poland\"].append(\"Poznan\")\nprint(cities)  # {'UK': ['London'], 'Poland': ['Poznan']}\n```\n\n## Fix safety\nThis rule's fix is marked as unsafe, as the edit will change the behavior of\nthe program by using a distinct object for every value in the dictionary,\nrather than a shared mutable instance. In some cases, programs may rely on\nthe previous behavior.\n\n## References\n- [Python documentation: `dict.fromkeys`](https://docs.python.org/3/library/stdtypes.html#dict.fromkeys)\n",
-    "preview": true
+    "preview": false
   },
   {
     "name": "unnecessary-dict-comprehension-for-iterable",
@@ -9956,7 +9990,7 @@
     ],
     "fix": "Fix is sometimes available.",
     "explanation": "## What it does\nChecks for incorrect usages of `default_factory` as a keyword argument when\ninitializing a `defaultdict`.\n\n## Why is this bad?\nThe `defaultdict` constructor accepts a callable as its first argument.\nFor example, it's common to initialize a `defaultdict` with `int` or `list`\nvia `defaultdict(int)` or `defaultdict(list)`, to create a dictionary that\nreturns `0` or `[]` respectively when a key is missing.\n\nThe default factory _must_ be provided as a positional argument, as all\nkeyword arguments to `defaultdict` are interpreted as initial entries in\nthe dictionary. For example, `defaultdict(foo=1, bar=2)` will create a\ndictionary with `{\"foo\": 1, \"bar\": 2}` as its initial entries.\n\nAs such, `defaultdict(default_factory=list)` will create a dictionary with\n`{\"default_factory\": list}` as its initial entry, instead of a dictionary\nthat returns `[]` when a key is missing. Specifying a `default_factory`\nkeyword argument is almost always a mistake, and one that type checkers\ncan't reliably detect.\n\n## Fix safety\nThis rule's fix is marked as unsafe, as converting `default_factory` from a\nkeyword to a positional argument will change the behavior of the code, even\nif the keyword argument was used erroneously.\n\n## Examples\n```python\ndefaultdict(default_factory=int)\ndefaultdict(default_factory=list)\n```\n\nUse instead:\n```python\ndefaultdict(int)\ndefaultdict(list)\n```\n",
-    "preview": true
+    "preview": false
   },
   {
     "name": "missing-f-string-syntax",
@@ -9992,6 +10026,18 @@
     ],
     "fix": "Fix is not available.",
     "explanation": "## What it does\nChecks for functions declared `async` that do not await or otherwise use features requiring the\nfunction to be declared `async`.\n\n## Why is this bad?\nDeclaring a function `async` when it's not is usually a mistake, and will artificially limit the\ncontexts where that function may be called. In some cases, labeling a function `async` is\nsemantically meaningful (e.g. with the trio library).\n\n## Examples\n```python\nasync def foo():\n    bar()\n```\n\nUse instead:\n```python\ndef foo():\n    bar()\n```\n",
+    "preview": true
+  },
+  {
+    "name": "assert-with-print-message",
+    "code": "RUF030",
+    "linter": "Ruff-specific rules",
+    "summary": "`print()` expression in `assert` statement is likely unintentional",
+    "message_formats": [
+      "`print()` expression in `assert` statement is likely unintentional"
+    ],
+    "fix": "Fix is always available.",
+    "explanation": "## What it does\nChecks for uses of `assert expression, print(message)`.\n\n## Why is this bad?\nThe return value of the second expression is used as the contents of the\n`AssertionError` raised by the `assert` statement. Using a `print` expression\nin this context will output the message to `stdout`, before raising an\nempty `AssertionError(None)`.\n\nInstead, remove the `print` and pass the message directly as the second\nexpression, allowing `stderr` to capture the message in a well-formatted context.\n\n## Example\n```python\nassert False, print(\"This is a message\")\n```\n\nUse instead:\n```python\nassert False, \"This is a message\"\n```\n\n## Fix safety\nThis rule's fix is marked as unsafe, as changing the second expression\nwill result in a different `AssertionError` message being raised, as well as\na change in `stdout` output.\n\n## References\n- [Python documentation: `assert`](https://docs.python.org/3/reference/simple_stmts.html#the-assert-statement)\n",
     "preview": true
   },
   {
