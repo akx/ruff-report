@@ -10,22 +10,22 @@ export default function StandaloneDataFinder() {
   const navigate = useNavigate();
   const tryLoadScript = React.useCallback(() => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (window as any).__RUFF_REPORT_DATA__ = undefined;
+    (globalThis as any).__RUFF_REPORT_DATA__ = undefined;
     const scriptTag = document.createElement("script");
     scriptTag.src = `./ruff-report.js?${Date.now()}`;
-    scriptTag.onload = () => {
+    scriptTag.addEventListener("load", () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const data = (window as any).__RUFF_REPORT_DATA__;
+      const data = (globalThis as any).__RUFF_REPORT_DATA__;
       if (data && Array.isArray(data)) {
         setRawData(data);
         navigate("/report");
       }
       scriptTag.remove();
-    };
-    scriptTag.onerror = () => {
+    });
+    scriptTag.addEventListener("error", () => {
       scriptTag.remove();
-    };
-    document.body.appendChild(scriptTag);
+    });
+    document.body.append(scriptTag);
   }, [navigate, setRawData]);
   const interval = useInterval(tryLoadScript, 300);
   React.useEffect(() => {
@@ -33,7 +33,7 @@ export default function StandaloneDataFinder() {
     return interval.stop;
   }, [interval]);
   return (
-    <Paper shadow="sm" p="sm" mt="sm" sx={{ textAlign: "center" }}>
+    <Paper shadow="sm" p="sm" mt="sm" style={{ textAlign: "center" }}>
       <Loader size="xs" />
       &nbsp;Trying to load <Code>ruff-report.js</Code> in the same directory as
       this file...

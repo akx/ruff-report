@@ -25,7 +25,7 @@ const facets: Facet[] = filterableKeys.map((key) => ({
 
 export default function BasicReportView() {
   const { messages } = useLoadedReportData().filtered;
-  if (!messages.length) {
+  if (messages.length === 0) {
     return <NoDataAlert />;
   }
   return (

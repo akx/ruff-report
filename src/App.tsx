@@ -1,13 +1,17 @@
 import React from "react";
-import { MantineProvider } from "@mantine/core";
+import { ColorSchemeScript, MantineProvider, createTheme } from "@mantine/core";
 import { RouterProvider } from "react-router-dom";
 import router from "./router";
 
+const theme = createTheme({});
 function App() {
   return (
-    <MantineProvider withGlobalStyles withNormalizeCSS>
-      <RouterProvider router={router} />
-    </MantineProvider>
+    <>
+      <ColorSchemeScript defaultColorScheme="auto" />
+      <MantineProvider theme={theme} defaultColorScheme="auto">
+        <RouterProvider router={router} />
+      </MantineProvider>
+    </>
   );
 }
 

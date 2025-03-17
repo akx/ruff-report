@@ -59,7 +59,7 @@ export default function FileView() {
   const { ["*"]: file } = useParams<{ ["*"]: string }>();
   const { messages: allFilteredMessages } = useLoadedReportData().filtered;
   const messages = allFilteredMessages.filter((m) => m.shortFilename === file);
-  if (!messages.length || !file) {
+  if (messages.length === 0 || !file) {
     return <NoDataAlert />;
   }
   const uniqueCodes = new Set(messages.map((m) => m.code));
