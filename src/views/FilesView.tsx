@@ -44,7 +44,7 @@ const facets: Facet[] = [
 
 export default function FilesView() {
   const { messages } = useLoadedReportData().filtered;
-  if (!messages.length) {
+  if (messages.length === 0) {
     return <NoDataAlert />;
   }
   return <FacetTabs facets={facets} messages={messages} />;

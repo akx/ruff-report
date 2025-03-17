@@ -1,10 +1,11 @@
 import {
   Button,
   Group,
-  Navbar,
+  AppShell,
   NavLink,
   rem,
   useMantineTheme,
+  useMantineColorScheme,
 } from "@mantine/core";
 import { FilterAccordion } from "./FilterAccordion";
 import React from "react";
@@ -14,18 +15,17 @@ import { NavBarInfoBox } from "./NavBarInfoBox";
 
 export function Nav() {
   const theme = useMantineTheme();
+  const { colorScheme } = useMantineColorScheme();
   const navigate = useNavigate();
   const { processed, filters } = useReportData();
   return (
-    <Navbar p="sm" width={{ base: 300 }}>
-      <Navbar.Section
-        sx={{
+    <AppShell.Navbar p="sm">
+      <AppShell.Section
+        style={{
           paddingBottom: theme.spacing.sm,
           marginBottom: theme.spacing.sm,
           borderBottom: `${rem(1)} solid ${
-            theme.colorScheme === "dark"
-              ? theme.colors.dark[4]
-              : theme.colors.gray[2]
+            colorScheme === "dark" ? theme.colors.dark[4] : theme.colors.gray[2]
           }`,
         }}
       >
@@ -33,13 +33,12 @@ export function Nav() {
           <NavLink label="Home" onClick={() => navigate("/")} />
           <NavLink label="Files" onClick={() => navigate("/files")} />
         </Group>
-      </Navbar.Section>
-      <Navbar.Section grow>
-        <Group>
+      </AppShell.Section>
+      <AppShell.Section grow>
+        <Group justify="space-between">
           <span>Filters</span>
           <Button
-            size="xs"
-            compact
+            size="compact-xs"
             variant="outline"
             onClick={filters.resetFilters}
           >
@@ -47,10 +46,10 @@ export function Nav() {
           </Button>
         </Group>
         <FilterAccordion processed={processed} {...filters} />
-      </Navbar.Section>
-      <Navbar.Section>
+      </AppShell.Section>
+      <AppShell.Section>
         <NavBarInfoBox />
-      </Navbar.Section>
-    </Navbar>
+      </AppShell.Section>
+    </AppShell.Navbar>
   );
 }

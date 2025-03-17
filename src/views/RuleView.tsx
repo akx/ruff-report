@@ -43,7 +43,7 @@ function RuleHeader({
   ruleInfo: RuleExplanation | undefined;
 }) {
   return (
-    <Group position="apart">
+    <Group justify="space-between">
       <Title>
         {code}
         {ruleInfo ? <>&nbsp;&ndash;&nbsp;{ruleInfo.name}</> : null}
@@ -78,7 +78,7 @@ export default function RuleView() {
     ],
     [ruleInfo],
   );
-  if (!messages.length || !code) {
+  if (messages.length === 0 || !code) {
     return <NoDataAlert />;
   }
   return (

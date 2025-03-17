@@ -24,7 +24,7 @@ export function removePrefix(value: string, prefix: string) {
 }
 
 export function deriveModule(filename: string) {
-  return filename.replace(/\.py$/, "").replace(/\//g, ".");
+  return filename.replace(/\.py$/, "").replaceAll('/', ".");
 }
 
 export function derivePackage(module: string) {

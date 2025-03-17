@@ -8,7 +8,6 @@ import {
   Title,
 } from "@mantine/core";
 import { Dropzone } from "@mantine/dropzone";
-import { IconUpload, IconX } from "@tabler/icons-react";
 import React from "react";
 import { useReportData } from "../contexts/reportData";
 import { useNavigate } from "react-router-dom";
@@ -28,30 +27,10 @@ export default function UploadOrEnterJSON() {
       if (messages) {
         setData(messages);
       }
-    } catch (e) {}
+    } catch (_error) {
+      // Ah well!
+    }
   }
-
-  const handleFile = (f: File): Promise<Message[] | null> => {
-    return new Promise((res, rej) => {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const result = e.target?.result;
-        if (result) {
-          try {
-            const messages = parseRawJSONAsRuffData(result);
-            if (messages) {
-              setData(messages);
-            }
-            res(messages);
-          } catch (e) {}
-        } else {
-          rej();
-        }
-      };
-      reader.onerror = rej;
-      reader.readAsText(f);
-    });
-  };
 
   const commit = (data: Message[] | null) => {
     if (data) {
@@ -63,8 +42,7 @@ export default function UploadOrEnterJSON() {
   const handleDrop = async (files: readonly File[]) => {
     const [file] = files;
     if (file) {
-      const res = await handleFile(file);
-      if (res) commit(res);
+      handleJSON(await file.text());
     }
   };
   return (
@@ -73,22 +51,10 @@ export default function UploadOrEnterJSON() {
         <Grid.Col span={1}>
           <Title order={3}>Select a JSON file</Title>
           <Dropzone onDrop={handleDrop} multiple={false}>
-            <Group
-              position="center"
-              spacing="xl"
-              style={{ minHeight: rem(220), pointerEvents: "none" }}
-            >
-              <Dropzone.Accept>
-                <IconUpload size="3.2rem" stroke={1.5} />
-              </Dropzone.Accept>
-              <Dropzone.Reject>
-                <IconX size="3.2rem" stroke={1.5} />
-              </Dropzone.Reject>
-              <div>
-                <Text size="xl" inline>
-                  Drag a JSON file here or click to browse for one
-                </Text>
-              </div>
+            <Group style={{ minHeight: rem(220), pointerEvents: "none" }}>
+              <Text size="xl" inline>
+                Drag a JSON file here or click to browse for one
+              </Text>
             </Group>
           </Dropzone>
         </Grid.Col>

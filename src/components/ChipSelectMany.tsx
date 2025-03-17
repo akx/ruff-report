@@ -28,7 +28,7 @@ export function ChipSelectMany({
       </Button.Group>
       <div style={{ maxHeight: 250, overflowY: "auto", overflowX: "hidden" }}>
         <Chip.Group multiple value={selected} onChange={setSelected}>
-          <Group position="left" spacing={2}>
+          <Group gap={2}>
             {valuesAndCounts.map(([value, count]) => (
               <Chip key={value} value={value} size="xs">
                 {value} ({count})

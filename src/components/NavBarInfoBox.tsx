@@ -5,7 +5,7 @@ import { standalone } from "../config";
 
 export function NavBarInfoBox() {
   return (
-    <Paper shadow="xs" p="xs" sx={{ textAlign: "center" }}>
+    <Paper shadow="xs" p="xs" style={{ textAlign: "center" }}>
       <b>ruff-report</b> {appVersion}
       {standalone ? <div>(standalone mode)</div> : null}
       <br />

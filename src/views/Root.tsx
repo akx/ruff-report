@@ -49,8 +49,17 @@ export default function Root() {
   );
   return (
     <ReportDataContext.Provider value={reportDataContext}>
-      <AppShell navbar={<Nav />}>
-        <Outlet />
+      <AppShell
+        padding="sm"
+        navbar={{
+          breakpoint: "sm",
+          width: 300,
+        }}
+      >
+        <AppShell.Main>
+          <Outlet />
+        </AppShell.Main>
+        <Nav />
       </AppShell>
     </ReportDataContext.Provider>
   );

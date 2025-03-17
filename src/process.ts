@@ -16,10 +16,10 @@ export function extendMessages(
   messages: readonly Message[],
 ): ExtendedMessage[] {
   const extendedMessages: ExtendedMessage[] = [];
-  const filenames = new Set<string>([
-    ...messages.map((message) => message.filename),
-  ]);
-  const commonPrefix = getCommonPrefix(Array.from(filenames));
+  const filenames = new Set<string>(
+    messages.map((message) => message.filename)
+  );
+  const commonPrefix = getCommonPrefix([...filenames]);
   for (const message of messages) {
     const shortFilename = removePrefix(message.filename, commonPrefix);
     const moduleName = deriveModule(shortFilename);

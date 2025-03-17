@@ -8,13 +8,10 @@ import { useReportData } from "./contexts/reportData";
 import FileView from "./views/FileView";
 import FilesView from "./views/FilesView";
 
+// eslint-disable-next-line react-refresh/only-export-components
 const Dispatch = () => {
   const { rawData } = useReportData();
-  if (!rawData.length) {
-    return <Navigate to="/welcome" replace={true} />;
-  } else {
-    return <Navigate to="/report" replace={true} />;
-  }
+  return rawData.length === 0 ? <Navigate to="/welcome" replace={true} /> : <Navigate to="/report" replace={true} />;
 };
 
 const router = createHashRouter([

@@ -22,9 +22,9 @@ export function FilterAccordion({
     const valuesAndCounts = processed.values[key];
     const selected = filters[key];
     const suffix =
-      selected.length !== valuesAndCounts.length
-        ? ` (${selected.length} / ${valuesAndCounts.length})`
-        : "";
+      selected.length === valuesAndCounts.length
+        ? ""
+        : ` (${selected.length} / ${valuesAndCounts.length})`;
     return (
       <Accordion.Item key={key} value={key}>
         <Accordion.Control disabled={processed.messages.length === 0}>
