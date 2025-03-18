@@ -3,7 +3,7 @@ all: src/gen/rules.json src/gen/ruff-version.json
 .PHONY: src/gen/rules.json
 
 src/gen/rules.json:
-	ruff rule --all --output-format=json > $@
+	ruff rule --all --output-format=json | python process_rules.py > $@
 
 .PHONY: src/gen/ruff-version.json
 
