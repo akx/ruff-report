@@ -18,7 +18,7 @@ export function renderCodeLink(code: string) {
   if (ruleInfo?.explanation) {
     return (
       <HoverCard.Root>
-        <HoverCard.Trigger>{link}</HoverCard.Trigger>
+        <HoverCard.Trigger asChild>{link}</HoverCard.Trigger>
         <HoverCard.Portal>
           <HoverCard.Content className="bg-white shadow-lg rounded max-w-prose max-h-80 flex flex-col">
             <div className="px-4 py-1 text-sm bg-neutral-200 rounded-t">
