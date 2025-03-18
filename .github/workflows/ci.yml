@@ -3,7 +3,7 @@ name: CI
 on:
   push:
     branches: [master]
-    tags: ['v*']
+    tags: ["v*"]
   pull_request:
     branches: [master]
 
@@ -62,7 +62,7 @@ jobs:
         id: deployment
         uses: actions/deploy-pages@v4
         if: ${{ github.event_name == 'push' }}
-        
+
   release:
     needs:
       # Build also checks lints, etc., so good to have as a dep
