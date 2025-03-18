@@ -1,19 +1,33 @@
-import { appVersion, ruffVersion } from "../data";
+import { appVersion, ruffVersion, getRuleMap } from "../data";
 import React from "react";
 import { standalone } from "../config";
+import { useInterval } from "../hooks";
+
+function RulesInfo() {
+  const [nRules, setNRules] = React.useState<number | null>(null);
+  useInterval(
+    () => {
+      setNRules(Object.keys(getRuleMap()).length);
+    },
+    nRules == null ? 100 : null,
+  );
+  return (
+    <div>
+      {nRules === null ? `Rules` : `${nRules} rules`} from{" "}
+      <a href="https://docs.astral.sh/ruff" className="link">
+        Ruff
+      </a>{" "}
+      {ruffVersion}
+    </div>
+  );
+}
 
 export function NavBarInfoBox() {
   return (
     <div className="text-center p-1 text-sm">
       <b>ruff-report</b> {appVersion}
       {standalone ? <div>(standalone mode)</div> : null}
-      <div>
-        Rules from{" "}
-        <a href="https://docs.astral.sh/ruff" className="link">
-          Ruff
-        </a>{" "}
-        {ruffVersion}
-      </div>
+      <RulesInfo />
       Built by{" "}
       <a
         href="https://akx.github.io"

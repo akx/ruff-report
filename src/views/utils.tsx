@@ -1,4 +1,4 @@
-import { ruleMap } from "../data";
+import { getRuleMap } from "../data";
 import { Link } from "wouter";
 import React from "react";
 import { HoverCard } from "radix-ui";
@@ -6,7 +6,7 @@ import { RuleExplanation } from "../types/ruff";
 import Markdown from "markdown-to-jsx";
 
 export function renderCodeLink(code: string) {
-  const ruleInfo = ruleMap[code];
+  const ruleInfo = getRuleMap()[code];
   const link = (
     <span>
       <Link to={`/rule/${code}`} className="link">
