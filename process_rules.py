@@ -19,4 +19,6 @@ for rule in json.load(sys.stdin):
         raise Exception(f"Unexpected fix: {fix}")
     rules_out.append(rule)
 
+print("// @ts-nocheck")
+print("export default ", end="")
 print(json.dumps(rules_out, indent=2))

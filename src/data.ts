@@ -7,9 +7,8 @@ const ruffVersion = (rawRuffVersion as { version: string }).version;
 let ruleMap: Record<string, RuleExplanation> = {};
 
 export async function loadRuleMap() {
-  const mod = await import("./gen/rules.json");
-  const rawRules = mod.default;
-  const rules = rawRules as RuleExplanation[];
+  const mod = await import("./gen/rules");
+  const rules: RuleExplanation[] = mod.default;
   ruleMap = Object.fromEntries(rules.map((r) => [r.code, r]));
 }
 
