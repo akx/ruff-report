@@ -15,9 +15,9 @@
     "@mantine/core": "^7.17.2",
     "@mantine/dropzone": "^7.17.2",
     "@mantine/hooks": "^7.17.2",
+    "markdown-to-jsx": "^7.7.4",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "react-markdown": "^10.1.0",
     "wouter": "^3.6.0"
   },
   "devDependencies": {
