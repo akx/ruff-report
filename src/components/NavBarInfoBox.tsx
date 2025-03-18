@@ -9,7 +9,8 @@ function RulesInfo() {
     () => {
       setNRules(Object.keys(getRuleMap()).length);
     },
-    nRules == null ? 100 : null,
+    // Only try loading rules until we load them, and halt then.
+    nRules ? null : 100,
   );
   return (
     <div>
