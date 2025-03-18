@@ -1,55 +1,34 @@
-import {
-  Button,
-  Group,
-  AppShell,
-  NavLink,
-  rem,
-  useMantineTheme,
-  useMantineColorScheme,
-} from "@mantine/core";
 import { FilterAccordion } from "./FilterAccordion";
 import React from "react";
-import { useLocation } from "wouter";
+import { Link } from "wouter";
 import { useReportData } from "../contexts/reportData";
 import { NavBarInfoBox } from "./NavBarInfoBox";
 
 export function Nav() {
-  const theme = useMantineTheme();
-  const { colorScheme } = useMantineColorScheme();
-  const [, navigate] = useLocation();
   const { processed, filters } = useReportData();
   return (
-    <AppShell.Navbar p="sm">
-      <AppShell.Section
-        style={{
-          paddingBottom: theme.spacing.sm,
-          marginBottom: theme.spacing.sm,
-          borderBottom: `${rem(1)} solid ${
-            colorScheme === "dark" ? theme.colors.dark[4] : theme.colors.gray[2]
-          }`,
-        }}
-      >
-        <Group grow>
-          <NavLink label="Home" onClick={() => navigate("/")} />
-          <NavLink label="Files" onClick={() => navigate("/files")} />
-        </Group>
-      </AppShell.Section>
-      <AppShell.Section grow>
-        <Group justify="space-between">
+    <div className="w-80 flex flex-col h-full border-r border-neutral-200 py-2 px-4 top-0 sticky h-screen">
+      <div className="flex gap-2 justify-around pb-2 mb-2">
+        <Link className="link" to="/">
+          Home
+        </Link>
+        <Link className="link" to="/files">
+          Files
+        </Link>
+      </div>
+      <div className="grow">
+        <div className="flex justify-between">
           <span>Filters</span>
-          <Button
-            size="compact-xs"
-            variant="outline"
+          <button
+            className="btn btn-xs btn-outline"
             onClick={filters.resetFilters}
           >
             Reset
-          </Button>
-        </Group>
+          </button>
+        </div>
         <FilterAccordion processed={processed} {...filters} />
-      </AppShell.Section>
-      <AppShell.Section>
-        <NavBarInfoBox />
-      </AppShell.Section>
-    </AppShell.Navbar>
+      </div>
+      <NavBarInfoBox />
+    </div>
   );
 }

@@ -1,5 +1,3 @@
-import { ColorSchemeScript, MantineProvider, createTheme } from "@mantine/core";
-
 import { Redirect, Route, Router, Switch } from "wouter";
 import { useHashLocation } from "wouter/use-hash-location";
 
@@ -21,27 +19,21 @@ function Dispatch() {
   );
 }
 
-const theme = createTheme({});
-function App() {
+export default function App() {
   return (
     <>
-      <ColorSchemeScript defaultColorScheme="auto" />
-      <MantineProvider theme={theme} defaultColorScheme="auto">
-        <Router hook={useHashLocation}>
-          <Root>
-            <Switch>
-              <Route path="/welcome" component={WelcomeView} />
-              <Route path="/report" component={BasicReportView} />
-              <Route path="/files" component={FilesView} />
-              <Route path="/rule/:code" component={RuleView} />
-              <Route path="/file/*" component={FileView} />
-              <Route path="/*" component={Dispatch} />
-            </Switch>
-          </Root>
-        </Router>
-      </MantineProvider>
+      <Router hook={useHashLocation}>
+        <Root>
+          <Switch>
+            <Route path="/welcome" component={WelcomeView} />
+            <Route path="/report" component={BasicReportView} />
+            <Route path="/files" component={FilesView} />
+            <Route path="/rule/:code" component={RuleView} />
+            <Route path="/file/*" component={FileView} />
+            <Route path="/*" component={Dispatch} />
+          </Switch>
+        </Root>
+      </Router>
     </>
   );
 }
-
-export default App;

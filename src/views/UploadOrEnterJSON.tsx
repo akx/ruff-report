@@ -1,18 +1,9 @@
-import {
-  Button,
-  Grid,
-  Group,
-  JsonInput,
-  rem,
-  Text,
-  Title,
-} from "@mantine/core";
-import { Dropzone } from "@mantine/dropzone";
 import React from "react";
 import { useReportData } from "../contexts/reportData";
 import { Message } from "../types/ruff";
 import { parseRawJSONAsRuffData } from "../utils";
 import { useLocation } from "wouter";
+import { Title } from "../components/Title";
 
 export default function UploadOrEnterJSON() {
   const { setRawData } = useReportData();
@@ -27,9 +18,11 @@ export default function UploadOrEnterJSON() {
       if (messages) {
         setData(messages);
       }
+      return messages;
     } catch (_error) {
       // Ah well!
     }
+    return null;
   }
 
   const commit = (data: Message[] | null) => {
@@ -39,41 +32,41 @@ export default function UploadOrEnterJSON() {
     }
   };
 
-  const handleDrop = async (files: readonly File[]) => {
-    const [file] = files;
+  const handleDrop = async (files: FileList | null) => {
+    const file = files?.[0];
     if (file) {
-      handleJSON(await file.text());
+      commit(handleJSON(await file.text()));
     }
   };
   return (
     <>
-      <Grid grow>
-        <Grid.Col span={1}>
+      <div className="grow grid grid-cols-2 gap-4 py-2">
+        <div>
           <Title order={3}>Select a JSON file</Title>
-          <Dropzone onDrop={handleDrop} multiple={false}>
-            <Group style={{ minHeight: rem(220), pointerEvents: "none" }}>
-              <Text size="xl" inline>
-                Drag a JSON file here or click to browse for one
-              </Text>
-            </Group>
-          </Dropzone>
-        </Grid.Col>
-
-        <Grid.Col span={1}>
+          <div className="relative border-dashed border-2 border-neutral-200 rounded-lg p-4 text-center min-h-40 flex items-center justify-center">
+            Drag a JSON file here or click to browse for one
+            <input
+              type="file"
+              className="absolute inset-0 w-full opacity-0"
+              onChange={(e) => handleDrop(e.target.files)}
+            />
+          </div>
+        </div>
+        <div>
           <Title order={3}>...or paste JSON</Title>
-
-          <JsonInput
-            validationError="Invalid JSON"
-            formatOnBlur
-            autosize
-            minRows={8}
-            onChange={handleJSON}
+          <textarea
+            className="textarea w-full min-h-40"
+            onChange={(e) => handleJSON(e.target.value)}
           />
-        </Grid.Col>
-      </Grid>
-      <Button mt={4} disabled={!isValid} onClick={() => commit(data)}>
+        </div>
+      </div>
+      <button
+        className="btn btn-primary"
+        disabled={!isValid}
+        onClick={() => commit(data)}
+      >
         Let's go!
-      </Button>
+      </button>
     </>
   );
 }

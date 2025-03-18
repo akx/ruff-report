@@ -1,11 +1,13 @@
-import { Alert } from "@mantine/core";
 import React from "react";
 
 export function NoDataAlert() {
   return (
-    <Alert title="No data!">
-      There's no data to show. <br />
-      Make sure your filters aren't hiding it..?
-    </Alert>
+    <div className="p-4">
+      <div className="alert">
+        <div className="text-lg">No data!</div>
+        There's no data to show. <br />
+        Make sure your filters aren't hiding it..?
+      </div>
+    </div>
   );
 }

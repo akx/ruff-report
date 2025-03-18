@@ -1,5 +1,4 @@
 import { filterableKeyLabels, filterableKeys } from "../types/ruff-report";
-import { Title } from "@mantine/core";
 import { PopularityTable } from "../components/PopularityTable";
 import { countBy } from "../nodash";
 import React from "react";
@@ -8,6 +7,7 @@ import { renderCodeLink } from "./utils";
 import { Facet } from "../types/ui";
 import FacetTabs from "../components/FacetTabs";
 import { NoDataAlert } from "../components/NoDataAlert";
+import { Title } from "../components/Title";
 
 const facets: Facet[] = filterableKeys.map((key) => ({
   name: `By ${filterableKeyLabels[key] ?? key}`,
@@ -29,9 +29,9 @@ export default function BasicReportView() {
     return <NoDataAlert />;
   }
   return (
-    <>
+    <div className="p-4">
       <Title>Total {messages.length.toLocaleString()} messages</Title>
       <FacetTabs facets={facets} messages={messages} />
-    </>
+    </div>
   );
 }

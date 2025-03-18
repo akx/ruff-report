@@ -1,3 +1,7 @@
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+@plugin "daisyui";
+
 body {
   margin: 0;
   font-family:

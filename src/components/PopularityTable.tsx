@@ -1,5 +1,4 @@
 import { sum } from "../nodash";
-import { Table } from "@mantine/core";
 import React from "react";
 import { alignRight } from "../styles";
 
@@ -10,7 +9,7 @@ type PopularityTableProps = {
 };
 
 function getProgressBackground(count: number, total: number) {
-  return `linear-gradient(to right, #c0c0c0 ${
+  return `linear-gradient(to right, var(--color-primary) ${
     (count / total) * 100
   }%, transparent 0%)`;
 }
@@ -23,19 +22,19 @@ export function PopularityTable({
   const sortedData = Object.entries(data).sort((a, b) => b[1] - a[1]);
   const total = sum(Object.values(data));
   return (
-    <Table striped highlightOnHover>
+    <table className="table table-zebra table-xs">
       <thead>
         <tr>
           <th>{header}</th>
-          <th>Count</th>
-          <th>% of total</th>
+          <th className="text-right">Count</th>
+          <th className="text-right">% of total</th>
         </tr>
       </thead>
       <tbody>
         {sortedData.map(([key, count]) => (
           <tr key={key}>
             <td>{keyRenderer ? keyRenderer(key) : key}</td>
-            <td style={alignRight}>{count.toLocaleString()}</td>
+            <td className="text-right">{count.toLocaleString()}</td>
             <td
               style={{
                 ...alignRight,
@@ -50,6 +49,6 @@ export function PopularityTable({
           </tr>
         ))}
       </tbody>
-    </Table>
+    </table>
   );
 }

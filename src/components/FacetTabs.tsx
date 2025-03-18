@@ -1,7 +1,7 @@
 import { Facet } from "../types/ui";
-import { Tabs } from "@mantine/core";
 import React from "react";
 import { ExtendedMessage } from "../types/ruff-report";
+import cx from "clsx";
 
 export default function FacetTabs({
   facets,
@@ -10,20 +10,23 @@ export default function FacetTabs({
   facets: Facet[];
   messages: readonly ExtendedMessage[];
 }) {
+  const [facet, setFacet] = React.useState(() => facets[0]?.name ?? "none");
   return (
-    <Tabs keepMounted={false} defaultValue={facets[0]?.name ?? "none"}>
-      <Tabs.List>
+    <div>
+      <div className="tabs tabs-border mb-2">
         {facets.map(({ name }) => (
-          <Tabs.Tab value={name} key={name}>
+          <button
+            onClick={() => setFacet(name)}
+            className={cx("tab", name === facet ? "tab-active" : null)}
+            key={name}
+          >
             {name}
-          </Tabs.Tab>
+          </button>
         ))}
-      </Tabs.List>
-      {facets.map(({ name, render }) => (
-        <Tabs.Panel value={name} key={name}>
-          {render(messages)}
-        </Tabs.Panel>
-      ))}
-    </Tabs>
+      </div>
+      {facets.map(({ name, render }) =>
+        facet === name ? <div key={name}>{render(messages)}</div> : null,
+      )}
+    </div>
   );
 }

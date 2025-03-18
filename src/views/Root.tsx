@@ -3,7 +3,6 @@ import { processMessages } from "../process";
 import { Message } from "../types/ruff";
 import { FilterAPI, useFilters } from "../hooks/useFilters";
 import { ProcessedMessages, ValuesKey } from "../types/ruff-report";
-import { AppShell } from "@mantine/core";
 import {
   ReportDataContext,
   ReportDataContextType,
@@ -48,16 +47,10 @@ export default function Root({ children }: React.PropsWithChildren) {
   );
   return (
     <ReportDataContext.Provider value={reportDataContext}>
-      <AppShell
-        padding="sm"
-        navbar={{
-          breakpoint: "sm",
-          width: 300,
-        }}
-      >
-        <AppShell.Main>{children}</AppShell.Main>
+      <div className="flex">
         <Nav />
-      </AppShell>
+        <main className="grow">{children}</main>
+      </div>
     </ReportDataContext.Provider>
   );
 }
