@@ -1,7 +1,7 @@
 import { filterableKeyLabels, filterableKeys } from "../types/ruff-report";
 import { Title } from "@mantine/core";
 import { PopularityTable } from "../components/PopularityTable";
-import { countBy } from "lodash";
+import { countBy } from "../nodash";
 import React from "react";
 import { useLoadedReportData } from "../contexts/reportData";
 import { renderCodeLink } from "./utils";

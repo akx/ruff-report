@@ -1,4 +1,4 @@
-import { sum } from "lodash";
+import { sum } from "../nodash";
 import { Table } from "@mantine/core";
 import React from "react";
 import { alignRight } from "../styles";

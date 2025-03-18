@@ -10,14 +10,14 @@ import {
   getCommonPrefix,
   removePrefix,
 } from "./utils";
-import { countBy, groupBy, orderBy } from "lodash";
+import { countBy, groupBy, orderByDesc } from "./nodash";
 
 export function extendMessages(
   messages: readonly Message[],
 ): ExtendedMessage[] {
   const extendedMessages: ExtendedMessage[] = [];
   const filenames = new Set<string>(
-    messages.map((message) => message.filename)
+    messages.map((message) => message.filename),
   );
   const commonPrefix = getCommonPrefix([...filenames]);
   for (const message of messages) {
@@ -38,23 +38,18 @@ export function extendMessages(
 
 function countAndSort(
   extendedMessages: readonly ExtendedMessage[],
-  iteratee: string | ((m: ExtendedMessage) => string),
+  iteratee: keyof ExtendedMessage | ((m: ExtendedMessage) => string),
 ) {
-  return orderBy(
-    Object.entries(countBy(extendedMessages, iteratee)),
-    [1],
-    ["desc"],
-  );
+  return orderByDesc(Object.entries(countBy(extendedMessages, iteratee)), 1);
 }
 
 export function groupAndSort(
   extendedMessages: readonly ExtendedMessage[],
-  iteratee: string | ((m: ExtendedMessage) => string),
+  iteratee: keyof ExtendedMessage | ((m: ExtendedMessage) => string),
 ) {
-  return orderBy(
+  return orderByDesc(
     Object.entries(groupBy(extendedMessages, iteratee)),
-    [(p) => p[1].length],
-    ["desc"],
+    (pair) => pair[1].length,
   );
 }
 
@@ -63,9 +58,10 @@ export function processMessages(
 ): ProcessedMessages {
   const extendedMessages = extendMessages(messages);
   const values = Object.fromEntries(
-    filterableKeys.map((prop) => {
-      return [prop, countAndSort(extendedMessages, (m) => m[prop])];
-    }),
+    filterableKeys.map((prop) => [
+      prop,
+      countAndSort(extendedMessages, (m) => m[prop]),
+    ]),
   ) as ProcessedMessages["values"];
   return {
     messages: extendedMessages,
