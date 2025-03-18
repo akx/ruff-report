@@ -9,14 +9,14 @@ import {
 } from "@mantine/core";
 import { FilterAccordion } from "./FilterAccordion";
 import React from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation } from "wouter";
 import { useReportData } from "../contexts/reportData";
 import { NavBarInfoBox } from "./NavBarInfoBox";
 
 export function Nav() {
   const theme = useMantineTheme();
   const { colorScheme } = useMantineColorScheme();
-  const navigate = useNavigate();
+  const [, navigate] = useLocation();
   const { processed, filters } = useReportData();
   return (
     <AppShell.Navbar p="sm">

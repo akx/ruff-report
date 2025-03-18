@@ -27,13 +27,16 @@ export interface Edit {
   location: Location;
 }
 
+const enum Fixability {
+  NotFixable = 0,
+  SometimesFixable = 1,
+  AlwaysFixable = 2,
+}
+
 export interface RuleExplanation {
   name: string;
   code: string;
-  linter: string;
-  summary: string;
-  message_formats: string[];
-  fix: string;
   explanation: string;
-  preview: boolean;
+  preview?: boolean;
+  fix?: Fixability;
 }

@@ -1,9 +1,9 @@
 import { ruleMap } from "../data";
-import { Link } from "react-router-dom";
+import { Link } from "wouter";
 import React from "react";
 import { Alert, HoverCard, Text } from "@mantine/core";
 import { RuleExplanation } from "../types/ruff";
-import ReactMarkdown from "react-markdown";
+import Markdown from "markdown-to-jsx";
 
 export function renderCodeLink(code: string) {
   const ruleInfo = ruleMap[code];
@@ -18,7 +18,9 @@ export function renderCodeLink(code: string) {
       <HoverCard width={400} shadow="md" openDelay={500}>
         <HoverCard.Target>{link}</HoverCard.Target>
         <HoverCard.Dropdown>
-          <Text size="sm">{renderRuleExplanation(ruleInfo)}</Text>
+          <Text component="div" size="sm">
+            {renderRuleExplanation(ruleInfo)}
+          </Text>
         </HoverCard.Dropdown>
       </HoverCard>
     );
@@ -38,5 +40,5 @@ export function renderRuleExplanation(ruleInfo: RuleExplanation | undefined) {
   if (!ruleInfo?.explanation) {
     return <Alert>We don't have an explanation for this rule...</Alert>;
   }
-  return <ReactMarkdown>{ruleInfo.explanation}</ReactMarkdown>;
+  return <Markdown>{ruleInfo.explanation}</Markdown>;
 }

@@ -1,13 +1,13 @@
 import { Code, Loader, Paper } from "@mantine/core";
 import React from "react";
 import { useReportData } from "../contexts/reportData";
-import { useNavigate } from "react-router-dom";
+import { useLocation } from "wouter";
 import { useInterval } from "@mantine/hooks";
 import { RUFF_INCANTATION } from "../consts";
 
 export default function StandaloneDataFinder() {
   const { setRawData } = useReportData();
-  const navigate = useNavigate();
+  const [, navigate] = useLocation();
   const tryLoadScript = React.useCallback(() => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (globalThis as any).__RUFF_REPORT_DATA__ = undefined;

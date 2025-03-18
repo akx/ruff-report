@@ -1,8 +1,8 @@
 import React from "react";
-import { useParams } from "react-router-dom";
+import { useParams } from "wouter";
 import { Button, Group, Title } from "@mantine/core";
 import { useLoadedReportData } from "../contexts/reportData";
-import { countBy } from "lodash";
+import { countBy } from "../nodash";
 import { ExtendedMessage } from "../types/ruff-report";
 import { PopularityTable } from "../components/PopularityTable";
 import { ruleMap } from "../data";
