@@ -2,7 +2,7 @@ import { ProcessedMessages } from "../types/ruff-report";
 import { Message } from "../types/ruff";
 import { createContext, useContext } from "react";
 import { FilterAPI } from "../hooks/useFilters";
-import { useNavigate } from "react-router-dom";
+import { useLocation } from "wouter";
 
 export interface ReportDataContextType {
   filtered: ProcessedMessages;
@@ -23,7 +23,7 @@ export function useReportData() {
 
 export function useLoadedReportData() {
   const rd = useReportData();
-  const navigate = useNavigate();
+  const [, navigate] = useLocation();
   if (!rd.loaded) {
     navigate("/");
     return { ...rd, loaded: true, rawData: [] };

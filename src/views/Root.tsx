@@ -8,7 +8,6 @@ import {
   ReportDataContext,
   ReportDataContextType,
 } from "../contexts/reportData";
-import { Outlet } from "react-router-dom";
 import { Nav } from "../components/Nav";
 
 function applyFilters(
@@ -25,7 +24,7 @@ function applyFilters(
   };
 }
 
-export default function Root() {
+export default function Root({ children }: React.PropsWithChildren) {
   const [rawData, setRawData] = React.useState<Message[] | null>(null);
   const processed = React.useMemo(
     () => processMessages(rawData ?? []),
@@ -56,9 +55,7 @@ export default function Root() {
           width: 300,
         }}
       >
-        <AppShell.Main>
-          <Outlet />
-        </AppShell.Main>
+        <AppShell.Main>{children}</AppShell.Main>
         <Nav />
       </AppShell>
     </ReportDataContext.Provider>

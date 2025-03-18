@@ -1,5 +1,5 @@
 import React from "react";
-import { useParams } from "react-router-dom";
+import { useParams } from "wouter";
 import { Badge, Table, Title } from "@mantine/core";
 import { useLoadedReportData } from "../contexts/reportData";
 import { countBy } from "../nodash";

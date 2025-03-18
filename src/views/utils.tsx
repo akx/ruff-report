@@ -1,5 +1,5 @@
 import { ruleMap } from "../data";
-import { Link } from "react-router-dom";
+import { Link } from "wouter";
 import React from "react";
 import { Alert, HoverCard, Text } from "@mantine/core";
 import { RuleExplanation } from "../types/ruff";

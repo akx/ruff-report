@@ -10,13 +10,13 @@ import {
 import { Dropzone } from "@mantine/dropzone";
 import React from "react";
 import { useReportData } from "../contexts/reportData";
-import { useNavigate } from "react-router-dom";
 import { Message } from "../types/ruff";
 import { parseRawJSONAsRuffData } from "../utils";
+import { useLocation } from "wouter";
 
 export default function UploadOrEnterJSON() {
   const { setRawData } = useReportData();
-  const navigate = useNavigate();
+  const [, navigate] = useLocation();
   const [data, setData] = React.useState<Message[] | null>(null);
   const isValid = data !== null;
 
