@@ -26,11 +26,7 @@ export default function StandaloneDataFinder() {
     });
     document.body.append(scriptTag);
   }, [navigate, setRawData]);
-  const interval = useInterval(tryLoadScript, 300);
-  React.useEffect(() => {
-    interval.start();
-    return interval.stop;
-  }, [interval]);
+  useInterval(tryLoadScript, 300);
   return (
     <div className="shadow-lg p-2 mt-2 text-center">
       <div className="loading loading-infinity text-primary loading-lg"></div>

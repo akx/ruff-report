@@ -8,7 +8,7 @@ import tseslint from "typescript-eslint";
 import eslintPluginUnicorn from "eslint-plugin-unicorn";
 
 export default tseslint.config(
-  { ignores: ["dist", "postcss.config.cjs"] },
+  { ignores: ["dist", "postcss.config.cjs", "src/gen"] },
   {
     languageOptions: {
       ecmaVersion: 2020,

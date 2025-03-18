@@ -1,4 +1,4 @@
-import { ruleMap } from "../data";
+import { getRuleMap } from "../data";
 import { Link } from "wouter";
 import React from "react";
 import { HoverCard } from "radix-ui";
@@ -6,7 +6,7 @@ import { RuleExplanation } from "../types/ruff";
 import Markdown from "markdown-to-jsx";
 
 export function renderCodeLink(code: string) {
-  const ruleInfo = ruleMap[code];
+  const ruleInfo = getRuleMap()[code];
   const link = (
     <span>
       <Link to={`/rule/${code}`} className="link">
@@ -18,7 +18,7 @@ export function renderCodeLink(code: string) {
   if (ruleInfo?.explanation) {
     return (
       <HoverCard.Root>
-        <HoverCard.Trigger>{link}</HoverCard.Trigger>
+        <HoverCard.Trigger asChild>{link}</HoverCard.Trigger>
         <HoverCard.Portal>
           <HoverCard.Content className="bg-white shadow-lg rounded max-w-prose max-h-80 flex flex-col">
             <div className="px-4 py-1 text-sm bg-neutral-200 rounded-t">

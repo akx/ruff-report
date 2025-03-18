@@ -1,15 +1,18 @@
 import React from "react";
 
-export function useInterval(fn: () => void, interval: number) {
+export function useInterval(fn: () => void, interval: number | null) {
   const intervalRef = React.useRef<number>(undefined);
-  const start = React.useCallback(() => {
-    intervalRef.current = setInterval(fn, interval);
-  }, [fn, interval]);
-  const stop = React.useCallback(() => {
-    clearInterval(intervalRef.current);
-  }, []);
+  const fnRef = React.useRef(fn);
+  fnRef.current = fn;
   React.useEffect(() => {
-    return stop;
-  }, [stop]);
-  return { start, stop };
+    if (interval && interval > 0) {
+      intervalRef.current = setInterval(() => {
+        fnRef.current?.();
+      }, interval);
+      return () => {
+        clearInterval(intervalRef.current);
+      };
+    }
+    return;
+  }, [interval]);
 }

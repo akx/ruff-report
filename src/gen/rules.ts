@@ -1,4 +1,5 @@
-[
+// @ts-nocheck
+export default [
   {
     "name": "airflow-variable-name-task-id-mismatch",
     "code": "AIR001",

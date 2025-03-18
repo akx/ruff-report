@@ -1,8 +1,8 @@
-all: src/gen/rules.json src/gen/ruff-version.json
+all: src/gen/rules.ts src/gen/ruff-version.json
 
-.PHONY: src/gen/rules.json
+.PHONY: src/gen/rules.ts
 
-src/gen/rules.json:
+src/gen/rules.ts:
 	ruff rule --all --output-format=json | python process_rules.py > $@
 
 .PHONY: src/gen/ruff-version.json

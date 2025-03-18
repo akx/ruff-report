@@ -4,7 +4,7 @@ import { useLoadedReportData } from "../contexts/reportData";
 import { countBy } from "../nodash";
 import { ExtendedMessage } from "../types/ruff-report";
 import { PopularityTable } from "../components/PopularityTable";
-import { ruleMap } from "../data";
+import { getRuleMap } from "../data";
 import { renderFileLink, renderRuleExplanation } from "./utils";
 import { Facet } from "../types/ui";
 import FacetTabs from "../components/FacetTabs";
@@ -66,7 +66,7 @@ export default function RuleView() {
   const { code } = useParams<{ code: string }>();
   const { messages: allFilteredMessages } = useLoadedReportData().filtered;
   const messages = allFilteredMessages.filter((m) => m.code === code);
-  const ruleInfo = code ? ruleMap[code] : undefined;
+  const ruleInfo = code ? getRuleMap()[code] : undefined;
   const uniqueFiles = new Set(messages.map((m) => m.shortFilename));
   const facets = React.useMemo(
     () => [
