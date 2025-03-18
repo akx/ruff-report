@@ -1,8 +1,7 @@
-import { Code, Loader, Paper } from "@mantine/core";
 import React from "react";
 import { useReportData } from "../contexts/reportData";
 import { useLocation } from "wouter";
-import { useInterval } from "@mantine/hooks";
+import { useInterval } from "../hooks";
 import { RUFF_INCANTATION } from "../consts";
 
 export default function StandaloneDataFinder() {
@@ -33,18 +32,21 @@ export default function StandaloneDataFinder() {
     return interval.stop;
   }, [interval]);
   return (
-    <Paper shadow="sm" p="sm" mt="sm" style={{ textAlign: "center" }}>
-      <Loader size="xs" />
-      &nbsp;Trying to load <Code>ruff-report.js</Code> in the same directory as
-      this file...
-      <Paper shadow="sm" p="sm" mt="sm">
+    <div className="shadow-lg p-2 mt-2 text-center">
+      <div className="loading loading-infinity text-primary loading-lg"></div>
+      <div>
+        Trying to load{" "}
+        <span className="font-mono font-bold">ruff-report.js</span> in the same
+        directory as this file...
+      </div>
+      <div className="p-2 mt-2 text-center shadow-md">
         On an UNIX-like system, you can generate a compatible file with
         something like: <br />
-        <Code>
+        <div className="font-mono text-xs p-2">
           echo "var __RUFF_REPORT_DATA__ =" &gt; ruff-report.js &&{" "}
           {RUFF_INCANTATION} &gt;&gt; ruff-report.js
-        </Code>
-      </Paper>
-    </Paper>
+        </div>
+      </div>
+    </div>
   );
 }

@@ -25,6 +25,7 @@ export default tseslint.config(
   prettierConfig,
   {
     rules: {
+      "react/prop-types": "off",
       "unicorn/filename-case": "off",
       "unicorn/no-null": "off",
       "unicorn/prefer-optional-catch-binding": "off",

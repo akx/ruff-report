@@ -1,6 +1,5 @@
 import React from "react";
 import { useParams } from "wouter";
-import { Button, Group, Title } from "@mantine/core";
 import { useLoadedReportData } from "../contexts/reportData";
 import { countBy } from "../nodash";
 import { ExtendedMessage } from "../types/ruff-report";
@@ -11,6 +10,7 @@ import { Facet } from "../types/ui";
 import FacetTabs from "../components/FacetTabs";
 import { NoDataAlert } from "../components/NoDataAlert";
 import { RuleExplanation } from "../types/ruff";
+import { Title } from "../components/Title";
 
 const baseFacets: Facet[] = [
   {
@@ -43,22 +43,22 @@ function RuleHeader({
   ruleInfo: RuleExplanation | undefined;
 }) {
   return (
-    <Group justify="space-between">
+    <div className="flex justify-between">
       <Title>
         {code}
         {ruleInfo ? <>&nbsp;&ndash;&nbsp;{ruleInfo.name}</> : null}
       </Title>
       {ruleInfo ? (
-        <Button
-          component="a"
+        <a
+          className="btn btn-outline"
           href={`https://beta.ruff.rs/docs/rules/${ruleInfo.name}/`}
-          variant="outline"
           target="_blank"
+          rel="noreferrer"
         >
           View docs on ruff.rs
-        </Button>
+        </a>
       ) : null}
-    </Group>
+    </div>
   );
 }
 
@@ -72,7 +72,11 @@ export default function RuleView() {
     () => [
       {
         name: "Explanation",
-        render: () => renderRuleExplanation(ruleInfo),
+        render: () => (
+          <div className="prose leading-normal">
+            {renderRuleExplanation(ruleInfo)}
+          </div>
+        ),
       },
       ...baseFacets,
     ],
@@ -82,14 +86,13 @@ export default function RuleView() {
     return <NoDataAlert />;
   }
   return (
-    <>
+    <div className="p-4">
       <RuleHeader code={code} ruleInfo={ruleInfo} />
-
       <p>
         {messages.length.toLocaleString()} occurrences in{" "}
         {uniqueFiles.size.toLocaleString()} files
       </p>
       <FacetTabs facets={facets} messages={messages} />
-    </>
+    </div>
   );
 }

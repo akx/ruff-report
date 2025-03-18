@@ -5,45 +5,63 @@ import {
   ValuesKey,
 } from "../types/ruff-report";
 import { FilterAPI } from "../hooks/useFilters";
-import { Accordion } from "@mantine/core";
 import { ChipSelectMany } from "./ChipSelectMany";
 import React from "react";
+import cx from "clsx";
 
 type FilterAccordionProps = {
   processed: ProcessedMessages;
 } & Omit<FilterAPI, "resetFilters">;
 
-export function FilterAccordion({
+function AccordionItem({
   processed,
   filters,
+  valueKey,
   setFilter,
-}: FilterAccordionProps) {
-  function renderAccordionItem(key: ValuesKey) {
-    const valuesAndCounts = processed.values[key];
-    const selected = filters[key];
-    const suffix =
-      selected.length === valuesAndCounts.length
-        ? ""
-        : ` (${selected.length} / ${valuesAndCounts.length})`;
-    return (
-      <Accordion.Item key={key} value={key}>
-        <Accordion.Control disabled={processed.messages.length === 0}>
-          {filterableKeyLabels[key] ?? key} {suffix}
-        </Accordion.Control>
-        <Accordion.Panel>
+}: { valueKey: ValuesKey } & FilterAccordionProps) {
+  const [open, setOpen] = React.useState(false);
+  const valuesAndCounts = processed.values[valueKey];
+  const selected = filters[valueKey];
+  const suffix =
+    selected.length === valuesAndCounts.length
+      ? ""
+      : ` (${selected.length} / ${valuesAndCounts.length})`;
+  return (
+    <div key={valueKey} className="py-1 border-b border-b-neutral-200">
+      <button
+        className={cx(
+          "flex justify-between w-full py-1",
+          processed.messages.length === 0
+            ? "opacity-50"
+            : "cursor-pointer hover:bg-neutral-100",
+        )}
+        disabled={processed.messages.length === 0}
+        onClick={() => setOpen((o) => !o)}
+      >
+        <span>
+          {filterableKeyLabels[valueKey] ?? valueKey} {suffix}
+        </span>
+        <span className="px-3">{open ? "▲" : "▼"}</span>
+      </button>
+      {open ? (
+        <div>
           <ChipSelectMany
             valuesAndCounts={valuesAndCounts}
             selected={selected}
-            setSelected={(v) => setFilter(key, v)}
+            setSelected={(v) => setFilter(valueKey, v)}
           />
-        </Accordion.Panel>
-      </Accordion.Item>
-    );
-  }
+        </div>
+      ) : null}
+    </div>
+  );
+}
 
+export function FilterAccordion(props: FilterAccordionProps) {
   return (
-    <Accordion multiple>
-      {filterableKeys.map((key) => renderAccordionItem(key))}
-    </Accordion>
+    <div>
+      {filterableKeys.map((key) => (
+        <AccordionItem key={key} valueKey={key} {...props} />
+      ))}
+    </div>
   );
 }

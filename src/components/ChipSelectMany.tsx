@@ -1,41 +1,55 @@
-import { Button, Chip, Group } from "@mantine/core";
 import React from "react";
+import cx from "clsx";
 
-type ChipSelectManyProps = {
+interface ChipSelectManyProps {
   valuesAndCounts: [string, number][];
   selected: string[];
   setSelected: (v: string[]) => void;
-};
+}
 
 export function ChipSelectMany({
   valuesAndCounts,
   selected,
   setSelected,
 }: ChipSelectManyProps) {
+  const selectedSet = new Set(selected);
   return (
     <>
-      <Button.Group>
-        <Button
-          variant="default"
-          size="xs"
+      <div className="join py-2">
+        <button
+          className="btn btn-outline btn-sm join-item"
           onClick={() => setSelected(valuesAndCounts.map((v) => v[0]))}
         >
           All ({valuesAndCounts.length})
-        </Button>
-        <Button variant="default" size="xs" onClick={() => setSelected([])}>
+        </button>
+        <button
+          className="btn btn-outline btn-sm join-item"
+          onClick={() => setSelected([])}
+        >
           None
-        </Button>
-      </Button.Group>
-      <div style={{ maxHeight: 250, overflowY: "auto", overflowX: "hidden" }}>
-        <Chip.Group multiple value={selected} onChange={setSelected}>
-          <Group gap={2}>
-            {valuesAndCounts.map(([value, count]) => (
-              <Chip key={value} value={value} size="xs">
-                {value} ({count})
-              </Chip>
-            ))}
-          </Group>
-        </Chip.Group>
+        </button>
+      </div>
+      <div className="overflow-y-auto overflow-x-hidden max-h-64">
+        <div className="flex flex-wrap gap-1">
+          {valuesAndCounts.map(([value, count]) => (
+            <button
+              className={cx(
+                "badge badge-sm m-0 cursor-pointer",
+                selectedSet.has(value) ? "badge-primary" : "badge-soft",
+              )}
+              key={value}
+              onClick={() =>
+                setSelected(
+                  selected.includes(value)
+                    ? selected.filter((v) => v !== value)
+                    : [...selected, value],
+                )
+              }
+            >
+              {value} ({count})
+            </button>
+          ))}
+        </div>
       </div>
     </>
   );

@@ -1,6 +1,5 @@
 import React from "react";
 import { useParams } from "wouter";
-import { Badge, Table, Title } from "@mantine/core";
 import { useLoadedReportData } from "../contexts/reportData";
 import { countBy } from "../nodash";
 import { ExtendedMessage } from "../types/ruff-report";
@@ -9,13 +8,14 @@ import { renderCodeLink } from "./utils";
 import { Facet } from "../types/ui";
 import FacetTabs from "../components/FacetTabs";
 import { NoDataAlert } from "../components/NoDataAlert";
+import { Title } from "../components/Title";
 
 const facets: Facet[] = [
   {
     name: "Report",
     render: (messages: readonly ExtendedMessage[]) => {
       return (
-        <Table>
+        <table className="table table-zebra table-xs">
           <thead>
             <tr>
               <th>Line</th>
@@ -31,12 +31,14 @@ const facets: Facet[] = [
                 <td>{message.code}</td>
                 <td>{message.message}</td>
                 <td>
-                  {message.fix ? <Badge color="green">Fixable</Badge> : null}
+                  {message.fix ? (
+                    <div className="badge badge-success">Fixable</div>
+                  ) : null}
                 </td>
               </tr>
             ))}
           </tbody>
-        </Table>
+        </table>
       );
     },
   },
@@ -64,13 +66,13 @@ export default function FileView() {
   }
   const uniqueCodes = new Set(messages.map((m) => m.code));
   return (
-    <>
+    <div className="p-4">
       <Title>{file}</Title>
       <p>
         {messages.length.toLocaleString()} messages,&nbsp;
         {uniqueCodes.size.toLocaleString()} rules
       </p>
       <FacetTabs facets={facets} messages={messages} />
-    </>
+    </div>
   );
 }

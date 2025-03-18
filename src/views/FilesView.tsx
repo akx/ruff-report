@@ -1,5 +1,4 @@
 import React from "react";
-import { Table } from "@mantine/core";
 import { useLoadedReportData } from "../contexts/reportData";
 import { ExtendedMessage } from "../types/ruff-report";
 import { renderFileLink } from "./utils";
@@ -15,7 +14,7 @@ const facets: Facet[] = [
     render: (messages: readonly ExtendedMessage[]) => {
       const byFile = groupAndSort(messages, "shortFilename");
       return (
-        <Table>
+        <table className="table table-zebra table-sm">
           <thead>
             <tr>
               <th>File</th>
@@ -36,7 +35,7 @@ const facets: Facet[] = [
               );
             })}
           </tbody>
-        </Table>
+        </table>
       );
     },
   },
