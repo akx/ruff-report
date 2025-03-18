@@ -1,7 +1,7 @@
 import { Paper } from "@mantine/core";
-import { appVersion, ruffVersion } from "../data";
+import { ruffVersion } from "../data";
 import React from "react";
-import { standalone } from "../config";
+import { appVersion, standalone } from "../config";
 
 export function NavBarInfoBox() {
   return (

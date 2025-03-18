@@ -17,6 +17,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-tags: true # required for "git describe --tags"
+          ref: ${{ github.event.pull_request.head.sha }}
       - uses: pnpm/action-setup@v4
         with:
           version: latest
@@ -24,6 +27,7 @@ jobs:
         with:
           node-version: "20.x"
           cache: pnpm
+      - run: echo VITE_RR_VERSION=$(git describe --tags --always) | tee -a $GITHUB_ENV
       - run: pnpm i
       - run: pnpm lint
       - run: pnpm build --base=/ruff-report/
@@ -35,6 +39,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-tags: true # required for "git describe --tags"
+          ref: ${{ github.event.pull_request.head.sha }}
       - uses: pnpm/action-setup@v4
         with:
           version: latest
@@ -42,6 +49,7 @@ jobs:
         with:
           node-version: "20.x"
           cache: pnpm
+      - run: echo VITE_RR_VERSION=$(git describe --tags --always) | tee -a >> $GITHUB_ENV
       - run: pnpm i
       - run: make standalone
       - name: Upload artifact
@@ -62,7 +70,7 @@ jobs:
         id: deployment
         uses: actions/deploy-pages@v4
         if: ${{ github.event_name == 'push' }}
-        
+
   release:
     needs:
       # Build also checks lints, etc., so good to have as a dep
