@@ -3,12 +3,12 @@ all: src/gen/rules.ts src/gen/ruff-version.json
 .PHONY: src/gen/rules.ts
 
 src/gen/rules.ts:
-	ruff rule --all --output-format=json | python process_rules.py > $@
+	uvx --isolated ruff rule --all --output-format=json | python process_rules.py > $@
 
 .PHONY: src/gen/ruff-version.json
 
 src/gen/ruff-version.json:
-	ruff version --output-format=json > $@
+	uvx --isolated ruff version --output-format=json > $@
 
 .PHONY: standalone
 
