@@ -3,7 +3,7 @@ all: src/gen/rules.ts src/gen/ruff-version.json
 .PHONY: src/gen/rules.ts
 
 src/gen/rules.ts:
-	uvx --isolated ruff rule --all --output-format=json | python process_rules.py > $@
+	uvx --isolated ruff rule --all --output-format=json | uv run process_rules.py > $@
 
 .PHONY: src/gen/ruff-version.json
 
