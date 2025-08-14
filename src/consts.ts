@@ -1,2 +1,2 @@
 export const RUFF_INCANTATION =
-  "ruff --select=ALL --preview --output-format=json .";
+  "ruff check --select=ALL --preview --output-format=json .";
