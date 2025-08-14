@@ -3,7 +3,7 @@
   "type": "module",
   "license": "MIT",
   "author": "Aarni Koskela <akx@iki.fi>",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
