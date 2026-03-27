@@ -1,4 +1,3 @@
-import React from "react";
 import { useLoadedReportData } from "../contexts/reportData";
 import { ExtendedMessage } from "../types/ruff-report";
 import { renderFileLink } from "./utils";
@@ -23,9 +22,9 @@ const facets: Facet[] = [
             </tr>
           </thead>
           <tbody>
-            {byFile.map(([file, messages], i) => {
+            {byFile.map(([file, messages]) => {
               return (
-                <tr key={i}>
+                <tr key={file}>
                   <td>{renderFileLink(file)}</td>
                   <td style={alignRight}>{messages.length.toLocaleString()}</td>
                   <td style={alignRight}>

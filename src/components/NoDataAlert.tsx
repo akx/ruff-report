@@ -1,5 +1,3 @@
-import React from "react";
-
 export function NoDataAlert() {
   return (
     <div className="p-4">

@@ -21,8 +21,15 @@ export function useFilters(processed: ProcessedMessages): FilterAPI {
   const [filtersData, setFiltersData] = React.useState<
     Record<ValuesKey, string[]>
   >(() => getInitialFilters(processed));
-  const resetFilters = () => setFiltersData(getInitialFilters(processed));
-  React.useEffect(resetFilters, [processed]);
+  const resetFilters = React.useCallback(
+    () => setFiltersData(getInitialFilters(processed)),
+    [processed],
+  );
+  const processedRef = React.useRef(processed);
+  if (processedRef.current !== processed) {
+    processedRef.current = processed;
+    setFiltersData(getInitialFilters(processed));
+  }
   const setFilter = React.useCallback((key: ValuesKey, value: string[]) => {
     setFiltersData((prev) => ({ ...prev, [key]: value }));
   }, []);

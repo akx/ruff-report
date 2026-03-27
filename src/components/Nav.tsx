@@ -1,5 +1,4 @@
 import { FilterAccordion } from "./FilterAccordion";
-import React from "react";
 import { Link } from "wouter";
 import { useReportData } from "../contexts/reportData";
 import { NavBarInfoBox } from "./NavBarInfoBox";

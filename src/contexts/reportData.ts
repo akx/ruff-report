@@ -1,6 +1,6 @@
 import { ProcessedMessages } from "../types/ruff-report";
 import { Message } from "../types/ruff";
-import { createContext, useContext } from "react";
+import { createContext, use } from "react";
 import { FilterAPI } from "../hooks/useFilters";
 import { useLocation } from "wouter";
 
@@ -18,7 +18,7 @@ export const ReportDataContext = createContext<ReportDataContextType>(
 );
 
 export function useReportData() {
-  return useContext(ReportDataContext);
+  return use(ReportDataContext);
 }
 
 export function useLoadedReportData() {
