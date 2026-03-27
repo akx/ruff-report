@@ -46,11 +46,11 @@ export default function Root({ children }: React.PropsWithChildren) {
     [processed, filtered, filters, rawData],
   );
   return (
-    <ReportDataContext.Provider value={reportDataContext}>
+    <ReportDataContext value={reportDataContext}>
       <div className="flex">
         <Nav />
         <main className="grow">{children}</main>
       </div>
-    </ReportDataContext.Provider>
+    </ReportDataContext>
   );
 }

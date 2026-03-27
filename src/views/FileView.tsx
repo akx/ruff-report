@@ -1,4 +1,3 @@
-import React from "react";
 import { useParams } from "wouter";
 import { useLoadedReportData } from "../contexts/reportData";
 import { countBy } from "../nodash";
@@ -25,8 +24,8 @@ const facets: Facet[] = [
             </tr>
           </thead>
           <tbody>
-            {messages.map((message, i) => (
-              <tr key={i}>
+            {messages.map((message) => (
+              <tr key={`${message.location.row}:${message.code}`}>
                 <td>{message.location.row}</td>
                 <td>{message.code}</td>
                 <td>{message.message}</td>

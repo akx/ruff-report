@@ -1,7 +1,6 @@
 import { filterableKeyLabels, filterableKeys } from "../types/ruff-report";
 import { PopularityTable } from "../components/PopularityTable";
 import { countBy } from "../nodash";
-import React from "react";
 import { useLoadedReportData } from "../contexts/reportData";
 import { renderCodeLink } from "./utils";
 import { Facet } from "../types/ui";

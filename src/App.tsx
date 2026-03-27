@@ -2,7 +2,6 @@ import { Redirect, Route, Router, Switch } from "wouter";
 import { useHashLocation } from "wouter/use-hash-location";
 
 import Root from "./views/Root";
-import React from "react";
 import WelcomeView from "./views/WelcomeView";
 import BasicReportView from "./views/BasicReportView";
 import RuleView from "./views/RuleView";

@@ -1,4 +1,3 @@
-import React from "react";
 import { standalone } from "../config";
 import UploadOrEnterJSON from "./UploadOrEnterJSON";
 import StandaloneDataFinder from "./StandaloneDataFinder";
