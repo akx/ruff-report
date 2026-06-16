@@ -1,3 +1,4 @@
+/* eslint-disable unicorn/no-unsafe-property-key */
 export function countBy<T>(
   collection: readonly T[],
   iteratee: keyof T | ((item: T) => string),
@@ -27,6 +28,7 @@ export function groupBy<T>(
 
   for (const item of collection) {
     const key = callback(item);
+    // eslint-disable-next-line unicorn/no-computed-property-existence-check
     if (!result[key]) {
       result[key] = [];
     }

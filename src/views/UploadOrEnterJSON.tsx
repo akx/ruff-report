@@ -26,10 +26,12 @@ export default function UploadOrEnterJSON() {
   }
 
   const commit = (data: Message[] | null) => {
-    if (data) {
-      setRawData(data);
-      navigate("/report");
+    if (!data) {
+      return;
     }
+
+    setRawData(data);
+    navigate("/report");
   };
 
   const handleDrop = async (files: FileList | null) => {

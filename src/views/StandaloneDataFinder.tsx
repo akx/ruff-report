@@ -8,7 +8,7 @@ export default function StandaloneDataFinder() {
   const { setRawData } = useReportData();
   const [, navigate] = useLocation();
   const tryLoadScript = React.useCallback(() => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any,unicorn/no-global-object-property-assignment
     (globalThis as any).__RUFF_REPORT_DATA__ = undefined;
     const scriptTag = document.createElement("script");
     scriptTag.src = `./ruff-report.js?${Date.now()}`;
