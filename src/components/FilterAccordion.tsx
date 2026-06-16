@@ -9,16 +9,16 @@ import { ChipSelectMany } from "./ChipSelectMany";
 import React from "react";
 import cx from "clsx";
 
-type FilterAccordionProps = {
+type FilterAccordionProps = Omit<FilterAPI, "resetFilters"> & {
   processed: ProcessedMessages;
-} & Omit<FilterAPI, "resetFilters">;
+};
 
 function AccordionItem({
   processed,
   filters,
   valueKey,
   setFilter,
-}: { valueKey: ValuesKey } & FilterAccordionProps) {
+}: FilterAccordionProps & { valueKey: ValuesKey }) {
   const [open, setOpen] = React.useState(false);
   const valuesAndCounts = processed.values[valueKey];
   const selected = filters[valueKey];

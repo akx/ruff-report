@@ -68,6 +68,7 @@ export default function RuleView() {
   const messages = allFilteredMessages.filter((m) => m.code === code);
   const ruleInfo = code ? getRuleMap()[code] : undefined;
   const uniqueFiles = new Set(messages.map((m) => m.shortFilename));
+  // eslint-disable-next-line unicorn/no-declarations-before-early-exit
   const facets = React.useMemo(
     () => [
       {

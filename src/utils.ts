@@ -42,7 +42,8 @@ export function parseRawJSONAsRuffData(
   rawData: string | ArrayBuffer,
 ): Message[] | null {
   if (typeof rawData !== "string") {
-    rawData = new TextDecoder("utf-8").decode(rawData);
+    const decoder = new TextDecoder("utf-8");
+    rawData = decoder.decode(rawData);
   }
   const data = JSON.parse(rawData);
   if (validateDataAsRuffData(data)) {

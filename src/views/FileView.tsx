@@ -57,6 +57,7 @@ const facets: Facet[] = [
 ];
 
 export default function FileView() {
+  // eslint-disable-next-line unicorn/no-unreadable-object-destructuring
   const { ["*"]: file } = useParams<{ ["*"]: string }>();
   const { messages: allFilteredMessages } = useLoadedReportData().filtered;
   const messages = allFilteredMessages.filter((m) => m.shortFilename === file);
