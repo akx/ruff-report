@@ -47,6 +47,56 @@ export default [
     }
   },
   {
+    "name": "airflow-task-branch-as-short-circuit",
+    "code": "AIR004",
+    "fix_availability": "None",
+    "explanation": "## What it does\nChecks for branching logic that could be replaced with a short-circuit\npattern, either via `@task.branch` decorated functions or\n`BranchPythonOperator` callables.\n\n## Why is this bad?\nWhen a branch function has at least two `return` statements and exactly\none of them returns a non-empty list, the function is effectively acting\nas a short-circuit operator. Using `@task.short_circuit` or\n`ShortCircuitOperator` is simpler and more readable in such cases.\n\n## Example\n\nUsing the `TaskFlow` API:\n```python\nfrom airflow.decorators import task\n\n\n@task.branch\ndef my_task():\n    if condition:\n        return [\"my_downstream_task\"]\n    return []\n```\n\nUse instead:\n```python\nfrom airflow.decorators import task\n\n\n@task.short_circuit\ndef my_task():\n    return condition\n```\n\nUsing the standard operator API:\n```python\nfrom airflow.operators.python import BranchPythonOperator\n\n\ndef my_callable():\n    if condition:\n        return [\"my_downstream_task\"]\n    return []\n\n\ntask = BranchPythonOperator(task_id=\"my_task\", python_callable=my_callable)\n```\n\nUse instead:\n```python\nfrom airflow.operators.python import ShortCircuitOperator\n\n\ndef my_callable():\n    return condition\n\n\ntask = ShortCircuitOperator(task_id=\"my_task\", python_callable=my_callable)\n```\n",
+    "preview": true,
+    "status": {
+      "Preview": {
+        "since": "0.15.12"
+      }
+    },
+    "source_location": {
+      "file": "crates/ruff_linter/src/rules/airflow/rules/task_branch_as_short_circuit.rs",
+      "line": 72
+    }
+  },
+  {
+    "name": "airflow-xcom-pull-in-template-string",
+    "code": "AIR201",
+    "fix_availability": "Sometimes",
+    "explanation": "## What it does\nChecks for Airflow operator keyword arguments that use a Jinja template\nstring containing a single `xcom_pull` call to retrieve another task's\noutput.\n\n## Why is this bad?\nUsing `{{ ti.xcom_pull(task_ids='some_task') }}` as a string template to\naccess the output of an upstream task is less readable and more\nerror-prone than using the `.output` attribute on the task object\ndirectly. The `.output` attribute provides better IDE support and makes\ntask dependencies more explicit.\n\n## Example\n```python\nfrom airflow.operators.python import PythonOperator\n\n\ntask_1 = PythonOperator(task_id=\"task_1\", python_callable=my_func)\ntask_2 = PythonOperator(\n    task_id=\"task_2\",\n    op_args=\"{{ ti.xcom_pull(task_ids='task_1') }}\",\n)\n```\n\nUse instead:\n```python\nfrom airflow.operators.python import PythonOperator\n\n\ntask_1 = PythonOperator(task_id=\"task_1\", python_callable=my_func)\ntask_2 = PythonOperator(\n    task_id=\"task_2\",\n    op_args=task_1.output,\n)\n```\n\n## Fix safety\nThe fix is always unsafe because the variable in scope that matches the\ntask ID may not be the Airflow task object that produced the `XCom` value.\n",
+    "preview": true,
+    "status": {
+      "Preview": {
+        "since": "0.15.11"
+      }
+    },
+    "source_location": {
+      "file": "crates/ruff_linter/src/rules/airflow/rules/xcom_pull_in_template_string.rs",
+      "line": 51
+    },
+    "fix": 1
+  },
+  {
+    "name": "airflow-task-implicit-multiple-outputs",
+    "code": "AIR202",
+    "fix_availability": "Always",
+    "explanation": "## What it does\nChecks for `@task`-decorated functions whose `multiple_outputs` behavior is\ndetermined by Airflow's runtime inference rather than being set explicitly.\n\n## Why is this bad?\nAt runtime, Airflow infers `multiple_outputs` from the return type\nannotation: if it resolves to a subclass of `collections.abc.Mapping`, the\nreturn value is split into one `XCom` per key; otherwise it is stored as a\nsingle `XCom`. This couples typing to `XCom` layout in a non-obvious way \u2014\nrenaming, removing, or refining the return annotation silently changes the\nDag's `XCom` behavior.\n\nPassing `multiple_outputs=` explicitly makes the author's intent clear,\ninsulates the Dag from future changes to inference, and increases\nawareness of the parameter.\n\n## Example\n```python\nfrom airflow.sdk import task\n\n\n@task\ndef extract() -> dict:\n    return {\"x\": 1, \"y\": 2}\n```\n\nUse instead:\n```python\nfrom airflow.sdk import task\n\n\n@task(multiple_outputs=True)\ndef extract() -> dict:\n    return {\"x\": 1, \"y\": 2}\n```\n\n## Fix safety\nThe fix is always marked unsafe: the inserted value mirrors Airflow's\ncurrent inference (`True` when the return annotation is a `Mapping`\nsubclass, `False` otherwise), but the author may have intended a different\n`XCom` layout, and a function with multiple return paths may not always\nreturn a dict.\n",
+    "preview": true,
+    "status": {
+      "Preview": {
+        "since": "0.15.14"
+      }
+    },
+    "source_location": {
+      "file": "crates/ruff_linter/src/rules/airflow/rules/task_implicit_multiple_outputs.rs",
+      "line": 55
+    },
+    "fix": 2
+  },
+  {
     "name": "airflow3-removal",
     "code": "AIR301",
     "fix_availability": "Sometimes",
@@ -577,7 +627,7 @@ export default [
     "name": "async-function-with-timeout",
     "code": "ASYNC109",
     "fix_availability": "None",
-    "explanation": "## What it does\nChecks for `async` function definitions with `timeout` parameters.\n\n## Why is this bad?\nRather than implementing asynchronous timeout behavior manually, prefer\nbuilt-in timeout functionality, such as `asyncio.timeout`, `trio.fail_after`,\nor `anyio.move_on_after`, among others.\n\nThis rule is highly opinionated to enforce a design pattern\ncalled [\"structured concurrency\"] that allows for\n`async` functions to be oblivious to timeouts,\ninstead letting callers to handle the logic with a context manager.\n\n## Details\n\nThis rule attempts to detect which async framework your code is using\nby analysing the imports in the file it's checking. If it sees an\n`anyio` import in your code, it will assume `anyio` is your framework\nof choice; if it sees a `trio` import, it will assume `trio`; if it\nsees neither, it will assume `asyncio`. `asyncio.timeout` was added\nin Python 3.11, so if `asyncio` is detected as the framework being used,\nthis rule will be ignored when your configured [`target-version`] is set\nto less than Python 3.11.\n\nFor functions that wrap `asyncio.timeout`, `trio.fail_after` or\n`anyio.move_on_after`, false positives from this rule can be avoided\nby using a different parameter name.\n\n## Example\n\n```python\nasync def long_running_task(timeout): ...\n\n\nasync def main():\n    await long_running_task(timeout=2)\n```\n\nUse instead:\n\n```python\nasync def long_running_task(): ...\n\n\nasync def main():\n    async with asyncio.timeout(2):\n        await long_running_task()\n```\n\n## References\n- [`asyncio` timeouts](https://docs.python.org/3/library/asyncio-task.html#timeouts)\n- [`anyio` timeouts](https://anyio.readthedocs.io/en/stable/cancellation.html)\n- [`trio` timeouts](https://trio.readthedocs.io/en/stable/reference-core.html#cancellation-and-timeouts)\n\n[\"structured concurrency\"]: https://vorpus.org/blog/some-thoughts-on-asynchronous-api-design-in-a-post-asyncawait-world/#timeouts-and-cancellation\n",
+    "explanation": "## What it does\nChecks for `async` function definitions with `timeout` parameters.\n\n## Why is this bad?\nRather than implementing asynchronous timeout behavior manually, prefer\nbuilt-in timeout functionality, such as `asyncio.timeout`, `trio.fail_after`,\nor `anyio.move_on_after`, among others.\n\nThis rule is highly opinionated to enforce a design pattern\ncalled [\"structured concurrency\"] that allows for\n`async` functions to be oblivious to timeouts,\ninstead letting callers to handle the logic with a context manager.\n\n## Details\n\nThis rule attempts to detect which async framework your code is using\nby analysing the imports in the file it's checking. If it sees an\n`anyio` import in your code, it will assume `anyio` is your framework\nof choice; if it sees a `trio` import, it will assume `trio`; if it\nsees neither, it will assume `asyncio`. `asyncio.timeout` was added\nin Python 3.11, so if `asyncio` is detected as the framework being used,\nthis rule will be ignored when your configured [`target-version`] is set\nto less than Python 3.11.\n\nFor functions that wrap `asyncio.timeout`, `trio.fail_after` or\n`anyio.move_on_after`, false positives from this rule can be avoided\nby using a different parameter name.\n\nThis rule exempts methods decorated with [`@typing.override`][override].\nRemoving a parameter from a subclass method may cause type checkers to\ncomplain about a violation of the Liskov Substitution Principle if it\nmeans that the method now incompatibly overrides a method defined on a\nsuperclass. Explicitly decorating an overriding method with `@override`\nsignals to Ruff that the method is intended to override a superclass\nmethod and that a type checker will enforce that it does so; Ruff\ntherefore knows that it should not enforce this rule on such methods.\n\n## Example\n\n```python\nasync def long_running_task(timeout): ...\n\n\nasync def main():\n    await long_running_task(timeout=2)\n```\n\nUse instead:\n\n```python\nasync def long_running_task(): ...\n\n\nasync def main():\n    async with asyncio.timeout(2):\n        await long_running_task()\n```\n\n## References\n- [`asyncio` timeouts](https://docs.python.org/3/library/asyncio-task.html#timeouts)\n- [`anyio` timeouts](https://anyio.readthedocs.io/en/stable/cancellation.html)\n- [`trio` timeouts](https://trio.readthedocs.io/en/stable/reference-core.html#cancellation-and-timeouts)\n\n[\"structured concurrency\"]: https://vorpus.org/blog/some-thoughts-on-asynchronous-api-design-in-a-post-asyncawait-world/#timeouts-and-cancellation\n[override]: https://docs.python.org/3/library/typing.html#typing.override\n",
     "status": {
       "Stable": {
         "since": "0.5.0"
@@ -585,7 +635,7 @@ export default [
     },
     "source_location": {
       "file": "crates/ruff_linter/src/rules/flake8_async/rules/async_function_with_timeout.rs",
-      "line": 67
+      "line": 78
     }
   },
   {
@@ -634,6 +684,22 @@ export default [
       "line": 41
     },
     "fix": 1
+  },
+  {
+    "name": "yield-in-context-manager-in-async-generator",
+    "code": "ASYNC119",
+    "fix_availability": "None",
+    "explanation": "## What it does\nChecks for `yield` inside a context manager in an async generator.\n\n## Why is this bad?\nYielding inside a context manager in an async generator is unsafe because\nthe cleanup of the context manager may be delayed until the generator is\nclosed, at which point `await` is no longer allowed. This can lead to\nresource leaks or other bugs.\n\nFor more information, see [PEP 533](https://peps.python.org/pep-0533/).\n\nIf the function is intended to yield only once and act as a context\nmanager, use `@asynccontextmanager`. If it's a true async generator\nthat yields multiple values, consumers should use `contextlib.aclosing` to\nensure timely cleanup, or the generator should be refactored to avoid\nholding context managers open across yields.\n\nThe rule also suppresses diagnostics for functions decorated with\n`@pytest.fixture`, `@pytest_asyncio.fixture`, or `@trio.as_safe_channel`,\nas these handle async generator cleanup safely.\n\n## Example\n\nThe following function yields once inside a context manager, but without\n`@asynccontextmanager`, cleanup of the connection may be delayed:\n```python\nasync def open_connection():\n    async with connect() as conn:\n        yield conn\n```\n\nIf the function is intended to yield exactly once (i.e., it's a context\nmanager), add `@asynccontextmanager`:\n```python\nfrom contextlib import asynccontextmanager\n\n\n@asynccontextmanager\nasync def open_connection():\n    async with connect() as conn:\n        yield conn\n```\n\nFor async generators that yield multiple values, `@asynccontextmanager`\nis not appropriate. Instead, refactor to avoid holding context managers\nopen across yields, or ensure consumers use `contextlib.aclosing` for timely\ncleanup.\n\n## Known problems\nUsing `contextlib.aclosing` around all call sites of an async generator is a\nvalid way to guarantee timely cleanup, but this rule cannot verify that\nall callers use `aclosing`. As a result, it may flag generators that\nare always consumed safely.\n\n## References\n- [PEP 533 \u2013 Deterministic cleanup for iterators](https://peps.python.org/pep-0533/)\n- [`contextlib.aclosing`](https://docs.python.org/3/library/contextlib.html#contextlib.aclosing)\n- [trio.as_safe_channel](https://trio.readthedocs.io/en/latest/reference-core.html#trio.as_safe_channel)\n",
+    "preview": true,
+    "status": {
+      "Preview": {
+        "since": "0.15.16"
+      }
+    },
+    "source_location": {
+      "file": "crates/ruff_linter/src/rules/flake8_async/rules/yield_in_context_manager_in_async_generator.rs",
+      "line": 68
+    }
   },
   {
     "name": "blocking-http-call-in-async-function",
@@ -804,7 +870,7 @@ export default [
     "name": "bad-file-permissions",
     "code": "S103",
     "fix_availability": "None",
-    "explanation": "## What it does\nChecks for files with overly permissive permissions.\n\n## Why is this bad?\nOverly permissive file permissions may allow unintended access and\narbitrary code execution.\n\n## Example\n```python\nimport os\n\nos.chmod(\"/etc/secrets.txt\", 0o666)  # rw-rw-rw-\n```\n\nUse instead:\n```python\nimport os\n\nos.chmod(\"/etc/secrets.txt\", 0o600)  # rw-------\n```\n\n## References\n- [Python documentation: `os.chmod`](https://docs.python.org/3/library/os.html#os.chmod)\n- [Python documentation: `stat`](https://docs.python.org/3/library/stat.html)\n- [Common Weakness Enumeration: CWE-732](https://cwe.mitre.org/data/definitions/732.html)\n",
+    "explanation": "## What it does\nChecks for files with overly permissive permissions.\n\n## Why is this bad?\nOverly permissive file permissions may allow unintended access and\narbitrary code execution.\n\n## Example\n```python\nimport os\n\nos.chmod(\"/etc/secrets.txt\", 0o666)  # rw-rw-rw-\n```\n\nUse instead:\n```python\nimport os\n\nos.chmod(\"/etc/secrets.txt\", 0o600)  # rw-------\n```\n\n## Preview\nWhen [preview] is enabled, the set of bits treated as dangerous matches\nupstream Bandit (`0o33`): `S_IWOTH`, `S_IXOTH`, `S_IWGRP`, and `S_IXGRP`.\nOutside preview, only `S_IWOTH` and `S_IXGRP` are flagged.\n\n[preview]: https://docs.astral.sh/ruff/preview/\n\n## References\n- [Python documentation: `os.chmod`](https://docs.python.org/3/library/os.html#os.chmod)\n- [Python documentation: `stat`](https://docs.python.org/3/library/stat.html)\n- [Common Weakness Enumeration: CWE-732](https://cwe.mitre.org/data/definitions/732.html)\n",
     "status": {
       "Stable": {
         "since": "v0.0.211"
@@ -812,7 +878,7 @@ export default [
     },
     "source_location": {
       "file": "crates/ruff_linter/src/rules/flake8_bandit/rules/bad_file_permissions.rs",
-      "line": 37
+      "line": 44
     }
   },
   {
@@ -2566,7 +2632,7 @@ export default [
     },
     "source_location": {
       "file": "crates/ruff_linter/src/rules/flake8_bugbear/rules/loop_iterator_mutation.rs",
-      "line": 38
+      "line": 39
     }
   },
   {
@@ -2725,7 +2791,7 @@ export default [
     "name": "prohibited-trailing-comma",
     "code": "COM819",
     "fix_availability": "Always",
-    "explanation": "## What it does\nChecks for the presence of prohibited trailing commas.\n\n## Why is this bad?\nTrailing commas are not essential in some cases and can therefore be viewed\nas unnecessary.\n\n## Example\n```python\nfoo = (1, 2, 3,)\n```\n\nUse instead:\n```python\nfoo = (1, 2, 3)\n```\n\n## Formatter compatibility\nWe recommend against using this rule alongside the [formatter]. The\nformatter enforces consistent use of trailing commas, making the rule redundant.\n\n[formatter]:https://docs.astral.sh/ruff/formatter/\n",
+    "explanation": "## What it does\nChecks for the presence of prohibited trailing commas.\n\n## Why is this bad?\nTrailing commas are not essential in some cases and can therefore be viewed\nas unnecessary.\n\n## Example\n```python\nfoo = (1, 2, 3,)\n```\n\nUse instead:\n```python\nfoo = (1, 2, 3)\n```\n\n## Formatter compatibility\nWe recommend against using this rule alongside the [formatter]. With the\ndefault `format.skip-magic-trailing-comma = false`, trailing commas can be\nintentional: the formatter treats them as a signal to preserve multiline\nformatting. When set to `true`, the formatter removes those trailing commas\nwhere possible, making this rule redundant.\n\n[formatter]:https://docs.astral.sh/ruff/formatter/\n",
     "status": {
       "Stable": {
         "since": "v0.0.223"
@@ -2733,7 +2799,7 @@ export default [
     },
     "source_location": {
       "file": "crates/ruff_linter/src/rules/flake8_commas/rules/trailing_commas.rs",
-      "line": 234
+      "line": 237
     },
     "fix": 2
   },
@@ -2868,7 +2934,7 @@ export default [
   {
     "name": "unnecessary-literal-within-tuple-call",
     "code": "C409",
-    "fix_availability": "Always",
+    "fix_availability": "Sometimes",
     "explanation": "## What it does\nChecks for `tuple` calls that take unnecessary list or tuple literals as\narguments. In [preview], this also includes unnecessary list comprehensions\nwithin tuple calls.\n\n## Why is this bad?\nIt's unnecessary to use a list or tuple literal within a `tuple()` call,\nsince there is a literal syntax for these types.\n\nIf a list literal was passed, then it should be rewritten as a `tuple`\nliteral. Otherwise, if a tuple literal was passed, then the outer call\nto `tuple()` should be removed.\n\nIn [preview], this rule also checks for list comprehensions within `tuple()`\ncalls. If a list comprehension is found, it should be rewritten as a\ngenerator expression.\n\n## Example\n```python\ntuple([1, 2])\ntuple((1, 2))\ntuple([x for x in range(10)])\n```\n\nUse instead:\n```python\n(1, 2)\n(1, 2)\ntuple(x for x in range(10))\n```\n\n## Fix safety\nThis rule's fix is marked as unsafe, as it may occasionally drop comments\nwhen rewriting the call. In most cases, though, comments will be preserved.\n\n[preview]: https://docs.astral.sh/ruff/preview/\n",
     "status": {
       "Stable": {
@@ -2879,7 +2945,7 @@ export default [
       "file": "crates/ruff_linter/src/rules/flake8_comprehensions/rules/unnecessary_literal_within_tuple_call.rs",
       "line": 50
     },
-    "fix": 2
+    "fix": 1
   },
   {
     "name": "unnecessary-literal-within-list-call",
@@ -2900,7 +2966,7 @@ export default [
   {
     "name": "unnecessary-list-call",
     "code": "C411",
-    "fix_availability": "Always",
+    "fix_availability": "Sometimes",
     "explanation": "## What it does\nChecks for unnecessary `list()` calls around list comprehensions.\n\n## Why is this bad?\nIt is redundant to use a `list()` call around a list comprehension.\n\n## Example\n```python\nlist([f(x) for x in foo])\n```\n\nUse instead\n```python\n[f(x) for x in foo]\n```\n\n## Fix safety\nThis rule's fix is marked as unsafe, as it may occasionally drop comments\nwhen rewriting the call. In most cases, though, comments will be preserved.\n",
     "status": {
       "Stable": {
@@ -2911,7 +2977,7 @@ export default [
       "file": "crates/ruff_linter/src/rules/flake8_comprehensions/rules/unnecessary_list_call.rs",
       "line": 31
     },
-    "fix": 2
+    "fix": 1
   },
   {
     "name": "unnecessary-call-around-sorted",
@@ -2964,7 +3030,7 @@ export default [
     "name": "unnecessary-comprehension",
     "code": "C416",
     "fix_availability": "Always",
-    "explanation": "## What it does\nChecks for unnecessary dict, list, and set comprehension.\n\n## Why is this bad?\nIt's unnecessary to use a dict/list/set comprehension to build a data structure if the\nelements are unchanged. Wrap the iterable with `dict()`, `list()`, or `set()` instead.\n\n## Example\n```python\n{a: b for a, b in iterable}\n[x for x in iterable]\n{x for x in iterable}\n```\n\nUse instead:\n```python\ndict(iterable)\nlist(iterable)\nset(iterable)\n```\n\n## Known problems\n\nThis rule may produce false positives for dictionary comprehensions that iterate over a mapping.\nThe dict constructor behaves differently depending on if it receives a sequence (e.g., a\nlist) or a mapping (e.g., a dict). When a comprehension iterates over the keys of a mapping,\nreplacing it with a `dict()` constructor call will give a different result.\n\nFor example:\n\n```pycon\n>>> d1 = {(1, 2): 3, (4, 5): 6}\n>>> {x: y for x, y in d1}  # Iterates over the keys of a mapping\n{1: 2, 4: 5}\n>>> dict(d1)               # Ruff's incorrect suggested fix\n{(1, 2): 3, (4, 5): 6}\n>>> dict(d1.keys())        # Correct fix\n{1: 2, 4: 5}\n```\n\nWhen the comprehension iterates over a sequence, Ruff's suggested fix is correct. However, Ruff\ncannot consistently infer if the iterable type is a sequence or a mapping and cannot suggest\nthe correct fix for mappings.\n\n## Fix safety\nDue to the known problem with dictionary comprehensions, this fix is marked as unsafe.\n\nAdditionally, this fix may drop comments when rewriting the comprehension.\n",
+    "explanation": "## What it does\nChecks for unnecessary dict, list, and set comprehension.\n\n## Why is this bad?\nIt's unnecessary to use a dict/list/set comprehension to build a data structure if the\nelements are unchanged. Wrap the iterable with `dict()`, `list()`, or `set()` instead.\n\n## Example\n```python\n{a: b for a, b in iterable}\n[x for x in iterable]\n{x for x in iterable}\n```\n\nUse instead:\n```python\ndict(iterable)\nlist(iterable)\nset(iterable)\n```\n\n## Known problems\n\nThis rule may produce false positives for dictionary comprehensions that iterate over a mapping.\nThe dict constructor behaves differently depending on if it receives a sequence (e.g., a\nlist) or a mapping (e.g., a dict). When a comprehension iterates over the keys of a mapping,\nreplacing it with a `dict()` constructor call will give a different result.\n\nFor example:\n\n```pycon\n>>> d1 = {(1, 2): 3, (4, 5): 6}\n>>> {x: y for x, y in d1}  # Iterates over the keys of a mapping\n{1: 2, 4: 5}\n>>> dict(d1)               # Ruff's incorrect suggested fix\n{(1, 2): 3, (4, 5): 6}\n>>> dict(d1.keys())        # Correct fix\n{1: 2, 4: 5}\n```\n\nWhen the comprehension iterates over a sequence, Ruff's suggested fix is correct. However, Ruff\ncannot consistently infer if the iterable type is a sequence or a mapping and cannot suggest\nthe correct fix for mappings.\n\nAdditionally, rewriting comprehensions inside an object's `__len__` method may cause a\n`RecursionError`, as collection constructors can call back into `__len__`.\n\n## Fix safety\nThis rule's fix is always marked as unsafe because of the known problems described above and\nbecause comments may be dropped when rewriting the comprehension.\n",
     "status": {
       "Stable": {
         "since": "v0.0.73"
@@ -2972,7 +3038,7 @@ export default [
     },
     "source_location": {
       "file": "crates/ruff_linter/src/rules/flake8_comprehensions/rules/unnecessary_comprehension.rs",
-      "line": 59
+      "line": 61
     },
     "fix": 2
   },
@@ -2995,7 +3061,7 @@ export default [
   {
     "name": "unnecessary-literal-within-dict-call",
     "code": "C418",
-    "fix_availability": "Always",
+    "fix_availability": "Sometimes",
     "explanation": "## What it does\nChecks for `dict()` calls that take unnecessary dict literals or dict\ncomprehensions as arguments.\n\n## Why is this bad?\nIt's unnecessary to wrap a dict literal or comprehension within a `dict()`\ncall, since the literal or comprehension syntax already returns a\ndictionary.\n\n## Example\n```python\ndict({})\ndict({\"a\": 1})\n```\n\nUse instead:\n```python\n{}\n{\"a\": 1}\n```\n\n## Fix safety\nThis rule's fix is marked as unsafe, as it may occasionally drop comments\nwhen rewriting the call. In most cases, though, comments will be preserved.\n",
     "status": {
       "Stable": {
@@ -3006,7 +3072,7 @@ export default [
       "file": "crates/ruff_linter/src/rules/flake8_comprehensions/rules/unnecessary_literal_within_dict_call.rs",
       "line": 37
     },
-    "fix": 2
+    "fix": 1
   },
   {
     "name": "unnecessary-comprehension-in-call",
@@ -3338,7 +3404,7 @@ export default [
     },
     "source_location": {
       "file": "crates/ruff_linter/src/rules/flake8_errmsg/rules/string_in_exception.rs",
-      "line": 54
+      "line": 56
     },
     "fix": 1
   },
@@ -3354,7 +3420,7 @@ export default [
     },
     "source_location": {
       "file": "crates/ruff_linter/src/rules/flake8_errmsg/rules/string_in_exception.rs",
-      "line": 110
+      "line": 112
     },
     "fix": 1
   },
@@ -3370,7 +3436,7 @@ export default [
     },
     "source_location": {
       "file": "crates/ruff_linter/src/rules/flake8_errmsg/rules/string_in_exception.rs",
-      "line": 167
+      "line": 169
     },
     "fix": 1
   },
@@ -3733,7 +3799,7 @@ export default [
     "name": "log-exception-outside-except-handler",
     "code": "LOG004",
     "fix_availability": "Sometimes",
-    "explanation": "## What it does\nChecks for `.exception()` logging calls outside of exception handlers.\n\n## Why is this bad?\n[The documentation] states:\n> This function should only be called from an exception handler.\n\nCalling `.exception()` outside of an exception handler\nattaches `None` as exception information, leading to confusing messages:\n\n```pycon\n>>> logging.exception(\"example\")\nERROR:root:example\nNoneType: None\n```\n\n## Example\n\n```python\nimport logging\n\nlogging.exception(\"Foobar\")\n```\n\nUse instead:\n\n```python\nimport logging\n\nlogging.error(\"Foobar\")\n```\n\n## Fix safety\nThe fix, if available, will always be marked as unsafe, as it changes runtime behavior.\n\n## Options\n\n- `lint.logger-objects`\n\n[The documentation]: https://docs.python.org/3/library/logging.html#logging.exception\n",
+    "explanation": "## What it does\nChecks for `.exception()` logging calls outside of exception handlers.\n\n## Why is this bad?\n[The documentation] states:\n> This function should only be called from an exception handler.\n\nCalling `.exception()` outside of an exception handler\nattaches `None` as exception information, leading to confusing messages:\n\n```pycon\n>>> logging.exception(\"example\")\nERROR:root:example\nNoneType: None\n```\n\n## Example\n\n```python\nimport logging\n\nlogging.exception(\"Foobar\")\n```\n\nUse instead:\n\n```python\nimport logging\n\nlogging.error(\"Foobar\")\n```\n\n## Known limitations\nThis rule checks whether a call is _defined_ inside an exception handler, not\nwhether it _executes_ inside one. A function defined in an `except` block but\ncalled outside of it will not be flagged, despite the fact that the call may\nnot have access to an active exception at runtime:\n\n```python\nimport logging\n\n\ntry:\n    raise ValueError()\nexcept Exception:\n\n    def handler():\n        logging.exception(\"Foobar\")  # LOG004 not raised (false negative)\n\n\nhandler()\n```\n\n## Fix safety\nThe fix, if available, will always be marked as unsafe, as it changes runtime behavior.\n\n## Options\n\n- `lint.logger-objects`\n\n[The documentation]: https://docs.python.org/3/library/logging.html#logging.exception\n",
     "preview": true,
     "status": {
       "Preview": {
@@ -3742,7 +3808,7 @@ export default [
     },
     "source_location": {
       "file": "crates/ruff_linter/src/rules/flake8_logging/rules/log_exception_outside_except_handler.rs",
-      "line": 50
+      "line": 71
     },
     "fix": 1
   },
@@ -3781,7 +3847,7 @@ export default [
     "name": "exc-info-outside-except-handler",
     "code": "LOG014",
     "fix_availability": "Sometimes",
-    "explanation": "## What it does\nChecks for logging calls with `exc_info=` outside exception handlers.\n\n## Why is this bad?\nUsing `exc_info=True` outside of an exception handler\nattaches `None` as the exception information, leading to confusing messages:\n\n```pycon\n>>> logging.warning(\"Uh oh\", exc_info=True)\nWARNING:root:Uh oh\nNoneType: None\n```\n\n## Example\n\n```python\nimport logging\n\n\nlogging.warning(\"Foobar\", exc_info=True)\n```\n\nUse instead:\n\n```python\nimport logging\n\n\nlogging.warning(\"Foobar\")\n```\n\n## Fix safety\nThe fix is always marked as unsafe, as it changes runtime behavior.\n\n## Options\n\n- `lint.logger-objects`\n",
+    "explanation": "## What it does\nChecks for logging calls with `exc_info=` outside exception handlers.\n\n## Why is this bad?\nUsing `exc_info=True` outside of an exception handler\nattaches `None` as the exception information, leading to confusing messages:\n\n```pycon\n>>> logging.warning(\"Uh oh\", exc_info=True)\nWARNING:root:Uh oh\nNoneType: None\n```\n\n## Example\n\n```python\nimport logging\n\n\nlogging.warning(\"Foobar\", exc_info=True)\n```\n\nUse instead:\n\n```python\nimport logging\n\n\nlogging.warning(\"Foobar\")\n```\n\n## Known limitations\nThis rule checks whether a call is _defined_ inside an exception handler, not\nwhether it _executes_ inside one. A function defined in an `except` block but\ncalled outside of it will not be flagged, despite the fact that the call may\nnot have access to an active exception at runtime:\n\n```python\nimport logging\n\n\ntry:\n    raise ValueError()\nexcept Exception:\n\n    def handler():\n        logging.error(\"Foobar\", exc_info=True)  # LOG014 not raised (false negative)\n\n\nhandler()\n```\n\n## Fix safety\nThe fix is always marked as unsafe, as it changes runtime behavior.\n\n## Options\n\n- `lint.logger-objects`\n",
     "status": {
       "Stable": {
         "since": "0.12.0"
@@ -3789,7 +3855,7 @@ export default [
     },
     "source_location": {
       "file": "crates/ruff_linter/src/rules/flake8_logging/rules/exc_info_outside_except_handler.rs",
-      "line": 50
+      "line": 71
     },
     "fix": 1
   },
@@ -4545,7 +4611,7 @@ export default [
     "name": "non-self-return-type",
     "code": "PYI034",
     "fix_availability": "Sometimes",
-    "explanation": "## What it does\nChecks for methods that are annotated with a fixed return type which\nshould instead be returning `Self`.\n\n## Why is this bad?\nIf methods that generally return `self` at runtime are annotated with a\nfixed return type, and the class is subclassed, type checkers will not be\nable to infer the correct return type.\n\nFor example:\n```python\nclass Shape:\n    def set_scale(self, scale: float) -> Shape:\n        self.scale = scale\n        return self\n\nclass Circle(Shape):\n    def set_radius(self, radius: float) -> Circle:\n        self.radius = radius\n        return self\n\n# Type checker infers return type as `Shape`, not `Circle`.\nCircle().set_scale(0.5)\n\n# Thus, this expression is invalid, as `Shape` has no attribute `set_radius`.\nCircle().set_scale(0.5).set_radius(2.7)\n```\n\nSpecifically, this check enforces that the return type of the following\nmethods is `Self`:\n\n1. In-place binary-operation dunder methods, like `__iadd__`, `__imul__`, etc.\n1. `__new__`, `__enter__`, and `__aenter__`, if those methods return the\n   class name.\n1. `__iter__` methods that return `Iterator`, despite the class inheriting\n   directly from `Iterator`.\n1. `__aiter__` methods that return `AsyncIterator`, despite the class\n   inheriting directly from `AsyncIterator`.\n\nThe rule attempts to avoid flagging methods on metaclasses, since\n[PEP 673] specifies that `Self` is disallowed in metaclasses. Ruff can\ndetect a class as being a metaclass if it inherits from a stdlib\nmetaclass such as `builtins.type` or `abc.ABCMeta`, and additionally\ninfers that a class may be a metaclass if it has a `__new__` method\nwith a similar signature to `type.__new__`. The heuristic used to\nidentify a metaclass-like `__new__` method signature is that it:\n\n1. Has exactly 5 parameters (including `cls`)\n1. Has a second parameter annotated with `str`\n1. Has a third parameter annotated with a `tuple` type\n1. Has a fourth parameter annotated with a `dict` type\n1. Has a fifth parameter is keyword-variadic (`**kwargs`)\n\nFor example, the following class would be detected as a metaclass, disabling\nthe rule:\n\n```python\nclass MyMetaclass(django.db.models.base.ModelBase):\n    def __new__(cls, name: str, bases: tuple[Any, ...], attrs: dict[str, Any], **kwargs: Any) -> MyMetaclass:\n        ...\n```\n\n## Example\n\n```pyi\nclass Foo:\n    def __new__(cls, *args: Any, **kwargs: Any) -> Foo: ...\n    def __enter__(self) -> Foo: ...\n    async def __aenter__(self) -> Foo: ...\n    def __iadd__(self, other: Foo) -> Foo: ...\n```\n\nUse instead:\n\n```pyi\nfrom typing_extensions import Self\n\nclass Foo:\n    def __new__(cls, *args: Any, **kwargs: Any) -> Self: ...\n    def __enter__(self) -> Self: ...\n    async def __aenter__(self) -> Self: ...\n    def __iadd__(self, other: Foo) -> Self: ...\n```\n\n## Fix safety\nThis rule's fix is marked as unsafe as it changes the meaning of your type annotations.\n\n## Availability\n\nBecause this rule relies on the third-party `typing_extensions` module for Python versions\nbefore 3.11, its diagnostic will not be emitted, and no fix will be offered, if\n`typing_extensions` imports have been disabled by the [`lint.typing-extensions`] linter option.\n\n## Options\n\n- `lint.typing-extensions`\n\n## References\n- [Python documentation: `typing.Self`](https://docs.python.org/3/library/typing.html#typing.Self)\n\n[PEP 673]: https://peps.python.org/pep-0673/#valid-locations-for-self\n",
+    "explanation": "## What it does\nChecks for methods that are annotated with a fixed return type which\nshould instead be returning `Self`.\n\n## Why is this bad?\nIf methods that generally return `self` at runtime are annotated with a\nfixed return type, and the class is subclassed, type checkers will not be\nable to infer the correct return type.\n\nFor example:\n```python\nclass Shape:\n    def set_scale(self, scale: float) -> Shape:\n        self.scale = scale\n        return self\n\nclass Circle(Shape):\n    def set_radius(self, radius: float) -> Circle:\n        self.radius = radius\n        return self\n\n# Type checker infers return type as `Shape`, not `Circle`.\nCircle().set_scale(0.5)\n\n# Thus, this expression is invalid, as `Shape` has no attribute `set_radius`.\nCircle().set_scale(0.5).set_radius(2.7)\n```\n\nSpecifically, this check enforces that the return type of the following\nmethods is `Self`:\n\n1. In-place binary-operation dunder methods, like `__iadd__`, `__imul__`, etc.,\n   if those methods return the class name.\n1. `__new__`, `__enter__`, and `__aenter__`, if those methods return the\n   class name.\n1. `__iter__` methods that return `Iterator`, despite the class inheriting\n   directly from `Iterator`.\n1. `__aiter__` methods that return `AsyncIterator`, despite the class\n   inheriting directly from `AsyncIterator`.\n\nThe rule attempts to avoid flagging methods on metaclasses, since\n[PEP 673] specifies that `Self` is disallowed in metaclasses. Ruff can\ndetect a class as being a metaclass if it inherits from a stdlib\nmetaclass such as `builtins.type` or `abc.ABCMeta`, and additionally\ninfers that a class may be a metaclass if it has a `__new__` method\nwith a similar signature to `type.__new__`. The heuristic used to\nidentify a metaclass-like `__new__` method signature is that it:\n\n1. Has exactly 5 parameters (including `cls`)\n1. Has a second parameter annotated with `str`\n1. Has a third parameter annotated with a `tuple` type\n1. Has a fourth parameter annotated with a `dict` type\n1. Has a fifth parameter is keyword-variadic (`**kwargs`)\n\nFor example, the following class would be detected as a metaclass, disabling\nthe rule:\n\n```python\nclass MyMetaclass(django.db.models.base.ModelBase):\n    def __new__(cls, name: str, bases: tuple[Any, ...], attrs: dict[str, Any], **kwargs: Any) -> MyMetaclass:\n        ...\n```\n\n## Example\n\n```pyi\nclass Foo:\n    def __new__(cls, *args: Any, **kwargs: Any) -> Foo: ...\n    def __enter__(self) -> Foo: ...\n    async def __aenter__(self) -> Foo: ...\n    def __iadd__(self, other: Foo) -> Foo: ...\n```\n\nUse instead:\n\n```pyi\nfrom typing_extensions import Self\n\nclass Foo:\n    def __new__(cls, *args: Any, **kwargs: Any) -> Self: ...\n    def __enter__(self) -> Self: ...\n    async def __aenter__(self) -> Self: ...\n    def __iadd__(self, other: Foo) -> Self: ...\n```\n\n## Fix safety\nThis rule's fix is marked as unsafe as it changes the meaning of your type annotations.\n\n## Availability\n\nBecause this rule relies on the third-party `typing_extensions` module for Python versions\nbefore 3.11, its diagnostic will not be emitted, and no fix will be offered, if\n`typing_extensions` imports have been disabled by the [`lint.typing-extensions`] linter option.\n\n## Options\n\n- `lint.typing-extensions`\n\n## References\n- [Python documentation: `typing.Self`](https://docs.python.org/3/library/typing.html#typing.Self)\n\n[PEP 673]: https://peps.python.org/pep-0673/#valid-locations-for-self\n",
     "status": {
       "Stable": {
         "since": "v0.0.271"
@@ -4553,7 +4619,7 @@ export default [
     },
     "source_location": {
       "file": "crates/ruff_linter/src/rules/flake8_pyi/rules/non_self_return_type.rs",
-      "line": 115
+      "line": 116
     },
     "fix": 1
   },
@@ -4970,7 +5036,7 @@ export default [
     },
     "source_location": {
       "file": "crates/ruff_linter/src/rules/flake8_pytest_style/rules/fixture.rs",
-      "line": 82
+      "line": 81
     },
     "fix": 2
   },
@@ -4986,7 +5052,7 @@ export default [
     },
     "source_location": {
       "file": "crates/ruff_linter/src/rules/flake8_pytest_style/rules/fixture.rs",
-      "line": 134
+      "line": 133
     }
   },
   {
@@ -5001,7 +5067,7 @@ export default [
     },
     "source_location": {
       "file": "crates/ruff_linter/src/rules/flake8_pytest_style/rules/fixture.rs",
-      "line": 176
+      "line": 175
     },
     "fix": 2
   },
@@ -5017,7 +5083,7 @@ export default [
     },
     "source_location": {
       "file": "crates/ruff_linter/src/rules/flake8_pytest_style/rules/fixture.rs",
-      "line": 239
+      "line": 238
     }
   },
   {
@@ -5032,7 +5098,7 @@ export default [
     },
     "source_location": {
       "file": "crates/ruff_linter/src/rules/flake8_pytest_style/rules/fixture.rs",
-      "line": 305
+      "line": 304
     }
   },
   {
@@ -5170,7 +5236,7 @@ export default [
     },
     "source_location": {
       "file": "crates/ruff_linter/src/rules/flake8_pytest_style/rules/parametrize.rs",
-      "line": 267
+      "line": 284
     },
     "fix": 1
   },
@@ -5247,7 +5313,7 @@ export default [
     },
     "source_location": {
       "file": "crates/ruff_linter/src/rules/flake8_pytest_style/rules/fixture.rs",
-      "line": 366
+      "line": 365
     }
   },
   {
@@ -5262,7 +5328,7 @@ export default [
     },
     "source_location": {
       "file": "crates/ruff_linter/src/rules/flake8_pytest_style/rules/fixture.rs",
-      "line": 415
+      "line": 414
     }
   },
   {
@@ -5277,7 +5343,7 @@ export default [
     },
     "source_location": {
       "file": "crates/ruff_linter/src/rules/flake8_pytest_style/rules/fixture.rs",
-      "line": 475
+      "line": 474
     }
   },
   {
@@ -5292,7 +5358,7 @@ export default [
     },
     "source_location": {
       "file": "crates/ruff_linter/src/rules/flake8_pytest_style/rules/fixture.rs",
-      "line": 524
+      "line": 523
     },
     "fix": 2
   },
@@ -5324,7 +5390,7 @@ export default [
     },
     "source_location": {
       "file": "crates/ruff_linter/src/rules/flake8_pytest_style/rules/fixture.rs",
-      "line": 626
+      "line": 625
     },
     "fix": 2
   },
@@ -5340,7 +5406,7 @@ export default [
     },
     "source_location": {
       "file": "crates/ruff_linter/src/rules/flake8_pytest_style/rules/fixture.rs",
-      "line": 582
+      "line": 581
     },
     "fix": 2
   },
@@ -5673,7 +5739,7 @@ export default [
     },
     "source_location": {
       "file": "crates/ruff_linter/src/rules/flake8_self/rules/private_member_access.rs",
-      "line": 57
+      "line": 58
     }
   },
   {
@@ -5688,7 +5754,7 @@ export default [
     },
     "source_location": {
       "file": "crates/ruff_linter/src/rules/flake8_simplify/rules/ast_bool_op.rs",
-      "line": 47
+      "line": 46
     },
     "fix": 1
   },
@@ -5696,7 +5762,7 @@ export default [
     "name": "collapsible-if",
     "code": "SIM102",
     "fix_availability": "Sometimes",
-    "explanation": "## What it does\nChecks for nested `if` statements that can be collapsed into a single `if`\nstatement.\n\n## Why is this bad?\nNesting `if` statements leads to deeper indentation and makes code harder to\nread. Instead, combine the conditions into a single `if` statement with an\n`and` operator.\n\n## Example\n```python\nif foo:\n    if bar:\n        ...\n```\n\nUse instead:\n```python\nif foo and bar:\n    ...\n```\n\n## Options\n\nThe rule will consult these two settings when deciding if a fix can be provided:\n\n- `lint.pycodestyle.max-line-length`\n- `indent-width`\n\nLines that would exceed the configured line length will not be fixed automatically.\n\n## References\n- [Python documentation: The `if` statement](https://docs.python.org/3/reference/compound_stmts.html#the-if-statement)\n- [Python documentation: Boolean operations](https://docs.python.org/3/reference/expressions.html#boolean-operations)\n",
+    "explanation": "## What it does\nChecks for nested `if` statements that can be collapsed into a single `if`\nstatement.\n\n## Why is this bad?\nNesting `if` statements leads to deeper indentation and makes code harder to\nread. Instead, combine the conditions into a single `if` statement with an\n`and` operator.\n\n## Example\n```python\nif foo:\n    if bar:\n        ...\n```\n\nUse instead:\n```python\nif foo and bar:\n    ...\n```\n## Preview and Fix Safety\nWhen [preview] is enabled, the fix for this rule is considered\nas safe. When [preview] is not enabled, the fix is always\nconsidered unsafe.\n\n[preview]: https://docs.astral.sh/ruff/preview/\n\n## Options\n\nThe rule will consult these two settings when deciding if a fix can be provided:\n\n- `lint.pycodestyle.max-line-length`\n- `indent-width`\n\nLines that would exceed the configured line length will not be fixed automatically.\n\n## References\n- [Python documentation: The `if` statement](https://docs.python.org/3/reference/compound_stmts.html#the-if-statement)\n- [Python documentation: Boolean operations](https://docs.python.org/3/reference/expressions.html#boolean-operations)\n",
     "status": {
       "Stable": {
         "since": "v0.0.211"
@@ -5704,7 +5770,7 @@ export default [
     },
     "source_location": {
       "file": "crates/ruff_linter/src/rules/flake8_simplify/rules/collapsible_if.rs",
-      "line": 57
+      "line": 65
     },
     "fix": 1
   },
@@ -5783,7 +5849,7 @@ export default [
     },
     "source_location": {
       "file": "crates/ruff_linter/src/rules/flake8_simplify/rules/ast_bool_op.rs",
-      "line": 96
+      "line": 95
     },
     "fix": 2
   },
@@ -6020,7 +6086,7 @@ export default [
     },
     "source_location": {
       "file": "crates/ruff_linter/src/rules/flake8_simplify/rules/ast_bool_op.rs",
-      "line": 130
+      "line": 129
     },
     "fix": 2
   },
@@ -6036,7 +6102,7 @@ export default [
     },
     "source_location": {
       "file": "crates/ruff_linter/src/rules/flake8_simplify/rules/ast_bool_op.rs",
-      "line": 163
+      "line": 162
     },
     "fix": 2
   },
@@ -6052,7 +6118,7 @@ export default [
     },
     "source_location": {
       "file": "crates/ruff_linter/src/rules/flake8_simplify/rules/ast_bool_op.rs",
-      "line": 216
+      "line": 215
     },
     "fix": 2
   },
@@ -6068,7 +6134,7 @@ export default [
     },
     "source_location": {
       "file": "crates/ruff_linter/src/rules/flake8_simplify/rules/ast_bool_op.rs",
-      "line": 269
+      "line": 268
     },
     "fix": 2
   },
@@ -6261,6 +6327,23 @@ export default [
     "fix": 2
   },
   {
+    "name": "lazy-import-immediately-resolved",
+    "code": "TID255",
+    "fix_availability": "Sometimes",
+    "explanation": "## What it does\nChecks for lazy imports that are resolved immediately at module load time.\n\n## Why is this bad?\nPython 3.15 adds support for `lazy import` and `lazy from ... import ...`,\nwhich defer the actual import work until the imported name is first used.\n\nWhen a lazily imported name is used immediately at module load time, the\nimport is resolved eagerly, defeating the purpose of marking the import as\nlazy. This is commonly caused by using a lazily imported module in a module\nglobal or in a top-level class definition.\n\n## Example\n```python\nlazy import foo\n\n\nclass Bar(foo.Foo): ...\n```\n\nUse instead:\n```python\nimport foo\n\n\nclass Bar(foo.Foo): ...\n```\n\n## Fix safety\nThis rule's fix is marked as unsafe because converting a lazy import to an\neager import changes when the imported module is executed, which can change\nruntime behavior if the module has import-time side effects.\n\nThe fix is only available when the lazy import statement imports a single\nmember, since removing `lazy` from a multi-member import would make every\nimported member eager, including names that may not be resolved immediately.\n",
+    "preview": true,
+    "status": {
+      "Preview": {
+        "since": "0.15.13"
+      }
+    },
+    "source_location": {
+      "file": "crates/ruff_linter/src/rules/flake8_tidy_imports/rules/lazy_import_immediately_resolved.rs",
+      "line": 48
+    },
+    "fix": 1
+  },
+  {
     "name": "invalid-todo-tag",
     "code": "TD001",
     "fix_availability": "None",
@@ -6370,7 +6453,7 @@ export default [
     "name": "typing-only-first-party-import",
     "code": "TC001",
     "fix_availability": "Sometimes",
-    "explanation": "## What it does\nChecks for first-party imports that are only used for type annotations, but\naren't defined in a type-checking block.\n\n## Why is this bad?\nUnused imports add a performance overhead at runtime, and risk creating\nimport cycles. If an import is _only_ used in typing-only contexts, it can\ninstead be imported conditionally under an `if TYPE_CHECKING:` block to\nminimize runtime overhead.\n\nIf [`lint.flake8-type-checking.quote-annotations`] is set to `true`,\nannotations will be wrapped in quotes if doing so would enable the\ncorresponding import to be moved into an `if TYPE_CHECKING:` block.\n\nIf a class _requires_ that type annotations be available at runtime (as is\nthe case for Pydantic, SQLAlchemy, and other libraries), consider using\nthe [`lint.flake8-type-checking.runtime-evaluated-base-classes`] and\n[`lint.flake8-type-checking.runtime-evaluated-decorators`] settings to mark them\nas such.\n\nIf [`lint.future-annotations`] is set to `true`, `from __future__ import\nannotations` will be added if doing so would enable an import to be\nmoved into an `if TYPE_CHECKING:` block. This takes precedence over the\n[`lint.flake8-type-checking.quote-annotations`] setting described above if\nboth settings are enabled.\n\n\n## Example\n```python\nfrom __future__ import annotations\n\nfrom . import local_module\n\n\ndef func(sized: local_module.Container) -> int:\n    return len(sized)\n```\n\nUse instead:\n```python\nfrom __future__ import annotations\n\nfrom typing import TYPE_CHECKING\n\nif TYPE_CHECKING:\n    from . import local_module\n\n\ndef func(sized: local_module.Container) -> int:\n    return len(sized)\n```\n\n## Options\n- `lint.flake8-type-checking.quote-annotations`\n- `lint.flake8-type-checking.runtime-evaluated-base-classes`\n- `lint.flake8-type-checking.runtime-evaluated-decorators`\n- `lint.flake8-type-checking.strict`\n- `lint.typing-modules`\n- `lint.future-annotations`\n\n## References\n- [PEP 563: Runtime annotation resolution and `TYPE_CHECKING`](https://peps.python.org/pep-0563/#runtime-annotation-resolution-and-type-checking)\n",
+    "explanation": "## What it does\nChecks for first-party imports that are only used for type annotations, but\naren't defined in a type-checking block.\n\n## Why is this bad?\nImports that are only used for type annotations add a performance overhead\nat runtime. For first-party imports, they can also contribute to import\ncycles. If an import is _only_ used in typing-only contexts, it can instead\nbe imported conditionally under an `if TYPE_CHECKING:` block to minimize\nruntime overhead.\n\nIf [`lint.flake8-type-checking.quote-annotations`] is set to `true`,\nannotations will be wrapped in quotes if doing so would enable the\ncorresponding import to be moved into an `if TYPE_CHECKING:` block.\n\nIf a class _requires_ that type annotations be available at runtime (as is\nthe case for Pydantic, SQLAlchemy, and other libraries), consider using\nthe [`lint.flake8-type-checking.runtime-evaluated-base-classes`] and\n[`lint.flake8-type-checking.runtime-evaluated-decorators`] settings to mark them\nas such.\n\nIf [`lint.future-annotations`] is set to `true`, `from __future__ import\nannotations` will be added if doing so would enable an import to be\nmoved into an `if TYPE_CHECKING:` block. This takes precedence over the\n[`lint.flake8-type-checking.quote-annotations`] setting described above if\nboth settings are enabled.\n\n\n## Example\n```python\nfrom __future__ import annotations\n\nfrom . import local_module\n\n\ndef func(sized: local_module.Container) -> int:\n    return len(sized)\n```\n\nUse instead:\n```python\nfrom __future__ import annotations\n\nfrom typing import TYPE_CHECKING\n\nif TYPE_CHECKING:\n    from . import local_module\n\n\ndef func(sized: local_module.Container) -> int:\n    return len(sized)\n```\n\n## Options\n- `lint.flake8-type-checking.quote-annotations`\n- `lint.flake8-type-checking.runtime-evaluated-base-classes`\n- `lint.flake8-type-checking.runtime-evaluated-decorators`\n- `lint.flake8-type-checking.strict`\n- `lint.typing-modules`\n- `lint.future-annotations`\n\n## References\n- [PEP 563: Runtime annotation resolution and `TYPE_CHECKING`](https://peps.python.org/pep-0563/#runtime-annotation-resolution-and-type-checking)\n",
     "status": {
       "Stable": {
         "since": "0.8.0"
@@ -6378,7 +6461,7 @@ export default [
     },
     "source_location": {
       "file": "crates/ruff_linter/src/rules/flake8_type_checking/rules/typing_only_runtime_import.rs",
-      "line": 83
+      "line": 84
     },
     "fix": 1
   },
@@ -6386,7 +6469,7 @@ export default [
     "name": "typing-only-third-party-import",
     "code": "TC002",
     "fix_availability": "Sometimes",
-    "explanation": "## What it does\nChecks for third-party imports that are only used for type annotations, but\naren't defined in a type-checking block.\n\n## Why is this bad?\nUnused imports add a performance overhead at runtime, and risk creating\nimport cycles. If an import is _only_ used in typing-only contexts, it can\ninstead be imported conditionally under an `if TYPE_CHECKING:` block to\nminimize runtime overhead.\n\nIf [`lint.flake8-type-checking.quote-annotations`] is set to `true`,\nannotations will be wrapped in quotes if doing so would enable the\ncorresponding import to be moved into an `if TYPE_CHECKING:` block.\n\nIf a class _requires_ that type annotations be available at runtime (as is\nthe case for Pydantic, SQLAlchemy, and other libraries), consider using\nthe [`lint.flake8-type-checking.runtime-evaluated-base-classes`] and\n[`lint.flake8-type-checking.runtime-evaluated-decorators`] settings to mark them\nas such.\n\nIf [`lint.future-annotations`] is set to `true`, `from __future__ import\nannotations` will be added if doing so would enable an import to be\nmoved into an `if TYPE_CHECKING:` block. This takes precedence over the\n[`lint.flake8-type-checking.quote-annotations`] setting described above if\nboth settings are enabled.\n\n## Example\n```python\nfrom __future__ import annotations\n\nimport pandas as pd\n\n\ndef func(df: pd.DataFrame) -> int:\n    return len(df)\n```\n\nUse instead:\n```python\nfrom __future__ import annotations\n\nfrom typing import TYPE_CHECKING\n\nif TYPE_CHECKING:\n    import pandas as pd\n\n\ndef func(df: pd.DataFrame) -> int:\n    return len(df)\n```\n\n## Options\n- `lint.flake8-type-checking.quote-annotations`\n- `lint.flake8-type-checking.runtime-evaluated-base-classes`\n- `lint.flake8-type-checking.runtime-evaluated-decorators`\n- `lint.flake8-type-checking.strict`\n- `lint.typing-modules`\n- `lint.future-annotations`\n\n## References\n- [PEP 563: Runtime annotation resolution and `TYPE_CHECKING`](https://peps.python.org/pep-0563/#runtime-annotation-resolution-and-type-checking)\n",
+    "explanation": "## What it does\nChecks for third-party imports that are only used for type annotations, but\naren't defined in a type-checking block.\n\n## Why is this bad?\nImports that are only used for type annotations add a performance overhead\nat runtime. If an import is _only_ used in typing-only contexts, it can\ninstead be imported conditionally under an `if TYPE_CHECKING:` block to\nminimize runtime overhead.\n\nIf [`lint.flake8-type-checking.quote-annotations`] is set to `true`,\nannotations will be wrapped in quotes if doing so would enable the\ncorresponding import to be moved into an `if TYPE_CHECKING:` block.\n\nIf a class _requires_ that type annotations be available at runtime (as is\nthe case for Pydantic, SQLAlchemy, and other libraries), consider using\nthe [`lint.flake8-type-checking.runtime-evaluated-base-classes`] and\n[`lint.flake8-type-checking.runtime-evaluated-decorators`] settings to mark them\nas such.\n\nIf [`lint.future-annotations`] is set to `true`, `from __future__ import\nannotations` will be added if doing so would enable an import to be\nmoved into an `if TYPE_CHECKING:` block. This takes precedence over the\n[`lint.flake8-type-checking.quote-annotations`] setting described above if\nboth settings are enabled.\n\n## Example\n```python\nfrom __future__ import annotations\n\nimport pandas as pd\n\n\ndef func(df: pd.DataFrame) -> int:\n    return len(df)\n```\n\nUse instead:\n```python\nfrom __future__ import annotations\n\nfrom typing import TYPE_CHECKING\n\nif TYPE_CHECKING:\n    import pandas as pd\n\n\ndef func(df: pd.DataFrame) -> int:\n    return len(df)\n```\n\n## Options\n- `lint.flake8-type-checking.quote-annotations`\n- `lint.flake8-type-checking.runtime-evaluated-base-classes`\n- `lint.flake8-type-checking.runtime-evaluated-decorators`\n- `lint.flake8-type-checking.strict`\n- `lint.typing-modules`\n- `lint.future-annotations`\n\n## References\n- [PEP 563: Runtime annotation resolution and `TYPE_CHECKING`](https://peps.python.org/pep-0563/#runtime-annotation-resolution-and-type-checking)\n",
     "status": {
       "Stable": {
         "since": "0.8.0"
@@ -6394,7 +6477,7 @@ export default [
     },
     "source_location": {
       "file": "crates/ruff_linter/src/rules/flake8_type_checking/rules/typing_only_runtime_import.rs",
-      "line": 166
+      "line": 167
     },
     "fix": 1
   },
@@ -6402,7 +6485,7 @@ export default [
     "name": "typing-only-standard-library-import",
     "code": "TC003",
     "fix_availability": "Sometimes",
-    "explanation": "## What it does\nChecks for standard library imports that are only used for type\nannotations, but aren't defined in a type-checking block.\n\n## Why is this bad?\nUnused imports add a performance overhead at runtime, and risk creating\nimport cycles. If an import is _only_ used in typing-only contexts, it can\ninstead be imported conditionally under an `if TYPE_CHECKING:` block to\nminimize runtime overhead.\n\nIf [`lint.flake8-type-checking.quote-annotations`] is set to `true`,\nannotations will be wrapped in quotes if doing so would enable the\ncorresponding import to be moved into an `if TYPE_CHECKING:` block.\n\nIf a class _requires_ that type annotations be available at runtime (as is\nthe case for Pydantic, SQLAlchemy, and other libraries), consider using\nthe [`lint.flake8-type-checking.runtime-evaluated-base-classes`] and\n[`lint.flake8-type-checking.runtime-evaluated-decorators`] settings to mark them\nas such.\n\nIf [`lint.future-annotations`] is set to `true`, `from __future__ import\nannotations` will be added if doing so would enable an import to be\nmoved into an `if TYPE_CHECKING:` block. This takes precedence over the\n[`lint.flake8-type-checking.quote-annotations`] setting described above if\nboth settings are enabled.\n\n## Example\n```python\nfrom __future__ import annotations\n\nfrom pathlib import Path\n\n\ndef func(path: Path) -> str:\n    return str(path)\n```\n\nUse instead:\n```python\nfrom __future__ import annotations\n\nfrom typing import TYPE_CHECKING\n\nif TYPE_CHECKING:\n    from pathlib import Path\n\n\ndef func(path: Path) -> str:\n    return str(path)\n```\n\n## Options\n- `lint.flake8-type-checking.quote-annotations`\n- `lint.flake8-type-checking.runtime-evaluated-base-classes`\n- `lint.flake8-type-checking.runtime-evaluated-decorators`\n- `lint.flake8-type-checking.strict`\n- `lint.typing-modules`\n- `lint.future-annotations`\n\n## References\n- [PEP 563: Runtime annotation resolution and `TYPE_CHECKING`](https://peps.python.org/pep-0563/#runtime-annotation-resolution-and-type-checking)\n",
+    "explanation": "## What it does\nChecks for standard library imports that are only used for type\nannotations, but aren't defined in a type-checking block.\n\n## Why is this bad?\nImports that are only used for type annotations add a performance overhead\nat runtime. If an import is _only_ used in typing-only contexts, it can\ninstead be imported conditionally under an `if TYPE_CHECKING:` block to\nminimize runtime overhead.\n\nIf [`lint.flake8-type-checking.quote-annotations`] is set to `true`,\nannotations will be wrapped in quotes if doing so would enable the\ncorresponding import to be moved into an `if TYPE_CHECKING:` block.\n\nIf a class _requires_ that type annotations be available at runtime (as is\nthe case for Pydantic, SQLAlchemy, and other libraries), consider using\nthe [`lint.flake8-type-checking.runtime-evaluated-base-classes`] and\n[`lint.flake8-type-checking.runtime-evaluated-decorators`] settings to mark them\nas such.\n\nIf [`lint.future-annotations`] is set to `true`, `from __future__ import\nannotations` will be added if doing so would enable an import to be\nmoved into an `if TYPE_CHECKING:` block. This takes precedence over the\n[`lint.flake8-type-checking.quote-annotations`] setting described above if\nboth settings are enabled.\n\n## Example\n```python\nfrom __future__ import annotations\n\nfrom pathlib import Path\n\n\ndef func(path: Path) -> str:\n    return str(path)\n```\n\nUse instead:\n```python\nfrom __future__ import annotations\n\nfrom typing import TYPE_CHECKING\n\nif TYPE_CHECKING:\n    from pathlib import Path\n\n\ndef func(path: Path) -> str:\n    return str(path)\n```\n\n## Options\n- `lint.flake8-type-checking.quote-annotations`\n- `lint.flake8-type-checking.runtime-evaluated-base-classes`\n- `lint.flake8-type-checking.runtime-evaluated-decorators`\n- `lint.flake8-type-checking.strict`\n- `lint.typing-modules`\n- `lint.future-annotations`\n\n## References\n- [PEP 563: Runtime annotation resolution and `TYPE_CHECKING`](https://peps.python.org/pep-0563/#runtime-annotation-resolution-and-type-checking)\n",
     "status": {
       "Stable": {
         "since": "0.8.0"
@@ -6410,7 +6493,7 @@ export default [
     },
     "source_location": {
       "file": "crates/ruff_linter/src/rules/flake8_type_checking/rules/typing_only_runtime_import.rs",
-      "line": 249
+      "line": 250
     },
     "fix": 1
   },
@@ -7190,7 +7273,7 @@ export default [
     "name": "complex-structure",
     "code": "C901",
     "fix_availability": "None",
-    "explanation": "## What it does\nChecks for functions with a high `McCabe` complexity.\n\n## Why is this bad?\nThe `McCabe` complexity of a function is a measure of the complexity of\nthe control flow graph of the function. It is calculated by adding\none to the number of decision points in the function. A decision\npoint is a place in the code where the program has a choice of two\nor more paths to follow.\n\nFunctions with a high complexity are hard to understand and maintain.\n\n## Example\n```python\ndef foo(a, b, c):\n    if a:\n        if b:\n            if c:\n                return 1\n            else:\n                return 2\n        else:\n            return 3\n    else:\n        return 4\n```\n\nUse instead:\n```python\ndef foo(a, b, c):\n    if not a:\n        return 4\n    if not b:\n        return 3\n    if not c:\n        return 2\n    return 1\n```\n\n## Options\n- `lint.mccabe.max-complexity`\n",
+    "explanation": "## What it does\nChecks for functions with a high `McCabe` complexity.\n\n## Why is this bad?\nThe `McCabe` complexity of a function is a measure of the complexity of\nthe control flow graph of the function. It is calculated by adding\none to the number of decision points in the function. A decision\npoint is a place in the code where the program has a choice of two\nor more paths to follow.\n\nFunctions with a high complexity are hard to understand and maintain.\n\n## Example\n```python\ndef normalize_status(status):\n    if status == \"new\":\n        return \"queued\"\n    if status == \"queued\":\n        return \"running\"\n    if status == \"running\":\n        return \"done\"\n    if status == \"failed\":\n        return \"retry\"\n    if status == \"cancelled\":\n        return \"closed\"\n    return \"unknown\"\n```\n\nUse instead:\n\n```python\nSTATUS_TRANSITIONS = {\n    \"new\": \"queued\",\n    \"queued\": \"running\",\n    \"running\": \"done\",\n    \"failed\": \"retry\",\n    \"cancelled\": \"closed\",\n}\n\n\ndef normalize_status(status):\n    return STATUS_TRANSITIONS.get(status, \"unknown\")\n```\n\nNote that this example assumes a `lint.mccabe.max-complexity` of 5 or less to trigger a\ndiagnostic because the initial code only has a complexity of 6.\n\n## Options\n- `lint.mccabe.max-complexity`\n",
     "status": {
       "Stable": {
         "since": "v0.0.127"
@@ -7198,7 +7281,7 @@ export default [
     },
     "source_location": {
       "file": "crates/ruff_linter/src/rules/mccabe/rules/function_is_too_complex.rs",
-      "line": 50
+      "line": 58
     }
   },
   {
@@ -8854,7 +8937,7 @@ export default [
     },
     "source_location": {
       "file": "crates/ruff_linter/src/rules/pycodestyle/rules/too_many_newlines_at_end_of_file.rs",
-      "line": 31
+      "line": 30
     },
     "fix": 2
   },
@@ -9173,7 +9256,7 @@ export default [
     "name": "incorrect-blank-line-before-class",
     "code": "D203",
     "fix_availability": "Always",
-    "explanation": "## What it does\nChecks for docstrings on class definitions that are not preceded by a\nblank line.\n\n## Why is this bad?\nUse a blank line to separate the docstring from the class definition, for\nconsistency.\n\nThis rule may not apply to all projects; its applicability is a matter of\nconvention. By default, this rule is disabled when using the `google`,\n`numpy`, and `pep257` conventions.\n\nFor an alternative, see [D211].\n\n## Example\n\n```python\nclass PhotoMetadata:\n    \"\"\"Metadata about a photo.\"\"\"\n```\n\nUse instead:\n\n```python\nclass PhotoMetadata:\n\n    \"\"\"Metadata about a photo.\"\"\"\n```\n\n## Options\n- `lint.pydocstyle.convention`\n\n[D211]: https://docs.astral.sh/ruff/rules/blank-line-before-class\n",
+    "explanation": "## What it does\nChecks for docstrings on class definitions that are not preceded by a\nblank line.\n\n## Why is this bad?\nUse a blank line to separate the docstring from the class definition, for\nconsistency.\n\nThis rule may not apply to all projects; its applicability is a matter of\nconvention. By default, this rule is disabled when using the `google`,\n`numpy`, and `pep257` conventions.\n\nFor an alternative, see [D211].\n\n## Example\n\n```python\nclass PhotoMetadata:\n    \"\"\"Metadata about a photo.\"\"\"\n```\n\nUse instead:\n\n```python\nclass PhotoMetadata:\n\n    \"\"\"Metadata about a photo.\"\"\"\n```\n\n## Formatter compatibility\nWe recommend against using this rule alongside the [formatter]. The\nformatter removes blank lines before class docstrings, which conflicts\nwith this rule's requirement to include them.\n\n## Options\n- `lint.pydocstyle.convention`\n\n[D211]: https://docs.astral.sh/ruff/rules/blank-line-before-class\n[formatter]: https://docs.astral.sh/ruff/formatter\n",
     "status": {
       "Stable": {
         "since": "v0.0.70"
@@ -9181,7 +9264,7 @@ export default [
     },
     "source_location": {
       "file": "crates/ruff_linter/src/rules/pydocstyle/rules/blank_before_after_class.rs",
-      "line": 45
+      "line": 51
     },
     "fix": 2
   },
@@ -9197,7 +9280,7 @@ export default [
     },
     "source_location": {
       "file": "crates/ruff_linter/src/rules/pydocstyle/rules/blank_before_after_class.rs",
-      "line": 98
+      "line": 104
     },
     "fix": 2
   },
@@ -9308,7 +9391,7 @@ export default [
     },
     "source_location": {
       "file": "crates/ruff_linter/src/rules/pydocstyle/rules/blank_before_after_class.rs",
-      "line": 146
+      "line": 152
     },
     "fix": 2
   },
@@ -10289,7 +10372,7 @@ export default [
     "name": "redefined-while-unused",
     "code": "F811",
     "fix_availability": "Sometimes",
-    "explanation": "## What it does\nChecks for variable definitions that redefine (or \"shadow\") unused\nvariables.\n\n## Why is this bad?\nRedefinitions of unused names are unnecessary and often indicative of a\nmistake.\n\n## Example\n```python\nimport foo\nimport bar\nimport foo  # Redefinition of unused `foo` from line 1\n```\n\nUse instead:\n```python\nimport foo\nimport bar\n```\n\n## Options\n\nThis rule ignores dummy variables, as determined by:\n\n- `lint.dummy-variable-rgx`\n",
+    "explanation": "## What it does\nChecks for variable definitions that redefine (or \"shadow\") unused\nvariables.\n\n## Why is this bad?\nRedefinitions of unused names are unnecessary and often indicative of a\nmistake.\n\n## Example\n\n```python\nimport foo\nimport bar\nimport foo  # Redefinition of unused `foo` from line 1\n```\n\nUse instead:\n\n```python\nimport foo\nimport bar\n```\n\n## Preview\nWhen [preview] is enabled, this rule also flags annotated variable\nredeclarations. For example, `bar: int = 1` followed by `bar: int = 2`\nwill be flagged as a redefinition of an unused variable, whereas plain\nreassignments like `bar = 1` followed by `bar = 2` remain unflagged.\n\nIn preview, this rule will also flag redefinitions in `typing.TYPE_CHECKING` blocks:\n\n```python\nimport typing\nfrom collections.abc import Sequence\n\nif typing.TYPE_CHECKING:\n    # Redefinition of unused `Sequence` from line 2\n    from collections.abc import Sequence\n```\n\nUse instead:\n\n```python\nfrom collections.abc import Sequence\n```\n\n[preview]: https://docs.astral.sh/ruff/preview/\n\n## Options\n\nThis rule ignores dummy variables, as determined by:\n\n- `lint.dummy-variable-rgx`\n",
     "status": {
       "Stable": {
         "since": "v0.0.171"
@@ -10297,7 +10380,7 @@ export default [
     },
     "source_location": {
       "file": "crates/ruff_linter/src/rules/pyflakes/rules/redefined_while_unused.rs",
-      "line": 39
+      "line": 72
     },
     "fix": 1
   },
@@ -10381,7 +10464,7 @@ export default [
     "name": "raise-not-implemented",
     "code": "F901",
     "fix_availability": "Sometimes",
-    "explanation": "## What it does\nChecks for `raise` statements that raise `NotImplemented`.\n\n## Why is this bad?\n`NotImplemented` is an exception used by binary special methods to indicate\nthat an operation is not implemented with respect to a particular type.\n\n`NotImplemented` should not be raised directly. Instead, raise\n`NotImplementedError`, which is used to indicate that the method is\nabstract or not implemented in the derived class.\n\n## Example\n```python\nclass Foo:\n    def bar(self):\n        raise NotImplemented\n```\n\nUse instead:\n```python\nclass Foo:\n    def bar(self):\n        raise NotImplementedError\n```\n\n## References\n- [Python documentation: `NotImplemented`](https://docs.python.org/3/library/constants.html#NotImplemented)\n- [Python documentation: `NotImplementedError`](https://docs.python.org/3/library/exceptions.html#NotImplementedError)\n",
+    "explanation": "## What it does\nChecks for `raise` statements that raise `NotImplemented`.\n\n## Why is this bad?\n`NotImplemented` is a special value returned by binary special methods to indicate\nthat an operation is not implemented with respect to a particular type.\n\nBecause `NotImplemented` is not an exception, it cannot be raised.\nRaise `NotImplementedError` instead, which is used to indicate that a method is\nabstract or not implemented in the derived class.\n\n## Example\n```python\nclass Foo:\n    def bar(self):\n        raise NotImplemented\n```\n\nUse instead:\n```python\nclass Foo:\n    def bar(self):\n        raise NotImplementedError\n```\n\n## References\n- [Python documentation: `NotImplemented`](https://docs.python.org/3/library/constants.html#NotImplemented)\n- [Python documentation: `NotImplementedError`](https://docs.python.org/3/library/exceptions.html#NotImplementedError)\n",
     "status": {
       "Stable": {
         "since": "v0.0.18"
@@ -11216,7 +11299,7 @@ export default [
     },
     "source_location": {
       "file": "crates/ruff_linter/src/rules/pylint/rules/invalid_string_characters.rs",
-      "line": 28
+      "line": 29
     },
     "fix": 1
   },
@@ -11232,7 +11315,7 @@ export default [
     },
     "source_location": {
       "file": "crates/ruff_linter/src/rules/pylint/rules/invalid_string_characters.rs",
-      "line": 64
+      "line": 65
     },
     "fix": 1
   },
@@ -11248,7 +11331,7 @@ export default [
     },
     "source_location": {
       "file": "crates/ruff_linter/src/rules/pylint/rules/invalid_string_characters.rs",
-      "line": 100
+      "line": 101
     },
     "fix": 1
   },
@@ -11264,7 +11347,7 @@ export default [
     },
     "source_location": {
       "file": "crates/ruff_linter/src/rules/pylint/rules/invalid_string_characters.rs",
-      "line": 136
+      "line": 137
     },
     "fix": 1
   },
@@ -11280,7 +11363,7 @@ export default [
     },
     "source_location": {
       "file": "crates/ruff_linter/src/rules/pylint/rules/invalid_string_characters.rs",
-      "line": 171
+      "line": 172
     },
     "fix": 1
   },
@@ -11305,7 +11388,7 @@ export default [
     "name": "comparison-with-itself",
     "code": "PLR0124",
     "fix_availability": "None",
-    "explanation": "## What it does\nChecks for operations that compare a name to itself.\n\n## Why is this bad?\nComparing a name to itself always results in the same value, and is likely\na mistake.\n\n## Example\n```python\nfoo == foo\n```\n\nIn some cases, self-comparisons are used to determine whether a float is\nNaN. Instead, prefer `math.isnan`:\n```python\nimport math\n\nmath.isnan(foo)\n```\n\n## References\n- [Python documentation: Comparisons](https://docs.python.org/3/reference/expressions.html#comparisons)\n",
+    "explanation": "## What it does\nChecks for operations that compare a name to itself.\n\n## Why is this bad?\nComparing a name to itself typically results in a truthy value, and is\nlikely a mistake.\n\n## Example\n```python\nfoo == foo\n```\n\nIn some cases, self-comparisons are used to determine whether a float is\nNaN. Instead, prefer `math.isnan`:\n```python\nimport math\n\nmath.isnan(foo)\n```\n\n## References\n- [Python documentation: Comparisons](https://docs.python.org/3/reference/expressions.html#comparisons)\n",
     "status": {
       "Stable": {
         "since": "v0.0.273"
@@ -11485,7 +11568,7 @@ export default [
     },
     "source_location": {
       "file": "crates/ruff_linter/src/rules/pylint/rules/too_many_statements.rs",
-      "line": 50
+      "line": 51
     }
   },
   {
@@ -11731,7 +11814,7 @@ export default [
     "name": "magic-value-comparison",
     "code": "PLR2004",
     "fix_availability": "None",
-    "explanation": "## What it does\nChecks for the use of unnamed numerical constants (\"magic\") values in\ncomparisons.\n\n## Why is this bad?\nThe use of \"magic\" values can make code harder to read and maintain, as\nreaders will have to infer the meaning of the value from the context.\nSuch values are discouraged by [PEP 8].\n\nFor convenience, this rule excludes a variety of common values from the\n\"magic\" value definition, such as `0`, `1`, `\"\"`, and `\"__main__\"`.\n\n## Example\n```python\ndef apply_discount(price: float) -> float:\n    if price <= 100:\n        return price / 2\n    else:\n        return price\n```\n\nUse instead:\n```python\nMAX_DISCOUNT = 100\n\n\ndef apply_discount(price: float) -> float:\n    if price <= MAX_DISCOUNT:\n        return price / 2\n    else:\n        return price\n```\n\n## Options\n- `lint.pylint.allow-magic-value-types`\n\n[PEP 8]: https://peps.python.org/pep-0008/#constants\n",
+    "explanation": "## What it does\nChecks for the use of unnamed numerical constants (\"magic\") values in\ncomparisons.\n\n## Why is this bad?\nThe use of \"magic\" values can make code harder to read and maintain, as\nreaders will have to infer the meaning of the value from the context.\nSuch values are discouraged by [PEP 8].\n\nFor convenience, this rule excludes a variety of common values from the\n\"magic\" value definition, such as `0`, `1`, `\"\"`, and `\"__main__\"`. It\nalso exempts comparisons against `sys.version`, `sys.version_info`, and\n`sys.implementation.version`.\n\n## Example\n```python\ndef apply_discount(price: float) -> float:\n    if price <= 100:\n        return price / 2\n    else:\n        return price\n```\n\nUse instead:\n```python\nMAX_DISCOUNT = 100\n\n\ndef apply_discount(price: float) -> float:\n    if price <= MAX_DISCOUNT:\n        return price / 2\n    else:\n        return price\n```\n\n## Options\n- `lint.pylint.allow-magic-value-types`\n\n[PEP 8]: https://peps.python.org/pep-0008/#constants\n",
     "status": {
       "Stable": {
         "since": "v0.0.221"
@@ -11739,7 +11822,7 @@ export default [
     },
     "source_location": {
       "file": "crates/ruff_linter/src/rules/pylint/rules/magic_value_comparison.rs",
-      "line": 48
+      "line": 52
     }
   },
   {
@@ -12085,6 +12168,22 @@ export default [
     }
   },
   {
+    "name": "too-many-statements-in-try-clause",
+    "code": "PLW0717",
+    "fix_availability": "None",
+    "explanation": "## What it does\nChecks for try clauses with too many statements.\n\nBy default, this rule allows up to 5 statements, as configured by the\n[`lint.pylint.max-statements-in-try`] option.\n\n## Why is this bad?\nTry clauses with many statements make unexpected exceptions harder\nto detect and debug.\n\nInstead, consider narrowing the try clause to only encompass code that\nmay raise exceptions you can anticipate or know about, moving all other\nstatements either before or after the try clause, or factoring out a helper function.\n\n## Example\n```python\nfrom random import randint\n\n\ndef random_ratio() -> float:\n    try:\n        a = randint(-100, 100)\n        b = randint(-100, 100)\n        c = randint(-100, 100)\n        d = randint(-100, 100)\n        scale = randint(1, 5)\n        res = scale * (a + b) / (c + d)\n    except ZeroDivisionError:\n        return random_ratio()\n    else:\n        return res\n```\n\nUse instead:\n```python\nfrom random import randint\n\n\ndef random_ratio() -> float:\n    a = randint(-100, 100)\n    b = randint(-100, 100)\n    c = randint(-100, 100)\n    d = randint(-100, 100)\n    scale = randint(1, 5)\n    try:\n        # every statement that cannot raise was moved outside the try clause\n        res = scale * (a + b) / (c + d)\n    except ZeroDivisionError:\n        return random_ratio()\n    else:\n        return res\n```\n\n## Options\n- `lint.pylint.max-statements-in-try`\n\n## References\n\n[Pylint's reference implementation](https://pylint.pycqa.org/en/latest/user_guide/configuration/all-options.html#broad-try-clause-checker)\nuses a different default setting.\nTo replicate it exactly, set `lint.pylint.max-statements-in-try` to 1.\n",
+    "preview": true,
+    "status": {
+      "Preview": {
+        "since": "0.15.14"
+      }
+    },
+    "source_location": {
+      "file": "crates/ruff_linter/src/rules/pylint/rules/too_many_try_statements.rs",
+      "line": 71
+    }
+  },
+  {
     "name": "bad-open-mode",
     "code": "PLW1501",
     "fix_availability": "None",
@@ -12339,7 +12438,7 @@ export default [
     "name": "non-pep604-annotation-union",
     "code": "UP007",
     "fix_availability": "Sometimes",
-    "explanation": "## What it does\nCheck for type annotations that can be rewritten based on [PEP 604] syntax.\n\n## Why is this bad?\n[PEP 604] introduced a new syntax for union type annotations based on the\n`|` operator. This syntax is more concise and readable than the previous\n`typing.Union` and `typing.Optional` syntaxes.\n\nThis rule is enabled when targeting Python 3.10 or later (see:\n[`target-version`]). By default, it's _also_ enabled for earlier Python\nversions if `from __future__ import annotations` is present, as\n`__future__` annotations are not evaluated at runtime. If your code relies\non runtime type annotations (either directly or via a library like\nPydantic), you can disable this behavior for Python versions prior to 3.10\nby setting [`lint.pyupgrade.keep-runtime-typing`] to `true`.\n\n## Example\n```python\nfrom typing import Union\n\nfoo: Union[int, str] = 1\n```\n\nUse instead:\n```python\nfoo: int | str = 1\n```\n\nNote that this rule only checks for usages of `typing.Union`,\nwhile `UP045` checks for `typing.Optional`.\n\n## Fix safety\nThis rule's fix is marked as unsafe, as it may lead to runtime errors when\nalongside libraries that rely on runtime type annotations, like Pydantic,\non Python versions prior to Python 3.10, or as it may remove comments if they\nare present within the type annotation being rewritten. It may also lead to\nruntime errors in unusual and likely incorrect type annotations where the type\ndoes not  support the `|` operator.\n\n## Options\n- `target-version`\n- `lint.pyupgrade.keep-runtime-typing`\n\n[PEP 604]: https://peps.python.org/pep-0604/\n",
+    "explanation": "## What it does\nCheck for type annotations that can be rewritten based on [PEP 604] syntax.\n\n## Why is this bad?\n[PEP 604] introduced a new syntax for union type annotations based on the\n`|` operator. This syntax is more concise and readable than the previous\n`typing.Union` and `typing.Optional` syntaxes.\n\nThis rule is enabled when targeting Python 3.10 or later (see:\n[`target-version`]). By default, it's _also_ enabled for earlier Python\nversions if `from __future__ import annotations` is present, as\n`__future__` annotations are not evaluated at runtime. If your code relies\non runtime type annotations (either directly or via a library like\nPydantic), you can disable this behavior for Python versions prior to 3.10\nby setting [`lint.pyupgrade.keep-runtime-typing`] to `true`.\n\n## Example\n```python\nfrom typing import Union\n\nfoo: Union[int, str] = 1\n```\n\nUse instead:\n```python\nfoo: int | str = 1\n```\n\nNote that this rule only checks for usages of `typing.Union`,\nwhile `UP045` checks for `typing.Optional`.\n\n## Fix safety\nThis rule's fix is marked as unsafe on Python versions prior to 3.10 because\nusing the PEP-604 syntax may lead to runtime errors in libraries that rely\non runtime type annotations, like Pydantic, or in unusual and likely\nincorrect type annotations where the type does not support the `|`\noperator. The fix is also marked as unsafe when it would remove comments\npresent within the type annotation being rewritten.\n\nIn [preview], this rule can also add its own `__future__` import on Python\n3.9 and earlier, if the [`lint.future-annotations`] setting is enabled. This\nalso makes the fix unsafe.\n\n## Options\n- `target-version`\n- `lint.pyupgrade.keep-runtime-typing`\n- `lint.future-annotations`\n\n[PEP 604]: https://peps.python.org/pep-0604/\n[preview]: https://docs.astral.sh/ruff/preview/\n",
     "status": {
       "Stable": {
         "since": "v0.0.155"
@@ -12347,7 +12446,7 @@ export default [
     },
     "source_location": {
       "file": "crates/ruff_linter/src/rules/pyupgrade/rules/use_pep604_annotation.rs",
-      "line": 58
+      "line": 66
     },
     "fix": 1
   },
@@ -12427,7 +12526,7 @@ export default [
     },
     "source_location": {
       "file": "crates/ruff_linter/src/rules/pyupgrade/rules/unnecessary_encode_utf8.rs",
-      "line": 32
+      "line": 33
     },
     "fix": 2
   },
@@ -12443,7 +12542,7 @@ export default [
     },
     "source_location": {
       "file": "crates/ruff_linter/src/rules/pyupgrade/rules/convert_typed_dict_functional_to_class.rs",
-      "line": 63
+      "line": 65
     },
     "fix": 1
   },
@@ -12459,7 +12558,7 @@ export default [
     },
     "source_location": {
       "file": "crates/ruff_linter/src/rules/pyupgrade/rules/convert_named_tuple_functional_to_class.rs",
-      "line": 52
+      "line": 54
     },
     "fix": 1
   },
@@ -12499,7 +12598,7 @@ export default [
     "name": "native-literals",
     "code": "UP018",
     "fix_availability": "Always",
-    "explanation": "## What it does\nChecks for unnecessary calls to `str`, `bytes`, `int`, `float`, and `bool`.\n\n## Why is this bad?\nThe mentioned constructors can be replaced with their respective literal\nforms, which are more readable and idiomatic.\n\n## Example\n```python\nstr(\"foo\")\n```\n\nUse instead:\n```python\n\"foo\"\n```\n\n## Fix safety\nThe fix is marked as unsafe if it might remove comments.\n\n## References\n- [Python documentation: `str`](https://docs.python.org/3/library/stdtypes.html#str)\n- [Python documentation: `bytes`](https://docs.python.org/3/library/stdtypes.html#bytes)\n- [Python documentation: `int`](https://docs.python.org/3/library/functions.html#int)\n- [Python documentation: `float`](https://docs.python.org/3/library/functions.html#float)\n- [Python documentation: `bool`](https://docs.python.org/3/library/functions.html#bool)\n",
+    "explanation": "## What it does\nChecks for unnecessary calls to `str`, `bytes`, `int`, `float`, `bool`, and `complex`.\n\n## Why is this bad?\nThe mentioned constructors can be replaced with their respective literal\nforms, which are more readable and idiomatic.\n\n## Example\n```python\nstr(\"foo\")\n```\n\nUse instead:\n```python\n\"foo\"\n```\n\n## Fix safety\nThe fix is marked as unsafe if it might remove comments.\n\n## References\n- [Python documentation: `str`](https://docs.python.org/3/library/stdtypes.html#str)\n- [Python documentation: `bytes`](https://docs.python.org/3/library/stdtypes.html#bytes)\n- [Python documentation: `int`](https://docs.python.org/3/library/functions.html#int)\n- [Python documentation: `float`](https://docs.python.org/3/library/functions.html#float)\n- [Python documentation: `bool`](https://docs.python.org/3/library/functions.html#bool)\n- [Python documentation: `complex`](https://docs.python.org/3/library/functions.html#complex)\n",
     "status": {
       "Stable": {
         "since": "v0.0.193"
@@ -12507,7 +12606,7 @@ export default [
     },
     "source_location": {
       "file": "crates/ruff_linter/src/rules/pyupgrade/rules/native_literals.rs",
-      "line": 130
+      "line": 143
     },
     "fix": 2
   },
@@ -12930,7 +13029,7 @@ export default [
     "name": "non-pep604-annotation-optional",
     "code": "UP045",
     "fix_availability": "Sometimes",
-    "explanation": "## What it does\nCheck for `typing.Optional` annotations that can be rewritten based on [PEP 604] syntax.\n\n## Why is this bad?\n[PEP 604] introduced a new syntax for union type annotations based on the\n`|` operator. This syntax is more concise and readable than the previous\n`typing.Optional` syntax.\n\nThis rule is enabled when targeting Python 3.10 or later (see:\n[`target-version`]). By default, it's _also_ enabled for earlier Python\nversions if `from __future__ import annotations` is present, as\n`__future__` annotations are not evaluated at runtime. If your code relies\non runtime type annotations (either directly or via a library like\nPydantic), you can disable this behavior for Python versions prior to 3.10\nby setting [`lint.pyupgrade.keep-runtime-typing`] to `true`.\n\n## Example\n```python\nfrom typing import Optional\n\nfoo: Optional[int] = None\n```\n\nUse instead:\n```python\nfoo: int | None = None\n```\n\n## Fix safety\nThis rule's fix is marked as unsafe, as it may lead to runtime errors\nusing libraries that rely on runtime type annotations, like Pydantic,\non Python versions prior to Python 3.10, or as it may remove comments if they\nare present within the type annotation being rewritten. It may also lead to runtime\nerrors in unusual and likely incorrect type annotations where the type does not\nsupport the `|` operator.\n\n## Options\n- `target-version`\n- `lint.pyupgrade.keep-runtime-typing`\n\n[PEP 604]: https://peps.python.org/pep-0604/\n",
+    "explanation": "## What it does\nCheck for `typing.Optional` annotations that can be rewritten based on [PEP 604] syntax.\n\n## Why is this bad?\n[PEP 604] introduced a new syntax for union type annotations based on the\n`|` operator. This syntax is more concise and readable than the previous\n`typing.Optional` syntax.\n\nThis rule is enabled when targeting Python 3.10 or later (see:\n[`target-version`]). By default, it's _also_ enabled for earlier Python\nversions if `from __future__ import annotations` is present, as\n`__future__` annotations are not evaluated at runtime. If your code relies\non runtime type annotations (either directly or via a library like\nPydantic), you can disable this behavior for Python versions prior to 3.10\nby setting [`lint.pyupgrade.keep-runtime-typing`] to `true`.\n\n## Example\n```python\nfrom typing import Optional\n\nfoo: Optional[int] = None\n```\n\nUse instead:\n```python\nfoo: int | None = None\n```\n\n## Fix safety\nThis rule's fix is marked as unsafe on Python versions prior to 3.10 because\nusing the PEP-604 syntax may lead to runtime errors in libraries that rely\non runtime type annotations, like Pydantic, or in unusual and likely\nincorrect type annotations where the type does not support the `|`\noperator. The fix is also marked as unsafe when it would remove comments\npresent within the type annotation being rewritten.\n\nIn [preview], this rule can also add its own `__future__` import on Python\n3.9 and earlier, if the [`lint.future-annotations`] setting is enabled. This\nalso makes the fix unsafe.\n\n## Options\n- `target-version`\n- `lint.pyupgrade.keep-runtime-typing`\n- `lint.future-annotations`\n\n[PEP 604]: https://peps.python.org/pep-0604/\n[preview]: https://docs.astral.sh/ruff/preview/\n",
     "status": {
       "Stable": {
         "since": "0.12.0"
@@ -12938,7 +13037,7 @@ export default [
     },
     "source_location": {
       "file": "crates/ruff_linter/src/rules/pyupgrade/rules/use_pep604_annotation.rs",
-      "line": 116
+      "line": 130
     },
     "fix": 1
   },
@@ -12946,7 +13045,7 @@ export default [
     "name": "non-pep695-generic-class",
     "code": "UP046",
     "fix_availability": "Sometimes",
-    "explanation": "## What it does\n\nChecks for use of standalone type variables and parameter specifications in generic classes.\n\n## Why is this bad?\n\nSpecial type parameter syntax was introduced in Python 3.12 by [PEP 695] for defining generic\nclasses. This syntax is easier to read and provides cleaner support for generics.\n\n## Known problems\n\nThe rule currently skips generic classes nested inside of other functions or classes. It also\nskips type parameters with the `default` argument introduced in [PEP 696] and implemented in\nPython 3.13.\n\nThis rule can only offer a fix if all of the generic types in the class definition are defined\nin the current module. For external type parameters, a diagnostic is emitted without a suggested\nfix.\n\nNot all type checkers fully support PEP 695 yet, so even valid fixes suggested by this rule may\ncause type checking to [fail].\n\n## Fix safety\n\nThis fix is marked as unsafe, as [PEP 695] uses inferred variance for type parameters, instead\nof the `covariant` and `contravariant` keywords used by `TypeVar` variables. As such, replacing\na `TypeVar` variable with an inline type parameter may change its variance.\n\n## Example\n\n```python\nfrom typing import Generic, TypeVar\n\nT = TypeVar(\"T\")\n\n\nclass GenericClass(Generic[T]):\n    var: T\n```\n\nUse instead:\n\n```python\nclass GenericClass[T]:\n    var: T\n```\n\n## See also\n\nThis rule replaces standalone type variables in classes but doesn't remove\nthe corresponding type variables even if they are unused after the fix. See\n[`unused-private-type-var`][PYI018] for a rule to clean up unused\nprivate type variables.\n\nThis rule will not rename private type variables to remove leading underscores, even though the\nnew type parameters are restricted in scope to their associated class. See\n[`private-type-parameter`][UP049] for a rule to update these names.\n\nThis rule will correctly handle classes with multiple base classes, as long as the single\n`Generic` base class is at the end of the argument list, as checked by\n[`generic-not-last-base-class`][PYI059]. If a `Generic` base class is\nfound outside of the last position, a diagnostic is emitted without a suggested fix.\n\nThis rule only applies to generic classes and does not include generic functions. See\n[`non-pep695-generic-function`][UP047] for the function version.\n\n## Options\n\n- `target-version`\n\n[PEP 695]: https://peps.python.org/pep-0695/\n[PEP 696]: https://peps.python.org/pep-0696/\n[PYI018]: https://docs.astral.sh/ruff/rules/unused-private-type-var/\n[PYI059]: https://docs.astral.sh/ruff/rules/generic-not-last-base-class/\n[UP047]: https://docs.astral.sh/ruff/rules/non-pep695-generic-function/\n[UP049]: https://docs.astral.sh/ruff/rules/private-type-parameter/\n[fail]: https://github.com/python/mypy/issues/18507\n",
+    "explanation": "## What it does\n\nChecks for use of standalone type variables and parameter specifications in generic classes.\n\n## Why is this bad?\n\nSpecial type parameter syntax was introduced in Python 3.12 by [PEP 695] for defining generic\nclasses. This syntax is easier to read and provides cleaner support for generics.\n\nIn particular, old-style `TypeVar` variables are typically allocated at module scope, but their\nsemantic meaning is only valid within the context of a generic class, function, or type alias.\n[PEP 695] eliminates this [source of confusion] by declaring type parameters at their point of\nuse.\n\n## Known problems\n\nThe rule currently skips generic classes nested inside of other functions or classes. It also\nskips type parameters with the `default` argument introduced in [PEP 696] and implemented in\nPython 3.13.\n\nThis rule can only offer a fix if all of the generic types in the class definition are defined\nin the current module. For external type parameters, a diagnostic is emitted without a suggested\nfix.\n\nNot all type checkers fully support PEP 695 yet, so even valid fixes suggested by this rule may\ncause type checking to [fail].\n\n## Fix safety\n\nThis fix is marked as unsafe, as [PEP 695] uses inferred variance for type parameters, instead\nof the `covariant` and `contravariant` keywords used by `TypeVar` variables. As such, replacing\na `TypeVar` variable with an inline type parameter may change its variance.\n\n## Examples\n\n```python\nfrom typing import Generic, TypeVar\n\nT = TypeVar(\"T\")\n\n\nclass GenericClass(Generic[T]):\n    var: T\n```\n\nUse instead:\n\n```python\nclass GenericClass[T]:\n    var: T\n```\n\nIn cases where you've intentionally defined a reusable `TypeVar` to share\nthe bounds across multiple uses:\n\n```python\nfrom typing import Generic, TypeVar\n\nReusableT = TypeVar(\"ReusableT\", bound=int | str | dict[int, str])\n\n\nclass GenericClass1(Generic[ReusableT]): ...\n\n\nclass GenericClass2(Generic[ReusableT]): ...\n\n\nclass GenericClass3(Generic[ReusableT]): ...\n```\n\nYou can instead extract the bound as a [type alias] to retain both the\nbenefits of the PEP 695 syntax and the reuse of the bound:\n\n```python\ntype ReusableTBound = int | str | dict[int, str]\n\n\nclass GenericClass1[ReusableT: ReusableTBound]: ...\n\n\nclass GenericClass2[ReusableT: ReusableTBound]: ...\n\n\nclass GenericClass3[ReusableT: ReusableTBound]: ...\n```\n\n## See also\n\nThis rule replaces standalone type variables in classes but doesn't remove\nthe corresponding type variables even if they are unused after the fix. See\n[`unused-private-type-var`][PYI018] for a rule to clean up unused\nprivate type variables.\n\nThis rule will not rename private type variables to remove leading underscores, even though the\nnew type parameters are restricted in scope to their associated class. See\n[`private-type-parameter`][UP049] for a rule to update these names.\n\nThis rule will correctly handle classes with multiple base classes, as long as the single\n`Generic` base class is at the end of the argument list, as checked by\n[`generic-not-last-base-class`][PYI059]. If a `Generic` base class is\nfound outside of the last position, a diagnostic is emitted without a suggested fix.\n\nThis rule only applies to generic classes and does not include generic functions. See\n[`non-pep695-generic-function`][UP047] for the function version.\n\n## Options\n\n- `target-version`\n\n[PEP 695]: https://peps.python.org/pep-0695/\n[PEP 696]: https://peps.python.org/pep-0696/\n[PYI018]: https://docs.astral.sh/ruff/rules/unused-private-type-var/\n[PYI059]: https://docs.astral.sh/ruff/rules/generic-not-last-base-class/\n[UP047]: https://docs.astral.sh/ruff/rules/non-pep695-generic-function/\n[UP049]: https://docs.astral.sh/ruff/rules/private-type-parameter/\n[fail]: https://github.com/python/mypy/issues/18507\n[source of confusion]: https://peps.python.org/pep-0695/#points-of-confusion\n[type alias]: https://docs.python.org/3/reference/simple_stmts.html#type-aliases\n",
     "status": {
       "Stable": {
         "since": "0.12.0"
@@ -12954,7 +13053,7 @@ export default [
     },
     "source_location": {
       "file": "crates/ruff_linter/src/rules/pyupgrade/rules/pep695/non_pep695_generic_class.rs",
-      "line": 92
+      "line": 133
     },
     "fix": 1
   },
@@ -13585,7 +13684,7 @@ export default [
     "name": "sorted-min-max",
     "code": "FURB192",
     "fix_availability": "Sometimes",
-    "explanation": "## What it does\nChecks for uses of `sorted()` to retrieve the minimum or maximum value in\na sequence.\n\n## Why is this bad?\nUsing `sorted()` to compute the minimum or maximum value in a sequence is\ninefficient and less readable than using `min()` or `max()` directly.\n\n## Example\n```python\nnums = [3, 1, 4, 1, 5]\nlowest = sorted(nums)[0]\nhighest = sorted(nums)[-1]\nhighest = sorted(nums, reverse=True)[0]\n```\n\nUse instead:\n```python\nnums = [3, 1, 4, 1, 5]\nlowest = min(nums)\nhighest = max(nums)\n```\n\n## Fix safety\nIn some cases, migrating to `min` or `max` can lead to a change in behavior,\nnotably when breaking ties.\n\nAs an example, `sorted(data, key=itemgetter(0), reverse=True)[0]` will return\nthe _last_ \"minimum\" element in the list, if there are multiple elements with\nthe same key. However, `min(data, key=itemgetter(0))` will return the _first_\n\"minimum\" element in the list in the same scenario.\n\nAs such, this rule's fix is marked as unsafe.\n\n## References\n- [Python documentation: `min`](https://docs.python.org/3/library/functions.html#min)\n- [Python documentation: `max`](https://docs.python.org/3/library/functions.html#max)\n",
+    "explanation": "## What it does\nChecks for uses of `sorted()` to retrieve the minimum or maximum value in\na sequence.\n\n## Why is this bad?\nUsing `sorted()` to compute the minimum or maximum value in a sequence is\ninefficient and less readable than using `min()` or `max()` directly.\n\n## Example\n```python\nnums = [3, 1, 4, 1, 5]\nlowest = sorted(nums)[0]\nhighest = sorted(nums)[-1]\nhighest = sorted(nums, reverse=True)[0]\n```\n\nUse instead:\n```python\nnums = [3, 1, 4, 1, 5]\nlowest = min(nums)\nhighest = max(nums)\n```\n\n## Fix safety\nIn some cases, migrating to `min` or `max` can lead to a change in behavior,\nnotably when breaking ties.\n\nAs an example, `sorted(data, key=itemgetter(0), reverse=True)[0]` will return\nthe _last_ \"minimum\" element in the list, if there are multiple elements with\nthe same key. However, `min(data, key=itemgetter(0))` will return the _first_\n\"minimum\" element in the list in the same scenario.\n\nThe fix also changes which exception is raised for an empty sequence:\n`sorted([])[0]` raises `IndexError`, but `min([])` and `max([])` raise\n`ValueError`. Code that catches one specific exception type will need to\nbe updated after the fix is applied.\n\nAs such, this rule's fix is marked as unsafe.\n\n## References\n- [Python documentation: `min`](https://docs.python.org/3/library/functions.html#min)\n- [Python documentation: `max`](https://docs.python.org/3/library/functions.html#max)\n",
     "preview": true,
     "status": {
       "Preview": {
@@ -13594,7 +13693,7 @@ export default [
     },
     "source_location": {
       "file": "crates/ruff_linter/src/rules/refurb/rules/sorted_min_max.rs",
-      "line": 49
+      "line": 54
     },
     "fix": 1
   },
@@ -13724,7 +13823,7 @@ export default [
     "name": "explicit-f-string-type-conversion",
     "code": "RUF010",
     "fix_availability": "Sometimes",
-    "explanation": "## What it does\nChecks for uses of `str()`, `repr()`, and `ascii()` as explicit type\nconversions within f-strings.\n\n## Why is this bad?\nf-strings support dedicated conversion flags for these types, which are\nmore succinct and idiomatic.\n\nNote that, in many cases, calling `str()` within an f-string is\nunnecessary and can be removed entirely, as the value will be converted\nto a string automatically, the notable exception being for classes that\nimplement a custom `__format__` method.\n\n## Example\n```python\na = \"some string\"\nf\"{repr(a)}\"\n```\n\nUse instead:\n```python\na = \"some string\"\nf\"{a!r}\"\n```\n",
+    "explanation": "## What it does\nChecks for uses of `str()`, `repr()`, and `ascii()` as explicit type\nconversions within f-strings.\n\n## Why is this bad?\nf-strings support dedicated conversion flags for these types, which are\nmore succinct and idiomatic.\n\nNote that, in many cases, calling `str()` within an f-string is\nunnecessary and can be removed entirely, as the value will be converted\nto a string automatically, the notable exception being for classes that\nimplement a custom `__format__` method.\n\n## Example\n```python\na = \"some string\"\nf\"{repr(a)}\"\n```\n\nUse instead:\n```python\na = \"some string\"\nf\"{a!r}\"\n```\n\n## Fix safety\n\nThis rule's fix is marked as unsafe if the call expression contains\ncomments that would be deleted by applying the fix.\n",
     "status": {
       "Stable": {
         "since": "v0.0.267"
@@ -13732,7 +13831,7 @@ export default [
     },
     "source_location": {
       "file": "crates/ruff_linter/src/rules/ruff/rules/explicit_f_string_type_conversion.rs",
-      "line": 42
+      "line": 47
     },
     "fix": 1
   },
@@ -13770,7 +13869,7 @@ export default [
     "name": "implicit-optional",
     "code": "RUF013",
     "fix_availability": "Sometimes",
-    "explanation": "## What it does\nChecks for the use of implicit `Optional` in type annotations when the\ndefault parameter value is `None`.\n\nIf [`lint.future-annotations`] is set to `true`, `from __future__ import\nannotations` will be added if doing so would allow using the `|` operator on\na Python version before 3.10.\n\n## Why is this bad?\nImplicit `Optional` is prohibited by [PEP 484]. It is confusing and\ninconsistent with the rest of the type system.\n\nIt's recommended to use `Optional[T]` instead. For Python 3.10 and later,\nyou can also use `T | None`.\n\n## Example\n```python\ndef foo(arg: int = None):\n    pass\n```\n\nUse instead:\n```python\nfrom typing import Optional\n\n\ndef foo(arg: Optional[int] = None):\n    pass\n```\n\nOr, for Python 3.10 and later:\n```python\ndef foo(arg: int | None = None):\n    pass\n```\n\nIf you want to use the `|` operator in Python 3.9 and earlier, you can\nuse future imports:\n```python\nfrom __future__ import annotations\n\n\ndef foo(arg: int | None = None):\n    pass\n```\n\n## Limitations\n\nType aliases are not supported and could result in false negatives.\nFor example, the following code will not be flagged:\n```python\nText = str | bytes\n\n\ndef foo(arg: Text = None):\n    pass\n```\n\n## Options\n- `target-version`\n- `lint.future-annotations`\n\n## Fix safety\n\nThis fix is always marked as unsafe because it can change the behavior of code that relies on\ntype hints, and it assumes the default value is always appropriate\u2014which might not be the case.\n\n[PEP 484]: https://peps.python.org/pep-0484/#union-types\n",
+    "explanation": "## What it does\nChecks for the use of implicit `Optional` in type annotations when the\ndefault parameter value is `None`.\n\nIf [`lint.future-annotations`] is set to `true`, `from __future__ import\nannotations` will be added if doing so would allow using the `|` operator on\na Python version before 3.10.\n\n## Why is this bad?\nImplicit `Optional` is prohibited by [PEP 484]. It is confusing and\ninconsistent with the rest of the type system.\n\nIt's recommended to use `Optional[T]` instead. For Python 3.10 and later,\nyou can also use `T | None`.\n\n## Example\n```python\ndef foo(arg: int = None):\n    pass\n```\n\nUse instead:\n```python\nfrom typing import Optional\n\n\ndef foo(arg: Optional[int] = None):\n    pass\n```\n\nOr, for Python 3.10 and later:\n```python\ndef foo(arg: int | None = None):\n    pass\n```\n\nIf you want to use the `|` operator in Python 3.9 and earlier, you can\nuse future imports:\n```python\nfrom __future__ import annotations\n\n\ndef foo(arg: int | None = None):\n    pass\n```\n\n## Limitations\n\nType aliases and other user-defined types are not supported and could\nresult in false negatives. For example, the following code will not be\nflagged:\n\n```python\nText = str | bytes\n\n\nclass Custom: ...\n\n\ndef foo(text_arg: Text = None, custom_arg: Custom = None):\n    pass\n```\n\n## Options\n- `target-version`\n- `lint.future-annotations`\n\n## Fix safety\n\nThis fix is always marked as unsafe because it can change the behavior of code that relies on\ntype hints, and it assumes the default value is always appropriate\u2014which might not be the case.\n\n[PEP 484]: https://peps.python.org/pep-0484/#union-types\n",
     "status": {
       "Stable": {
         "since": "v0.0.273"
@@ -13778,7 +13877,7 @@ export default [
     },
     "source_location": {
       "file": "crates/ruff_linter/src/rules/ruff/rules/implicit_optional.rs",
-      "line": 86
+      "line": 91
     },
     "fix": 1
   },
@@ -13817,7 +13916,7 @@ export default [
     "name": "quadratic-list-summation",
     "code": "RUF017",
     "fix_availability": "Always",
-    "explanation": "## What it does\nChecks for the use of `sum()` to flatten lists of lists, which has\nquadratic complexity.\n\n## Why is this bad?\nThe use of `sum()` to flatten lists of lists is quadratic in the number of\nlists, as `sum()` creates a new list for each element in the summation.\n\nInstead, consider using another method of flattening lists to avoid\nquadratic complexity. The following methods are all linear in the number of\nlists:\n\n- `[*sublist for sublist in lists]` (Python 3.15+)\n- `functools.reduce(operator.iadd, lists, [])`\n- `list(itertools.chain.from_iterable(lists))`\n- `[item for sublist in lists for item in sublist]`\n\nWhen fixing relevant violations, Ruff uses the starred-list-comprehension\nform on Python 3.15 and later. On older Python versions, Ruff falls back to\nthe `functools.reduce` form, which outperforms the other pre-3.15\nalternatives in [microbenchmarks].\n\n## Example\n```python\nlists = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]\njoined = sum(lists, [])\n```\n\nUse instead:\n```python\nlists = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]\njoined = [*sublist for sublist in lists]\n```\n\n## Fix safety\n\nThis fix is always marked as unsafe because the replacement may accept any\niterable where `sum` previously required lists. On Python 3.15 and later,\nRuff uses iterable unpacking within a list comprehension; on older Python\nversions, Ruff uses `operator.iadd`. In both cases, code that previously\nraised an error may silently succeed. Moreover, the fix could remove\ncomments from the original code.\n\n## References\n- [_How Not to Flatten a List of Lists in Python_](https://mathieularose.com/how-not-to-flatten-a-list-of-lists-in-python)\n- [_How do I make a flat list out of a list of lists?_](https://stackoverflow.com/questions/952914/how-do-i-make-a-flat-list-out-of-a-list-of-lists/953097#953097)\n\n[microbenchmarks]: https://github.com/astral-sh/ruff/issues/5073#issuecomment-1591836349\n",
+    "explanation": "## What it does\nChecks for the use of `sum()` to flatten lists of lists, which has\nquadratic complexity.\n\n## Why is this bad?\nThe use of `sum()` to flatten lists of lists is quadratic in the number of\nlists, as `sum()` creates a new list for each element in the summation.\n\nInstead, consider using another method of flattening lists to avoid\nquadratic complexity. The following methods are all linear in the number of\nlists:\n\n- `[*sublist for sublist in lists]` (Python 3.15+)\n- `functools.reduce(operator.iadd, lists, [])`\n- `list(itertools.chain.from_iterable(lists))`\n- `[item for sublist in lists for item in sublist]`\n\nWhen fixing relevant violations, Ruff uses the starred-list-comprehension\nform on Python 3.15 and later. On older Python versions, Ruff falls back to\nthe `functools.reduce` form, which outperforms the other pre-3.15\nalternatives in [microbenchmarks].\n\n## Example\n```python\nlists = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]\njoined = sum(lists, [])\n```\n\nOn Python 3.14 and earlier, use instead:\n```python\nimport functools\nimport operator\n\nlists = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]\njoined = functools.reduce(operator.iadd, lists, [])\n```\n\nOn Python 3.15 and later, use instead:\n```python\nlists = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]\njoined = [*sublist for sublist in lists]\n```\n\n## Fix safety\n\nThis fix is always marked as unsafe because the replacement may accept any\niterable where `sum` previously required lists. On Python 3.15 and later,\nRuff uses iterable unpacking within a list comprehension; on older Python\nversions, Ruff uses `operator.iadd`. In both cases, code that previously\nraised an error may silently succeed. Moreover, the fix could remove\ncomments from the original code.\n\n## References\n- [_How Not to Flatten a List of Lists in Python_](https://mathieularose.com/how-not-to-flatten-a-list-of-lists-in-python)\n- [_How do I make a flat list out of a list of lists?_](https://stackoverflow.com/questions/952914/how-do-i-make-a-flat-list-out-of-a-list-of-lists/953097#953097)\n\n[microbenchmarks]: https://github.com/astral-sh/ruff/issues/5073#issuecomment-1591836349\n",
     "status": {
       "Stable": {
         "since": "v0.0.285"
@@ -13825,7 +13924,7 @@ export default [
     },
     "source_location": {
       "file": "crates/ruff_linter/src/rules/ruff/rules/quadratic_list_summation.rs",
-      "line": 62
+      "line": 71
     },
     "fix": 2
   },
@@ -13848,7 +13947,7 @@ export default [
     "name": "unnecessary-key-check",
     "code": "RUF019",
     "fix_availability": "Always",
-    "explanation": "## What it does\nChecks for unnecessary key checks prior to accessing a dictionary.\n\n## Why is this bad?\nWhen working with dictionaries, the `get` can be used to access a value\nwithout having to check if the dictionary contains the relevant key,\nreturning `None` if the key is not present.\n\n## Example\n```python\nif \"key\" in dct and dct[\"key\"]:\n    ...\n```\n\nUse instead:\n```python\nif dct.get(\"key\"):\n    ...\n```\n\n## Fix safety\nThis rule's fix is marked as safe, unless the expression contains comments.\n",
+    "explanation": "## What it does\nChecks for unnecessary key checks prior to accessing a dictionary.\n\n## Why is this bad?\nWhen working with dictionaries, the `get` can be used to access a value\nwithout having to check if the dictionary contains the relevant key,\nreturning `None` if the key is not present.\n\n## Example\n```python\nif \"key\" in dct and dct[\"key\"]:\n    ...\n```\n\nUse instead:\n```python\nif dct.get(\"key\"):\n    ...\n```\n\n## Fix safety\nThis rule's fix is marked as safe, unless the expression contains comments\nor may have side effects.\n",
     "status": {
       "Stable": {
         "since": "v0.2.0"
@@ -13856,7 +13955,7 @@ export default [
     },
     "source_location": {
       "file": "crates/ruff_linter/src/rules/ruff/rules/unnecessary_key_check.rs",
-      "line": 35
+      "line": 36
     },
     "fix": 2
   },
@@ -14002,7 +14101,7 @@ export default [
     },
     "source_location": {
       "file": "crates/ruff_linter/src/rules/ruff/rules/unused_async.rs",
-      "line": 33
+      "line": 34
     }
   },
   {
@@ -14555,7 +14654,7 @@ export default [
     "name": "non-empty-init-module",
     "code": "RUF067",
     "fix_availability": "None",
-    "explanation": "## What it does\n\nDetects the presence of code in `__init__.py` files.\n\n## Why is this bad?\n\n`__init__.py` files are often empty or only contain simple code to modify a module's API. As\nsuch, it's easy to overlook them and their possible side effects when debugging.\n\n## Example\n\nInstead of defining `MyClass` directly in `__init__.py`:\n\n```python\n\"\"\"My module docstring.\"\"\"\n\n\nclass MyClass:\n    def my_method(self): ...\n```\n\nmove the definition to another file, import it, and include it in `__all__`:\n\n```python\n\"\"\"My module docstring.\"\"\"\n\nfrom submodule import MyClass\n\n__all__ = [\"MyClass\"]\n```\n\nCode in `__init__.py` files is also run at import time and can cause surprising slowdowns. To\ndisallow any code in `__init__.py` files, you can enable the\n[`lint.ruff.strictly-empty-init-modules`] setting. In this case:\n\n```python\nfrom submodule import MyClass\n\n__all__ = [\"MyClass\"]\n```\n\nthe only fix is entirely emptying the file:\n\n```python\n```\n\n## Details\n\nIn non-strict mode, this rule allows several common patterns in `__init__.py` files:\n\n- Imports\n- Assignments to `__all__`, `__path__`, `__version__`, and `__author__`\n- Module-level and attribute docstrings\n- `if TYPE_CHECKING` blocks\n- [PEP-562] module-level `__getattr__` and `__dir__` functions\n\n## Options\n\n- [`lint.ruff.strictly-empty-init-modules`]\n\n## References\n\n- [`flake8-empty-init-modules`](https://github.com/samueljsb/flake8-empty-init-modules/)\n\n[PEP-562]: https://peps.python.org/pep-0562/\n",
+    "explanation": "## What it does\n\nDetects the presence of code in `__init__.py` files.\n\n## Why is this bad?\n\n`__init__.py` files are often empty or only contain simple code to modify a module's API. As\nsuch, it's easy to overlook them and their possible side effects when debugging.\n\n## Example\n\nInstead of defining `MyClass` directly in `__init__.py`:\n\n```python\n\"\"\"My module docstring.\"\"\"\n\n\nclass MyClass:\n    def my_method(self): ...\n```\n\nmove the definition to another file, import it, and include it in `__all__`:\n\n```python\n\"\"\"My module docstring.\"\"\"\n\nfrom submodule import MyClass\n\n__all__ = [\"MyClass\"]\n```\n\nCode in `__init__.py` files is also run at import time and can cause surprising slowdowns. To\ndisallow any code in `__init__.py` files, you can enable the\n[`lint.ruff.strictly-empty-init-modules`] setting. In this case:\n\n```python\nfrom submodule import MyClass\n\n__all__ = [\"MyClass\"]\n```\n\nthe only fix is entirely emptying the file:\n\n```python\n```\n\n## Details\n\nIn non-strict mode, this rule allows several common patterns in `__init__.py` files:\n\n- Imports\n- Assignments to dunder names (identifiers starting and ending with `__`, such as `__all__` or\n  `__submodules__`)\n- Module-level and attribute docstrings\n- `if TYPE_CHECKING` blocks\n- [PEP-562] module-level `__getattr__` and `__dir__` functions\n\n## Options\n\n- [`lint.ruff.strictly-empty-init-modules`]\n\n## References\n\n- [`flake8-empty-init-modules`](https://github.com/samueljsb/flake8-empty-init-modules/)\n\n[PEP-562]: https://peps.python.org/pep-0562/\n",
     "preview": true,
     "status": {
       "Preview": {
@@ -14564,7 +14663,7 @@ export default [
     },
     "source_location": {
       "file": "crates/ruff_linter/src/rules/ruff/rules/non_empty_init_module.rs",
-      "line": 73
+      "line": 75
     }
   },
   {
@@ -14621,7 +14720,7 @@ export default [
     "name": "os-path-commonprefix",
     "code": "RUF071",
     "fix_availability": "Sometimes",
-    "explanation": "## What it does\nChecks for uses of `os.path.commonprefix`.\n\n## Why is this bad?\n`os.path.commonprefix` performs a character-by-character string\ncomparison rather than comparing path components. This leads to\nincorrect results when paths share a common string prefix that\nis not a valid path component.\n\n`os.path.commonpath` correctly compares path components.\n\n`os.path.commonprefix` is deprecated as of Python 3.15.\n\n## Example\n```python\nimport os\n\n# Returns \"/usr/l\" \u2014 not a valid directory!\nos.path.commonprefix([\"/usr/lib\", \"/usr/local/lib\"])\n```\n\nUse instead:\n```python\nimport os\n\n# Returns \"/usr\" \u2014 correct common path\nos.path.commonpath([\"/usr/lib\", \"/usr/local/lib\"])\n```\n\n## References\n- [Python documentation: `os.path.commonprefix`](https://docs.python.org/3/library/os.path.html#os.path.commonprefix)\n- [Python documentation: `os.path.commonpath`](https://docs.python.org/3/library/os.path.html#os.path.commonpath)\n- [Why `os.path.commonprefix` is deprecated](https://sethmlarson.dev/deprecate-confusing-apis-like-os-path-commonprefix)\n- [CPython deprecation issue](https://github.com/python/cpython/issues/144347)\n",
+    "explanation": "## What it does\nChecks for uses of `os.path.commonprefix`.\n\n## Why is this bad?\n`os.path.commonprefix` performs a character-by-character string\ncomparison rather than comparing path components. This leads to\nincorrect results when paths share a common string prefix that\nis not a valid path component.\n\n`os.path.commonpath` correctly compares path components.\n\n`os.path.commonprefix` is deprecated as of Python 3.15.\n\n## Example\n```python\nimport os\n\n# Returns \"/usr/l\" \u2014 not a valid directory!\nos.path.commonprefix([\"/usr/lib\", \"/usr/local/lib\"])\n```\n\nUse instead:\n```python\nimport os\n\n# Returns \"/usr\" \u2014 correct common path\nos.path.commonpath([\"/usr/lib\", \"/usr/local/lib\"])\n```\n\n## Fix safety\n\nThis fix is marked as unsafe because `os.path.commonprefix` and\n`os.path.commonpath` have different semantics:\n\n- `commonprefix` performs a character-by-character string comparison\n  and returns the longest common string prefix.\n- `commonpath` compares path components and returns the longest common\n  path prefix.\n\nIf you are intentionally using `commonprefix` for non-path string\ncomparisons (e.g., finding a common prefix among arbitrary strings\nlike version numbers or identifiers), see the\n[error suppression](https://docs.astral.sh/ruff/linter/#error-suppression)\ndocumentation for ways to disable this rule.\n\nFor example:\n\n```python\nimport os\n\n# commonprefix works on non-path strings\nos.path.commonprefix([\"12345\", \"12378\"])  # \"123\"\nos.path.commonpath([\"12345\", \"12378\"])  # \"\"\n```\n\n## References\n- [Python documentation: `os.path.commonprefix`](https://docs.python.org/3/library/os.path.html#os.path.commonprefix)\n- [Python documentation: `os.path.commonpath`](https://docs.python.org/3/library/os.path.html#os.path.commonpath)\n- [Why `os.path.commonprefix` is deprecated](https://sethmlarson.dev/deprecate-confusing-apis-like-os-path-commonprefix)\n- [CPython deprecation issue](https://github.com/python/cpython/issues/144347)\n",
     "preview": true,
     "status": {
       "Preview": {
@@ -14630,7 +14729,7 @@ export default [
     },
     "source_location": {
       "file": "crates/ruff_linter/src/rules/ruff/rules/os_path_commonprefix.rs",
-      "line": 43
+      "line": 69
     },
     "fix": 1
   },
@@ -14665,6 +14764,54 @@ export default [
     "source_location": {
       "file": "crates/ruff_linter/src/rules/ruff/rules/fstring_percent_format.rs",
       "line": 29
+    }
+  },
+  {
+    "name": "incorrect-decorator-order",
+    "code": "RUF074",
+    "fix_availability": "None",
+    "explanation": "## What it does\nChecks for incorrect ordering of decorators on functions and methods.\n\n## Why is this bad?\nDecorators are applied bottom-up. Certain decorator combinations cause\nruntime errors or silent wrong behavior when placed in the wrong order.\nFor example, `@abstractmethod` must be the innermost (bottom) decorator\nwhen combined with `@property`, `@classmethod`, or `@staticmethod`.\n\n## Example\n```python\nfrom abc import abstractmethod\n\n\nclass Foo:\n    @abstractmethod\n    @property\n    def bar(self): ...\n```\n\nUse instead:\n```python\nfrom abc import abstractmethod\n\n\nclass Foo:\n    @property\n    @abstractmethod\n    def bar(self): ...\n```\n\n## References\n- [Python documentation: `abc.abstractmethod`](https://docs.python.org/3/library/abc.html#abc.abstractmethod)\n- [Python documentation: `contextlib.contextmanager`](https://docs.python.org/3/library/contextlib.html#contextlib.contextmanager)\n",
+    "preview": true,
+    "status": {
+      "Preview": {
+        "since": "0.15.14"
+      }
+    },
+    "source_location": {
+      "file": "crates/ruff_linter/src/rules/ruff/rules/incorrect_decorator_order.rs",
+      "line": 46
+    }
+  },
+  {
+    "name": "fallible-context-manager",
+    "code": "RUF075",
+    "fix_availability": "None",
+    "explanation": "## What it does\nChecks for `@contextlib.contextmanager` decorated functions that contain\n`yield` expressions not protected against exceptions.\n\n## Why is this bad?\nWhen a context manager is used, code after `yield` is intended to run\nduring cleanup when the context exits. However, if an exception is raised\ninside the `with` block, code after an unprotected `yield` will never\nexecute.\n\nWrapping `yield` in a `try`/`finally` or `try`/`except` block ensures\nthat exceptions are handled appropriately.\n\n## Example\n```python\nfrom contextlib import contextmanager\n\n\n@contextmanager\ndef my_context():\n    print(\"setup\")\n    yield\n    print(\"cleanup\")  # This won't run if an exception is raised!\n```\n\nUse instead:\n```python\nfrom contextlib import contextmanager\n\n\n@contextmanager\ndef my_context():\n    print(\"setup\")\n    try:\n        yield\n    finally:\n        print(\"cleanup\")  # This always runs\n```\n\n## References\n- [Python documentation: `contextlib.contextmanager`](https://docs.python.org/3/library/contextlib.html#contextlib.contextmanager)\n",
+    "preview": true,
+    "status": {
+      "Preview": {
+        "since": "0.15.14"
+      }
+    },
+    "source_location": {
+      "file": "crates/ruff_linter/src/rules/ruff/rules/fallible_context_manager.rs",
+      "line": 51
+    }
+  },
+  {
+    "name": "pytest-fixture-autouse",
+    "code": "RUF076",
+    "fix_availability": "None",
+    "explanation": "## What it does\nChecks for `pytest` fixtures that set the parameter `autouse=True` in the decorator constructor.\n\n## Why is this bad?\nAutouse fixtures are run implicitly, which can make test behavior hard to\nreason about in general, but especially when defined in `conftest.py` files.\nAutouse fixtures in `conftest.py` files are automatically run for\nall tests in the directory structure, which can introduce hidden side effects,\nmake test suites slower, and make debugging difficult.\n\nInstead, prefer to explicitly request/inject fixtures in tests, test classes,\nor other fixtures that need them by declaring them in the function parameters.\n\n## Example\n\n```python\nimport pytest\n\n\n@pytest.fixture(autouse=True)\ndef my_fixture(): ...\n```\n\nUse instead:\n\n```python\nimport pytest\n\n\n@pytest.fixture()\ndef my_fixture(): ...\n\n\ndef test_foo(my_fixture): ...\n```\n\n## Note\n\nThis is a pedantic rule that restricts a valid `pytest` pattern. If you choose to\nenable it, you may want to ignore it outside of `conftest.py` files,\nas autouse fixtures are most problematic when defined globally.\n\nYou can do this by configuring [`lint.per-file-ignores`][lint.per-file-ignores]:\n\n```toml\n[tool.ruff.lint.per-file-ignores]\n\"!**/conftest.py\" = [\"RUF076\"]\n```\n\n## References\n- [`pytest` documentation: Sharing fixtures across classes, modules, packages or session](https://docs.pytest.org/en/stable/how-to/fixtures.html#scope-sharing-fixtures-across-classes-modules-packages-or-session)\n- [`pytest` documentation: Fixtures can request other fixtures](https://docs.pytest.org/en/stable/how-to/fixtures.html#fixtures-can-request-other-fixtures)\n",
+    "preview": true,
+    "status": {
+      "Preview": {
+        "since": "0.15.17"
+      }
+    },
+    "source_location": {
+      "file": "crates/ruff_linter/src/rules/ruff/rules/pytest_fixture_autouse.rs",
+      "line": 62
     }
   },
   {
